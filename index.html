@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>数字の階段ジェネレータ</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="web/styles.css" />
+  </head>
+  <body>
+    <header class="toolbar">
+      <div class="title-block">
+        <h1>数字の階段ジェネレータ</h1>
+        <p id="statusText">レベル1</p>
+      </div>
+      <div class="controls" aria-label="生成条件">
+        <label>
+          レベル
+          <select id="levelSelect" aria-label="レベル">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+          </select>
+        </label>
+        <label>
+          モード
+          <select id="modeSelect" aria-label="モード">
+            <option value="standard">標準</option>
+            <option value="strict">一本道</option>
+          </select>
+        </label>
+        <button type="button" id="generateButton">生成</button>
+        <button type="button" id="printButton">印刷</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="sheet-section" aria-labelledby="problemHeading">
+        <h2 id="problemHeading">問題</h2>
+        <div id="problemSvg" class="svg-frame"></div>
+      </section>
+
+      <section class="sheet-section" aria-labelledby="answerHeading">
+        <h2 id="answerHeading">解答</h2>
+        <div id="answerSvg" class="svg-frame"></div>
+      </section>
+
+      <section class="sheet-section" aria-labelledby="idMapHeading">
+        <h2 id="idMapHeading">IDマップ</h2>
+        <div id="idMapSvg" class="svg-frame"></div>
+      </section>
+
+      <section class="text-section" aria-labelledby="stepsHeading">
+        <h2 id="stepsHeading">あてずっぽう無しの確定順</h2>
+        <div id="stepsOutput"></div>
+      </section>
+
+      <section class="text-section" aria-labelledby="explanationHeading">
+        <h2 id="explanationHeading">解き方</h2>
+        <div id="explanationOutput"></div>
+      </section>
+    </main>
+
+    <script type="module" src="web/js/app.js"></script>
+  </body>
+</html>
