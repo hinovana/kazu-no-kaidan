@@ -1,0 +1,287 @@
+:root {
+  color-scheme: light;
+  --ink: #181818;
+  --muted: #666;
+  --line: #d7d7d7;
+  --paper: #fff;
+  --surface: #f5f5f3;
+  --accent: #28536b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background: var(--surface);
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+  line-height: 1.5;
+}
+
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(245, 245, 243, 0.96);
+}
+
+.title-block {
+  min-width: 0;
+}
+
+h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.title-block p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+select,
+button {
+  height: 34px;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+
+select {
+  min-width: 64px;
+  padding: 0 8px;
+}
+
+button {
+  padding: 0 14px;
+  cursor: pointer;
+}
+
+button:first-of-type {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+main {
+  width: min(1180px, calc(100vw - 32px));
+  margin: 24px auto 48px;
+  display: grid;
+  gap: 24px;
+}
+
+.sheet-section,
+.text-section {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+h2 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.svg-frame {
+  width: min(100%, 210mm);
+  margin: 0 auto;
+  aspect-ratio: 210 / 297;
+  background: #fff;
+  border: 1px solid #ececec;
+  overflow: hidden;
+}
+
+.svg-frame svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.generation-error {
+  min-height: 100%;
+  display: grid;
+  align-content: center;
+  gap: 14px;
+  padding: 32px;
+  color: var(--ink);
+  background: #fff;
+}
+
+.error-kicker {
+  margin: 0;
+  color: #9b2c2c;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.error-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.generation-error dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 5em 1fr;
+  gap: 8px 14px;
+  font-size: 14px;
+}
+
+.generation-error dt {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.generation-error dd {
+  margin: 0;
+}
+
+.steps-list {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+}
+
+.steps-list li {
+  display: grid;
+  grid-template-columns: 3ch minmax(120px, 15ch) 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 7px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.step-no {
+  color: var(--muted);
+  text-align: right;
+}
+
+.step-run {
+  color: #1b4d5c;
+  white-space: nowrap;
+}
+
+.step-equation {
+  white-space: normal;
+}
+
+.explanation-list {
+  margin: 0;
+  padding-left: 1.2em;
+  display: grid;
+  gap: 7px;
+}
+
+@media (max-width: 720px) {
+  .toolbar {
+    position: static;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  main {
+    width: min(100vw - 20px, 1180px);
+    margin-top: 12px;
+  }
+
+  .sheet-section,
+  .text-section {
+    padding: 12px;
+  }
+
+  .steps-list li {
+    grid-template-columns: 3ch 1fr;
+  }
+
+  .step-equation {
+    grid-column: 2;
+  }
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .toolbar {
+    display: none;
+  }
+
+  main {
+    width: 210mm;
+    margin: 0;
+    gap: 0;
+    display: block;
+  }
+
+  .sheet-section,
+  .text-section {
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .sheet-section h2,
+  .text-section h2 {
+    display: none;
+  }
+
+  .svg-frame {
+    width: 210mm;
+    height: 297mm;
+    border: 0;
+  }
+
+  .text-section {
+    padding: 18mm;
+  }
+
+  .text-section h2 {
+    display: block;
+    margin-bottom: 8mm;
+  }
+
+  .steps-list {
+    font-size: 10.5pt;
+  }
+}
