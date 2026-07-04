@@ -66,33 +66,16 @@ export function solveBookLevel7(problem) {
   const minValue = 1;
   const maxValue = 20;
   const given = givenValues(problem);
-  const t0 = given.t0;
-  const b1 = given.b1;
-  const m3 = given.m3;
-  const constant = 4 * t0 + 3 * b1 + 2 * m3;
   const initialReady = readyRuns(problem, given);
-  const candidates = [];
-
-  for (let b2 = minValue; b2 <= maxValue; b2 += 1) {
-    const t1Numerator = constant - 4 * b2;
-    if (t1Numerator % 5 !== 0) {
-      continue;
-    }
-
-    const t1 = t1Numerator / 5;
-    const values = bookLevel7Values({ t0, b1, m3, t1, b2 });
-    if (bookLevel7CandidateIsValid(problem, values, minValue, maxValue)) {
-      candidates.push(values);
-    }
-  }
+  const candidates = bookLevel7CandidateValues().filter((values) => bookLevel7CandidateIsValid(problem, values, minValue, maxValue));
 
   const uniqueSolution = candidates.length === 1;
   const values = uniqueSolution ? candidates[0] : given;
   return {
     kind: "text",
     values,
-    steps: bookLevel7TextSteps(problem, values, constant, minValue, maxValue).map((text) => ({ text })),
-    explanationLines: bookLevel7Explanation(values),
+    steps: bookLevel7TextSteps(problem, values, candidates.length, minValue, maxValue).map((text) => ({ text })),
+    explanationLines: bookLevel7Explanation(problem, values, candidates.length),
     unresolved: uniqueSolution ? [] : problem.nodes.map((node) => node.id).filter((nodeId) => values[nodeId] === undefined),
     readyHistory: [initialReady.map((item) => item.run.id)],
     initialReadyCount: initialReady.length,
@@ -140,6 +123,33 @@ export function bookProblemMetrics(problem, report) {
     answersMatch: report.uniqueSolution && answersMatch(problem, report.values),
     solver: "book-level7",
   };
+}
+
+let bookLevel7CandidateCache = null;
+
+export function bookLevel7CandidateValues() {
+  if (bookLevel7CandidateCache) {
+    return bookLevel7CandidateCache;
+  }
+
+  const minValue = 1;
+  const maxValue = 20;
+  const candidates = [];
+  for (let t0 = minValue; t0 <= maxValue; t0 += 1) {
+    for (let t1 = minValue; t1 <= maxValue; t1 += 1) {
+      for (let b1 = minValue; b1 <= maxValue; b1 += 1) {
+        for (let b2 = minValue; b2 <= maxValue; b2 += 1) {
+          const values = bookLevel7Values({ t0, t1, b1, b2 });
+          if (bookLevel7ValuesAreInDomain(values, minValue, maxValue)) {
+            candidates.push(values);
+          }
+        }
+      }
+    }
+  }
+
+  bookLevel7CandidateCache = candidates;
+  return bookLevel7CandidateCache;
 }
 
 export function readyRuns(problem, values) {
@@ -240,7 +250,7 @@ function redundantGivenIds(problem) {
   });
 }
 
-function bookLevel7Values({ t0, b1, m3, t1, b2 }) {
+function bookLevel7Values({ t0, t1, b1, b2 }) {
   const values = {
     t0,
     t1,
@@ -250,18 +260,18 @@ function bookLevel7Values({ t0, b1, m3, t1, b2 }) {
     b2,
     b0: 2 * b1 - b2,
     b3: 2 * b2 - b1,
-    m3,
   };
   values.m0 = (values.t2 + values.b2) / 2;
   values.m1 = (values.t3 + values.b3) / 2;
-  values.m2 = (values.m1 + values.m3) / 2;
+  values.m2 = 2 * values.m1 - values.m0;
+  values.m3 = 3 * values.m1 - 2 * values.m0;
   return values;
 }
 
 function bookLevel7CandidateIsValid(problem, values, minValue, maxValue) {
   for (const node of problem.nodes) {
     const value = values[node.id];
-    if (!Number.isInteger(value) || value < minValue || value > maxValue) {
+    if (!valueIsInDomain(value, minValue, maxValue)) {
       return false;
     }
     if (Object.prototype.hasOwnProperty.call(node, "given") && node.given !== value) {
@@ -275,23 +285,44 @@ function bookLevel7CandidateIsValid(problem, values, minValue, maxValue) {
   });
 }
 
-function bookLevel7TextSteps(problem, values, constant, minValue, maxValue) {
+function bookLevel7ValuesAreInDomain(values, minValue, maxValue) {
+  const nodeIds = ["t0", "t1", "t2", "t3", "m0", "m1", "m2", "m3", "b0", "b1", "b2", "b3"];
+  return nodeIds.every((nodeId) => valueIsInDomain(values[nodeId], minValue, maxValue));
+}
+
+function valueIsInDomain(value, minValue, maxValue) {
+  return Number.isInteger(value) && value >= minValue && value <= maxValue;
+}
+
+function bookLevel7TextSteps(problem, values, candidateCount, minValue, maxValue) {
+  const givenText = Object.entries(givenValues(problem))
+    .map(([nodeId, value]) => `${nodeId} = ${value}`)
+    .join(", ");
   return [
     `初期配置では、2つ分かっていて1つ決まる3マス組は ${readyRuns(problem, givenValues(problem)).length} 箇所です。`,
     `このレベルでは、${minValue}〜${maxValue} の整数という範囲も使います。`,
-    `b2 = x とおくと、下段から b0 = 2*b1 - x、b3 = 2*x - b1 です。`,
-    `t1 = y とおくと、上段から t2 = 2*y - t0、t3 = 3*y - 2*t0 です。`,
-    `中央と縦の条件を整理すると、5*y + 4*x = ${constant} になります。`,
-    `整数範囲で成り立つのは x = ${values.b2}, y = ${values.t1} だけです。`,
-    `したがって b2 = ${values.b2}, t1 = ${values.t1} から、残りのマスも順に決まります。`,
+    `ヒントは ${givenText} です。`,
+    `線の条件をすべて満たす盤面候補を作り、ヒントと合うものだけ残すと ${candidateCount} 通りです。`,
+    candidateCount === 1
+      ? `残った候補は1通りなので、t1 = ${values.t1}, b2 = ${values.b2} と決まります。`
+      : "候補が1通りではないため、このヒント配置だけでは解答を一意に決められません。",
+    candidateCount === 1
+      ? "そこから上段・下段・中央の等差条件で、残りのマスもすべて決まります。"
+      : "ヒントを増やすか、別のヒント配置にする必要があります。",
   ];
 }
 
-function bookLevel7Explanation(values) {
+function bookLevel7Explanation(problem, values, candidateCount) {
+  const givenText = Object.entries(givenValues(problem))
+    .map(([nodeId, value]) => `${nodeId} = ${value}`)
+    .join(", ");
   return [
     "この問題は、通常の「2つ分かれば1つ決まる」だけでは初手がありません。",
-    "そのため、整数の範囲と式の整理を使うタイプの問題として扱います。",
-    `b2 = ${values.b2}, t1 = ${values.t1} だけが条件を満たすため、解答は一意に決まります。`,
+    "そのため、1〜20の整数範囲と、すべての線の等差条件を合わせて使います。",
+    `ヒント ${givenText} に合う盤面候補は ${candidateCount} 通りです。`,
+    candidateCount === 1
+      ? `候補が1通りだけなので、t1 = ${values.t1}, b2 = ${values.b2} から解答が一意に決まります。`
+      : "候補が1通りではないため、このままでは解答を一意に決められません。",
     "標準のレベル1〜6より一段難しいので、レベル7として扱います。",
   ];
 }

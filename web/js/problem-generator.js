@@ -1,4 +1,6 @@
 import {
+  answersMatch,
+  bookLevel7CandidateValues,
   bookProblemMetrics,
   givenSignature,
   isAcceptablePuzzle,
@@ -188,7 +190,6 @@ g2 137.575 263.0 19 _
     source: "book-problem",
     solver: "book-level7",
     strictAvailable: false,
-    fixedValues: true,
     nodes: `
 t0 22.5 115.0 3 3
 t1 55.5 115.0 8 _
@@ -251,11 +252,15 @@ export function buildProblem(level, seedText, options = {}) {
   const template = parseTemplate(LEVEL_TEMPLATES.find((item) => item.level === level));
   const rng = new Rng(seedText);
   const constraints = generationConstraints(options.mode || "standard");
+  if (template.solver === "book-level7") {
+    return buildBookLevel7Problem(template, rng, seedText, constraints);
+  }
+
   const baseMax = Math.max(...template.nodes.map((node) => node.baseAnswer));
   const scales = baseMax * 2 <= 20 ? [1, 2] : [1];
-  const scale = template.fixedValues ? 1 : rng.choice(scales);
-  const maxOffset = template.fixedValues ? 0 : Math.max(0, Math.min(5, 20 - baseMax * scale));
-  const offset = template.fixedValues ? 0 : rng.int(0, maxOffset);
+  const scale = rng.choice(scales);
+  const maxOffset = Math.max(0, Math.min(5, 20 - baseMax * scale));
+  const offset = rng.int(0, maxOffset);
 
   const answerNodes = template.nodes.map((node) => ({
     id: node.id,
@@ -278,24 +283,6 @@ export function buildProblem(level, seedText, options = {}) {
     throw new Error("このレベルでは一本道モードの候補がありません");
   }
 
-  if (template.solver === "book-level7") {
-    for (const node of problem.nodes) {
-      const templateNode = template.nodes.find((item) => item.id === node.id);
-      if (templateNode.baseGiven) {
-        node.given = node.answer;
-      }
-    }
-
-    const report = solveBookLevel7(problem);
-    if (!report.uniqueSolution || report.unresolved.length !== 0) {
-      throw new Error("レベル7の整数範囲ソルバーで一意解が確認できません");
-    }
-    const metrics = bookProblemMetrics(problem, report);
-    metrics.generationMode = constraints.mode;
-    problem.metrics = metrics;
-    return { problem, report, metrics };
-  }
-
   const givenIds = chooseGivenIds(template, problem, rng, constraints);
   for (const node of problem.nodes) {
     if (givenIds.has(node.id)) {
@@ -311,6 +298,95 @@ export function buildProblem(level, seedText, options = {}) {
   metrics.generationMode = constraints.mode;
   problem.metrics = metrics;
   return { problem, report, metrics };
+}
+
+function buildBookLevel7Problem(template, rng, seedText, constraints) {
+  if (constraints.requireUniqueEveryStep && template.strictAvailable === false) {
+    throw new Error("このレベルでは一本道モードの候補がありません");
+  }
+
+  const answerCandidates = bookLevel7CandidateValues().filter((values) => isInterestingBookLevel7Answer(values));
+  for (const answerValues of rng.shuffle(answerCandidates)) {
+    const answerProblem = problemFromAnswerValues(template, seedText, answerValues);
+    const givenIds = chooseBookLevel7GivenIds(answerProblem, template.minGivens, rng);
+    if (!givenIds) {
+      continue;
+    }
+
+    const problem = withGivens(answerProblem, givenIds);
+    const report = solveBookLevel7(problem);
+    if (!isAcceptableBookLevel7Puzzle(problem, report)) {
+      continue;
+    }
+
+    const metrics = bookProblemMetrics(problem, report);
+    metrics.generationMode = constraints.mode;
+    problem.metrics = metrics;
+    return { problem, report, metrics };
+  }
+
+  throw new Error("レベル7のランダム生成候補が見つかりません");
+}
+
+function isInterestingBookLevel7Answer(values) {
+  const rowSteps = [values.t1 - values.t0, values.m1 - values.m0, values.b2 - values.b1];
+  const allValues = Object.values(values);
+  const valueRange = Math.max(...allValues) - Math.min(...allValues);
+  const uniqueCount = new Set(allValues).size;
+  return rowSteps.every((step) => step !== 0) && valueRange >= 6 && uniqueCount >= 6;
+}
+
+function problemFromAnswerValues(template, seedText, answerValues) {
+  return {
+    title: "数字の階段",
+    level: template.level,
+    source: template.source,
+    problemId: `L${template.level}-${hashSeed(seedText).toString(36).toUpperCase().slice(0, 6)}`,
+    nodes: template.nodes.map((node) => ({
+      id: node.id,
+      x: node.x,
+      y: node.y,
+      answer: answerValues[node.id],
+    })),
+    edges: template.edges,
+    runs: template.runs,
+    render: RENDER,
+  };
+}
+
+function chooseBookLevel7GivenIds(answerProblem, minGivens, rng) {
+  const allIds = answerProblem.nodes.map((node) => node.id);
+  const maxGivens = Math.min(5, allIds.length - 1);
+
+  for (let targetCount = minGivens; targetCount <= maxGivens; targetCount += 1) {
+    const accepted = [];
+    visitCombinations(allIds, targetCount, (candidate) => {
+      const problem = withGivens(answerProblem, new Set(candidate));
+      const report = solveBookLevel7(problem);
+      if (isAcceptableBookLevel7Puzzle(problem, report)) {
+        accepted.push(new Set(candidate));
+      }
+    });
+
+    if (accepted.length > 0) {
+      return new Set(rng.choice(accepted));
+    }
+  }
+
+  return null;
+}
+
+function isAcceptableBookLevel7Puzzle(problem, report) {
+  const metrics = bookProblemMetrics(problem, report);
+  return (
+    report.uniqueSolution &&
+    report.candidateCount === 1 &&
+    report.unresolved.length === 0 &&
+    metrics.answersMatch &&
+    metrics.initialReadyCount === 0 &&
+    metrics.completedRunCount === 0 &&
+    answersMatch(problem, report.values)
+  );
 }
 
 function generationConstraints(mode) {

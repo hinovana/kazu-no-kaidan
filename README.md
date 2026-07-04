@@ -13,6 +13,7 @@
 cd web
 ./server.sh
 ./server.sh 9000
+npm test
 ```
 
 ## CLI
@@ -22,4 +23,3 @@ cd cli
 python3 tests/test_digit_stairs.py
 python3 tests/test_digit_stairs.py problem_models/problem1.json
 ```
-
