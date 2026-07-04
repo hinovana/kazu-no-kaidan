@@ -8,8 +8,8 @@ from .model import (
     nodes_by_id,
     validate_problem,
 )
-from .render_svg import render_svg
-from .solve import linear_solution, solve_without_branching
+from .svg_renderer import render_svg
+from .solver import linear_solution, solve_without_branching
 
 __all__ = [
     "PropagationReport",

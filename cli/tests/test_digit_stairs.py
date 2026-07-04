@@ -18,7 +18,7 @@ from digit_stairs import (
     render_svg,
     solve_without_branching,
 )
-from digit_stairs.terminal import (
+from digit_stairs.terminal_renderer import (
     format_diagram,
     format_solution_explanation,
     id_labels,

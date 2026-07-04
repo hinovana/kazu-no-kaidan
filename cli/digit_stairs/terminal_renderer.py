@@ -4,8 +4,8 @@ from fractions import Fraction
 from typing import Mapping
 
 from .model import PropagationReport, answer_values, given_values
-from .render_svg import render_svg
-from .solve import linear_solution
+from .svg_renderer import render_svg
+from .solver import linear_solution
 
 
 def format_value(value) -> str:

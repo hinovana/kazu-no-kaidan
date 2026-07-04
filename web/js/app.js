@@ -1,5 +1,5 @@
-import { buildProblem } from "./engine.js";
-import { formatExplanation, renderStepsHtml, renderSvg } from "./render.js";
+import { buildProblem } from "./problem-generator.js";
+import { formatExplanation, renderStepsHtml, renderSvg } from "./renderer.js";
 
 function newSeed(level, mode) {
   return `level-${level}-${mode}-${Date.now()}-${Math.random().toString(36).slice(2)}`;

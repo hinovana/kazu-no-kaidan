@@ -8,9 +8,9 @@
 
 - `index.html`: 画面構造。
 - `styles.css`: 画面表示と印刷用スタイル。
+- `js/problem-generator.js`: 出題エンジン。問題テンプレート、乱数、初期配置探索、候補検査の呼び出し。
 - `js/solver.js`: ソルバーエンジン。分岐なし伝播、整数範囲ソルバー、一意解判定、メトリクス生成。
-- `js/engine.js`: 出題エンジン。問題テンプレート、乱数、初期配置探索、候補検査の呼び出し。
-- `js/render.js`: SVG描画、確定順HTML、解き方HTML。
+- `js/renderer.js`: SVG描画、確定順HTML、解き方HTML。
 - `js/app.js`: DOM操作、レベル選択、モード選択、印刷ボタン。
 - `server.sh`: ローカルHTTPサーバー起動スクリプト。任意のポート番号を引数で受け取り、既定ブラウザを開く。
 
