@@ -2,7 +2,4 @@
 __pycache__/
 *.py[cod]
 
-cli/outputs/
-cli/tmp/
-web/tmp/
-
+generators/*/tmp/

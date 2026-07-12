@@ -1,6 +1,0 @@
-{
-  "type": "module",
-  "scripts": {
-    "test": "node tests/level7-generator.test.js"
-  }
-}

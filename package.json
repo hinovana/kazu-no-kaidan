@@ -1,0 +1,10 @@
+{
+  "name": "math-worksheet-generators",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "serve": "./scripts/server.sh",
+    "test": "for test_file in generators/*/tests/*.test.js; do node \"$test_file\"; done",
+    "test:kazu-sagashi:corpus": "node generators/kazu-sagashi/tests/corpus.mjs"
+  }
+}

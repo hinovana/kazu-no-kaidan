@@ -8,20 +8,21 @@
 
 - `index.html`: 画面構造。
 - `styles.css`: 画面表示と印刷用スタイル。
-- `js/problem-generator.js`: 出題エンジン。問題テンプレート、乱数、初期配置探索、候補検査の呼び出し。
-- `js/solver.js`: ソルバーエンジン。分岐なし伝播、整数範囲ソルバー、一意解判定、メトリクス生成。
-- `js/renderer.js`: SVG描画、確定順HTML、解き方HTML。
-- `js/app.js`: DOM操作、レベル選択、モード選択、印刷ボタン。
-- `server.sh`: ローカルHTTPサーバー起動スクリプト。任意のポート番号を引数で受け取り、既定ブラウザを開く。
+- `src/generator.js`: 出題エンジン。問題テンプレート、乱数、初期配置探索、候補検査の呼び出し。
+- `src/solver.js`: ソルバーエンジン。分岐なし伝播、整数範囲ソルバー、一意解判定、メトリクス生成。
+- `src/renderer.js`: SVG描画、確定順HTML、解き方HTML。
+- `src/app.js`: DOM操作、レベル選択、モード選択、印刷ボタン。
+- `tests/generator.test.js`: 作問と一意性検査のテスト。
 
-外部ライブラリとビルド処理は使わない。ブラウザJSはES Modulesで書くため、`file://` で直接開くのではなく、GitHub PagesまたはローカルHTTPサーバーで `web/` 配下を配信して動かす。
+外部ライブラリとビルド処理は使わない。ブラウザJSはES Modulesで書くため、`file://` で直接開くのではなく、GitHub PagesまたはローカルHTTPサーバーでリポジトリルートを配信して動かす。
 
 ## 起動方法
 
+リポジトリルートで次を実行し、一覧ページから「数字の階段」を開く。
+
 ```bash
-cd web
-./server.sh
-./server.sh 9000
+npm run serve
+./scripts/server.sh 9000
 ```
 
 ## ルール
@@ -103,7 +104,7 @@ a + c = 2 * b
 
 ## 完了条件
 
-- `web/` をHTTP配信して `index.html` を開くと動く。
+- リポジトリルートをHTTP配信し、`generators/kazu-no-kaidan/` を開くと動く。
 - レベル1〜7を選ぶと問題が生成される。
 - 問題、解答、IDマップ、確定順、解き方が表示される。
 - 生成された問題は分岐なし推論で全マスが確定する。

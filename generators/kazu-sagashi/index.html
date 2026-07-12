@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>かずさがしジェネレータ</title>
+    <meta name="description" content="3×3の枠に指定されたリンゴとナシの条件がある場所を探す、印刷用かずさがし問題を生成します。" />
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="fruitSpriteRoot" aria-hidden="true"></div>
+    <header class="toolbar">
+      <div class="title-block">
+        <a class="back-link" href="../../">算数教材ジェネレータ</a>
+        <h1>かずさがしジェネレータ</h1>
+        <p id="statusText">準備中</p>
+      </div>
+      <div class="controls" aria-label="生成条件">
+        <label>レベル
+          <select id="levelSelect" aria-label="レベル">
+            <option value="1">1 - 6×6</option>
+            <option value="2" selected>2 - 8×8</option>
+            <option value="3">3 - 10×10</option>
+            <option value="4">4 - 1マス最大2個</option>
+            <option value="5">5 - リンゴとナシの個数</option>
+            <option value="6">6 - リンゴとナシの関係</option>
+          </select>
+        </label>
+        <label>問題数
+          <select id="countSelect" aria-label="問題数">
+            <option value="1" selected>1問</option>
+            <option value="6">6問</option>
+          </select>
+        </label>
+        <label class="seed-label">seed
+          <input id="seedInput" type="text" autocomplete="off" spellcheck="false" aria-label="seed" />
+        </label>
+        <button type="button" id="generateButton" class="primary-button">生成</button>
+        <button type="button" id="newSeedButton">新しいseed</button>
+        <button type="button" id="printButton">印刷</button>
+      </div>
+    </header>
+
+    <main>
+      <aside class="rule-note" aria-label="遊び方">
+        <strong>遊び方</strong>
+        <span>格子に沿った3×3の枠を動かして、指定された図柄の数や関係を満たす場所を1か所探します。</span>
+        <span>1問10分を上限の目安に、まずは自分で考えましょう。</span>
+      </aside>
+
+      <section class="output-section" aria-labelledby="problemHeading">
+        <div class="section-heading"><span>01</span><h2 id="problemHeading">問題</h2></div>
+        <div id="problemOutput"></div>
+      </section>
+
+      <section class="output-section answer-section" aria-labelledby="answerHeading">
+        <div class="section-heading"><span>02</span><h2 id="answerHeading">解答</h2></div>
+        <div id="answerOutput"></div>
+      </section>
+
+      <section class="metrics-section" aria-labelledby="metricsHeading">
+        <div class="section-heading"><span>03</span><h2 id="metricsHeading">生成メトリクス</h2></div>
+        <div id="metricsOutput"></div>
+      </section>
+    </main>
+    <script type="module" src="src/app.js?v=3"></script>
+  </body>
+</html>
