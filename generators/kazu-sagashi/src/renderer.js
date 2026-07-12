@@ -15,7 +15,7 @@ export function renderProblemCard(problem, index = 0, answerMode = false) {
         <span class="problem-number">${label}</span>
         <span class="problem-level">レベル${problem.level}</span>
       </header>
-      <h3>${escapeHtml(questionText(problem))}</h3>
+      <h3>${renderQuestion(problem)}</h3>
       ${renderBoardHtml(problem, { answer: answerMode })}
       <footer class="worksheet-card-footer">
         <span>${problem.grid.rows} × ${problem.grid.cols}</span>
@@ -113,6 +113,16 @@ function questionText(problem) {
       : "リンゴがナシより少ないのはどこ？";
   }
   return `${problem.rule.targetApple}こはどこ？`;
+}
+
+function renderQuestion(problem) {
+  if (problem.mode !== "pair-relation") {
+    return escapeHtml(questionText(problem));
+  }
+  if (problem.rule.relation === "equal") {
+    return "リンゴとナシが<ruby>同じ<rt>おなじ</rt></ruby><ruby>数<rt>かず</rt></ruby>はどこ？";
+  }
+  return "リンゴがナシより<ruby>少ない<rt>すくない</rt></ruby>のはどこ？";
 }
 
 function answerConfirmation(problem) {

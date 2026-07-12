@@ -199,6 +199,24 @@ test("worksheet reuses the page-level fruit symbols across six boards", () => {
   assert.equal((html.match(/<use href=/g) || []).length, problems.reduce((sum, problem) => sum + problem.metrics.totalFruitCount, 0));
 });
 
+test("relation questions show furigana while aria labels remain plain text", () => {
+  const problems = [];
+  for (let index = 0; index < 30 && problems.length < 2; index += 1) {
+    const problem = buildProblem(6, `furigana-${index}`);
+    if (!problems.some((item) => item.rule.relation === problem.rule.relation)) {
+      problems.push(problem);
+    }
+  }
+  assert.equal(problems.length, 2);
+
+  const html = renderWorksheet(problems);
+  assert.match(html, /<ruby>同じ<rt>おなじ<\/rt><\/ruby><ruby>数<rt>かず<\/rt><\/ruby>/);
+  assert.match(html, /<ruby>少ない<rt>すくない<\/rt><\/ruby>/);
+  assert.match(html, /aria-label="[^"]*同じ数はどこ？/);
+  assert.match(html, /aria-label="[^"]*少ないのはどこ？/);
+  assert.doesNotMatch(html, /aria-label="[^"]*<ruby>/);
+});
+
 test("invalid inputs fail explicitly without level fallback", () => {
   assert.throws(() => buildProblem(7, "future-level"), /未対応/);
   assert.throws(() => buildProblem(1, ""), /seed/);

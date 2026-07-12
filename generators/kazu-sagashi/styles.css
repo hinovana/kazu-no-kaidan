@@ -107,6 +107,8 @@ h2 { margin: 0; font-size: 18px; }
 .problem-number { font-weight: 800; }
 .problem-level { padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); font-size: 12px; }
 .worksheet-card h3 { margin: 12px 0 14px; text-align: center; font-size: clamp(23px, 3vw, 34px); letter-spacing: .08em; }
+.worksheet-card h3 ruby { ruby-align: center; }
+.worksheet-card h3 rt { font-size: .48em; font-weight: 600; letter-spacing: 0; }
 .worksheet-card-footer { margin-top: 12px; color: var(--muted); font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; flex-wrap: wrap; overflow-wrap: anywhere; }
 .worksheet-card-footer > * { min-width: 0; }
 .worksheet-card-footer strong { color: var(--answer); font-family: inherit; }
