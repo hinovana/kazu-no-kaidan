@@ -3,68 +3,85 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>数字の階段ジェネレータ</title>
+    <title>算数教材ジェネレータ</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="web/styles.css" />
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #24303f;
+        background: #f4f7fa;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      main {
+        width: min(920px, calc(100% - 40px));
+        margin: 0 auto;
+        padding: 64px 0;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2rem, 6vw, 3.5rem);
+      }
+
+      .intro {
+        margin: 16px 0 40px;
+        color: #5b6878;
+      }
+
+      .generator-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 20px;
+      }
+
+      .generator-card {
+        display: block;
+        padding: 28px;
+        color: inherit;
+        text-decoration: none;
+        background: #fff;
+        border: 1px solid #dbe2ea;
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgb(36 48 63 / 8%);
+        transition: transform 120ms ease, box-shadow 120ms ease;
+      }
+
+      .generator-card:hover,
+      .generator-card:focus-visible {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgb(36 48 63 / 14%);
+      }
+
+      .generator-card h2 {
+        margin: 0 0 8px;
+      }
+
+      .generator-card p {
+        margin: 0;
+        color: #5b6878;
+      }
+    </style>
   </head>
   <body>
-    <header class="toolbar">
-      <div class="title-block">
-        <h1>数字の階段ジェネレータ</h1>
-        <p id="statusText">レベル1</p>
-      </div>
-      <div class="controls" aria-label="生成条件">
-        <label>
-          レベル
-          <select id="levelSelect" aria-label="レベル">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-            <option value="6">6</option>
-            <option value="7">7</option>
-          </select>
-        </label>
-        <label>
-          モード
-          <select id="modeSelect" aria-label="モード">
-            <option value="standard">標準</option>
-            <option value="strict">一本道</option>
-          </select>
-        </label>
-        <button type="button" id="generateButton">生成</button>
-        <button type="button" id="printButton">印刷</button>
-      </div>
-    </header>
-
     <main>
-      <section class="sheet-section" aria-labelledby="problemHeading">
-        <h2 id="problemHeading">問題</h2>
-        <div id="problemSvg" class="svg-frame"></div>
-      </section>
+      <h1>算数教材ジェネレータ</h1>
+      <p class="intro">作りたい教材を選んでください。</p>
 
-      <section class="sheet-section" aria-labelledby="answerHeading">
-        <h2 id="answerHeading">解答</h2>
-        <div id="answerSvg" class="svg-frame"></div>
-      </section>
-
-      <section class="sheet-section" aria-labelledby="idMapHeading">
-        <h2 id="idMapHeading">IDマップ</h2>
-        <div id="idMapSvg" class="svg-frame"></div>
-      </section>
-
-      <section class="text-section" aria-labelledby="stepsHeading">
-        <h2 id="stepsHeading">あてずっぽう無しの確定順</h2>
-        <div id="stepsOutput"></div>
-      </section>
-
-      <section class="text-section" aria-labelledby="explanationHeading">
-        <h2 id="explanationHeading">解き方</h2>
-        <div id="explanationOutput"></div>
-      </section>
+      <div class="generator-list">
+        <a class="generator-card" href="generators/kazu-sagashi/">
+          <h2>かずさがし</h2>
+          <p>3×3の枠に指定されたリンゴとナシの数や関係がある場所を探します。</p>
+        </a>
+        <a class="generator-card" href="generators/kazu-no-kaidan/">
+          <h2>数字の階段</h2>
+          <p>等差数列のルールを使った問題・解答・解き方を生成します。</p>
+        </a>
+      </div>
     </main>
-
-    <script type="module" src="web/js/app.js"></script>
   </body>
 </html>

@@ -1,4 +1,4 @@
-import { buildProblem } from "./problem-generator.js";
+import { buildProblem } from "./generator.js";
 import { formatExplanation, renderStepsHtml, renderSvg } from "./renderer.js";
 
 function newSeed(level, mode) {

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 
-import { buildProblem } from "../js/problem-generator.js";
-import { bookLevel7CandidateValues, givenValues, readyRuns, solveBookLevel7 } from "../js/solver.js";
+import { buildProblem } from "../src/generator.js";
+import { bookLevel7CandidateValues, givenValues, readyRuns, solveBookLevel7 } from "../src/solver.js";
 
 function test(name, fn) {
   fn();

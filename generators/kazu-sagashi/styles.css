@@ -1,0 +1,269 @@
+:root {
+  color-scheme: light;
+  --ink: #253129;
+  --muted: #66706a;
+  --paper: #fffdf7;
+  --surface: #eef0e8;
+  --line: #a8ad9e;
+  --accent: #516438;
+  --accent-soft: #dfe7cf;
+  --apple: #9da968;
+  --apple-dark: #4b572f;
+  --answer: #c54d3f;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 12% 0%, rgb(255 255 255 / 72%), transparent 24rem),
+    var(--surface);
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+  line-height: 1.5;
+}
+
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 14px 22px;
+  border-bottom: 1px solid #c9ccbf;
+  background: rgb(238 240 232 / 96%);
+  backdrop-filter: blur(12px);
+}
+
+.title-block { min-width: 240px; }
+.back-link { color: var(--muted); font-size: 12px; text-decoration: none; }
+.back-link:hover { text-decoration: underline; }
+h1 { margin: 2px 0 0; font-size: 21px; letter-spacing: .03em; }
+.title-block p { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
+
+.controls { display: flex; align-items: center; justify-content: flex-end; gap: 9px; flex-wrap: wrap; }
+label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; }
+select, input, button {
+  height: 36px;
+  border: 1px solid #9da391;
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+select, input { padding: 0 9px; }
+input { width: 160px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+button { padding: 0 13px; cursor: pointer; font-weight: 700; }
+button:hover { border-color: var(--accent); }
+.primary-button { border-color: var(--accent); background: var(--accent); color: #fff; }
+
+main {
+  width: min(1240px, calc(100vw - 32px));
+  margin: 24px auto 60px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 26px;
+}
+main > *, .output-section, .metrics-section, .rule-note, .worksheet-list { min-width: 0; }
+.worksheet-list { width: 100%; }
+.rule-note {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 12px 16px;
+  border: 1px solid #cbd1bd;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  font-size: 13px;
+}
+.rule-note strong { white-space: nowrap; }
+
+.output-section, .metrics-section {
+  padding: 18px;
+  border: 1px solid #d0d3c7;
+  border-radius: 14px;
+  background: rgb(255 255 255 / 58%);
+}
+.section-heading { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+.section-heading > span { color: var(--accent); font: 700 12px/1 ui-monospace, monospace; }
+h2 { margin: 0; font-size: 18px; }
+
+.worksheet-list { display: grid; gap: 20px; }
+.worksheet-list.is-single { grid-template-columns: minmax(0, 760px); justify-content: center; }
+.worksheet-list.is-pack { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.worksheet-card {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #c8c5b7;
+  border-radius: 10px;
+  background: var(--paper);
+  box-shadow: 0 10px 30px rgb(58 65 46 / 8%);
+  break-inside: avoid;
+}
+.worksheet-card-header, .worksheet-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.problem-number { font-weight: 800; }
+.problem-level { padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); font-size: 12px; }
+.worksheet-card h3 { margin: 12px 0 14px; text-align: center; font-size: clamp(23px, 3vw, 34px); letter-spacing: .08em; }
+.worksheet-card-footer { margin-top: 12px; color: var(--muted); font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; flex-wrap: wrap; overflow-wrap: anywhere; }
+.worksheet-card-footer > * { min-width: 0; }
+.worksheet-card-footer strong { color: var(--answer); font-family: inherit; }
+
+.number-board {
+  --board-size: min(100%, 152mm);
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--grid-size), 1fr);
+  width: var(--board-size);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  border-top: 1px dashed var(--line);
+  border-left: 1px dashed var(--line);
+  background: #fffef9;
+}
+.is-pack .number-board { --board-size: min(100%, 108mm); }
+.number-cell {
+  position: relative;
+  min-width: 0;
+  border-right: 1px dashed var(--line);
+  border-bottom: 1px dashed var(--line);
+}
+.fruit-instance {
+  position: absolute;
+  left: var(--fruit-center-x);
+  top: 53%;
+  width: var(--fruit-size);
+  aspect-ratio: 1;
+  color: var(--apple-dark);
+  transform: translate(-50%, -50%);
+}
+.fruit-icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.fruit-symbol-sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.fruit-silhouette {
+  fill: #c84a3f;
+  stroke: #652821;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.fruit-logo-leaf {
+  fill: #668449;
+  stroke: #314725;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.fruit-logo-stem {
+  fill: none;
+  stroke: #6b4828;
+  stroke-linecap: round;
+  stroke-width: 5;
+  vector-effect: non-scaling-stroke;
+}
+.pear-silhouette {
+  fill: #d9b84a;
+  stroke: #6b5720;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.pear-leaf {
+  fill: #668449;
+  stroke: #314725;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.pear-stem {
+  fill: none;
+  stroke: #6b4828;
+  stroke-linecap: round;
+  stroke-width: 5;
+  vector-effect: non-scaling-stroke;
+}
+.pear-print-tone { display: none; fill: #333; }
+.answer-frame {
+  position: absolute;
+  z-index: 5;
+  left: calc(var(--answer-col) * 100% / var(--grid-size));
+  top: calc(var(--answer-row) * 100% / var(--grid-size));
+  width: calc(3 * 100% / var(--grid-size));
+  height: calc(3 * 100% / var(--grid-size));
+  border: clamp(3px, .55vw, 6px) solid var(--answer);
+  pointer-events: none;
+}
+
+.metrics-table-wrap { overflow-x: auto; }
+.metrics-table { width: 100%; border-collapse: collapse; background: var(--paper); font-size: 12px; }
+.metrics-table th, .metrics-table td { padding: 8px 10px; border-bottom: 1px solid #dddccf; text-align: right; white-space: nowrap; }
+.metrics-table thead th { color: var(--muted); font-size: 11px; }
+.generation-error { padding: 36px; border: 1px solid #d9aaa4; border-radius: 10px; background: #fff7f4; }
+.error-kicker { color: #9f3429; font-weight: 800; }
+.generation-error code { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+@media (max-width: 880px) {
+  .toolbar { position: static; align-items: stretch; flex-direction: column; }
+  .controls { justify-content: flex-start; }
+  .seed-label { width: 100%; }
+  .seed-label input { flex: 1; }
+  .rule-note { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .worksheet-list.is-pack { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media print {
+  @page { size: A4 portrait; margin: 10mm; }
+  html, body, .fruit-instance, .fruit-icon {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  body { background: #fff; }
+  .toolbar, .rule-note, .metrics-section, .section-heading { display: none !important; }
+  main { display: block; width: auto; margin: 0; }
+  .output-section { padding: 0; border: 0; background: #fff; }
+  .answer-section { break-before: page; }
+  .worksheet-list, .worksheet-list.is-pack, .worksheet-list.is-single { display: grid; grid-template-columns: 1fr; gap: 0; }
+  .worksheet-card { min-height: 270mm; padding: 12mm; border: 0; border-radius: 0; box-shadow: none; break-after: page; }
+  .number-board, .is-pack .number-board { --board-size: 148mm; }
+  .worksheet-card h3 { font-size: 28px; }
+  .fruit-silhouette {
+    fill: #fff !important;
+    stroke: #111 !important;
+    stroke-width: 2.2;
+  }
+  .fruit-logo-leaf {
+    fill: #fff !important;
+    stroke: #111 !important;
+    stroke-width: 1.8;
+  }
+  .fruit-logo-stem {
+    stroke: #111 !important;
+    stroke-width: 2.4;
+  }
+  .pear-silhouette, .pear-leaf {
+    fill: #fff !important;
+    stroke: #111 !important;
+    stroke-width: 2;
+  }
+  .pear-stem {
+    stroke: #111 !important;
+    stroke-width: 2.4;
+  }
+  .pear-print-tone {
+    display: block;
+    fill: #333 !important;
+    stroke: none;
+  }
+}

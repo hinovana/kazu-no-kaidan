@@ -4,13 +4,14 @@ set -euo pipefail
 HOST="127.0.0.1"
 PORT="${1:-8765}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 usage() {
   cat <<'EOF'
 Usage: ./server.sh [port]
 
-Starts a local HTTP server for the Digit Stairs generator and opens the
-default browser.
+Starts a local HTTP server for the worksheet generators and opens the default
+browser at the generator index.
 
 Examples:
   ./server.sh
@@ -41,7 +42,7 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-cd "${SCRIPT_DIR}"
+cd "${ROOT_DIR}"
 python3 -m http.server "${PORT}" --bind "${HOST}" &
 server_pid="$!"
 
@@ -74,7 +75,7 @@ if (( ready != 1 )); then
 fi
 
 url="http://${HOST}:${PORT}/"
-echo "Serving ${SCRIPT_DIR}"
+echo "Serving ${ROOT_DIR}"
 echo "Open ${url}"
 
 if [[ "${NO_OPEN:-0}" != "1" ]]; then
