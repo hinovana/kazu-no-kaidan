@@ -80,6 +80,7 @@ main > *, .output-section, .metrics-section, .rule-note, .worksheet-list { min-w
   font-size: 13px;
 }
 .rule-note strong { white-space: nowrap; }
+.difficulty-lab-link { margin-left: auto; color: var(--accent); font-size: 12px; font-weight: 800; white-space: nowrap; }
 
 .output-section, .metrics-section {
   padding: 18px;
@@ -257,6 +258,7 @@ h2 { margin: 0; font-size: 18px; }
   .seed-label { width: 100%; }
   .seed-label input { flex: 1; }
   .rule-note { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .difficulty-lab-link { margin-left: 0; }
   .worksheet-list.is-pack { grid-template-columns: minmax(0, 1fr); }
   .order-hint { gap: .08em; }
 }

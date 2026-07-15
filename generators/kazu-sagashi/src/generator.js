@@ -1,6 +1,6 @@
-import { GENERATOR_VERSION, levelProfile } from "./config.js?v=4";
-import { canonicalBoardSignature, validateProblem } from "./validator.js?v=4";
-import { buildNeumannProblem } from "./neumann-generator.js?v=2";
+import { GENERATOR_VERSION, levelProfile } from "./config.js?v=5";
+import { canonicalBoardSignature, validateProblem } from "./validator.js?v=5";
+import { buildNeumannProblem } from "./neumann-generator.js?v=3";
 
 const answerPatternCache = new Map();
 const EPSILON = 1e-12;

@@ -125,6 +125,11 @@ test("Neumann validates 200 fixed seeds with every difficulty contract", () => {
       first.metrics.sameOrangeClusterCount,
       first.metrics.sameTotalClusterCount
     ) >= 3, true);
+    assert.equal(first.metrics.visualRoughOrderExpectedRank >= 3, true);
+    assert.equal(first.metrics.visualOrderDensityExpectedRank >= 3, true);
+    assert.equal(first.metrics.visualShapeDensityExpectedRank >= 3, true);
+    assert.equal(first.metrics.visualCombinedExpectedRank >= 3, true);
+    assert.equal(first.metrics.visualMinimumExpectedRank >= 3, true);
     triples.add(first.answerTriple.join(","));
   }
   assert.deepEqual([...triples].sort(), ["1,2,3", "1,2,4", "1,3,4"]);
@@ -169,6 +174,25 @@ test("Neumann rejects the KS-N-0RTTQSI visual-shortcut regression", () => {
   assert.equal(result.errors.includes("二つの手掛かりの組み合わせで正解位置が漏れます"), true);
   assert.equal(result.metrics.sameOrangeTotalCount, 1);
   assert.equal(result.metrics.sameOrangeClusterCount, 1);
+});
+
+test("Neumann rejects a board ranked in the top two by visual salience", () => {
+  const cells = [
+    [3,2,3,3,1,2,0,3,1,0],
+    [1,0,2,0,3,2,0,2,2,3],
+    [2,3,3,0,0,0,0,2,0,1],
+    [0,0,0,3,1,2,2,0,2,0],
+    [1,0,1,0,2,0,1,1,2,3],
+    [2,0,2,0,2,0,3,1,3,1],
+    [0,3,2,3,1,2,3,0,0,0],
+    [3,3,2,3,0,1,1,3,2,0],
+    [3,2,2,2,3,1,3,3,3,0],
+    [1,1,0,3,3,1,2,1,3,0],
+  ];
+  const result = validateProblem(neumannProblem(cells, { row: 0, col: 0 }), { compareMetrics: false });
+  assert.equal(result.valid, false);
+  assert.equal(result.errors.includes("見た目の目立ち方だけで正解候補が上位に来ます"), true);
+  assert.equal(result.metrics.visualMinimumExpectedRank, 2.5);
 });
 
 test("pair predicates include degenerate windows exactly as written", () => {

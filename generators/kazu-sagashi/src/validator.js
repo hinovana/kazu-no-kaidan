@@ -1,5 +1,5 @@
-import { levelProfile } from "./config.js?v=4";
-import { analyzeNeumannProblem, validateNeumannProblem } from "./neumann-validator.js?v=2";
+import { levelProfile } from "./config.js?v=5";
+import { analyzeNeumannProblem, validateNeumannProblem } from "./neumann-validator.js?v=3";
 
 const EPSILON = 1e-12;
 

@@ -1,4 +1,4 @@
-export const GENERATOR_VERSION = "kazu-sagashi-v4";
+export const GENERATOR_VERSION = "kazu-sagashi-v5";
 
 const SEARCH_LIMITS = Object.freeze({
   maxRestarts: 64,
@@ -117,6 +117,7 @@ export const LEVEL_PROFILES = Object.freeze({
     requiredDistractorCount: 3,
     requiredSameCount: 5,
     requiredJointCueCount: 3,
+    requiredVisualExpectedRank: 3,
     requiredDistractorRegions: 3,
     initialProbabilities: Object.freeze([0.4, 0.2, 0.2, 0.2]),
     maxRestarts: 128,

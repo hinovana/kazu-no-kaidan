@@ -1,4 +1,4 @@
-import { buildProblem, buildWorksheet } from "./generator.js?v=4";
+import { buildProblem, buildWorksheet } from "./generator.js?v=5";
 import { renderMetrics, renderWorksheet } from "./renderer.js?v=8";
 
 function init() {

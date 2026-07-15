@@ -14,7 +14,7 @@
 - 条件を片方だけ確認したときに、もっともらしい誤答候補が複数残る。
 - 条件を満たす探索枠は1か所だけである。
 
-`kazu-sagashi-v4` で生成、独立検証、描画、seedコーパスまで技術実装済みである。v4では実問題 `KS-N-0RTTQSI` で確認された複合手掛かりによる視覚漏洩を禁止した。15節の児童による難易度検証が完了するまでは、UIで「試験版」と明示し、実証済みの最難関とは説明しない。
+`kazu-sagashi-v5` で生成、独立検証、描画、seedコーパスまで技術実装済みである。v4では実問題 `KS-N-0RTTQSI` で確認された複合手掛かりによる視覚漏洩を禁止した。v5では、粗い大小・密度・連結塊から「ここっぽい」と見える候補が上位2枠以内に来る問題も生成時に拒否する。16節の児童による難易度検証が完了するまでは、UIで「試験版」と明示し、実証済みの最難関とは説明しない。
 
 ## 2. 児童向け問題文
 
@@ -216,7 +216,39 @@ upperFraction(v) = count(value > v) / 64
 - 2 × 2の4セルが同じ図柄になる配置。
 - 9セルすべてが果物で埋まる配置。
 
-### 5.6 密度と図柄比率
+### 5.6 複合的な「ここっぽさ」の禁止
+
+5.3から5.5の個別条件を満たしていても、粗い大小関係、果物密度、果物の連結塊を同時に眺めることで正解枠が上位候補になる場合がある。全64候補枠を次の4モデルで順位付けする。
+
+```text
+roughOrder = I(1 ≤ appleCount ≤ pearCount)
+           + I(1 ≤ pearCount ≤ orangeCount)
+
+densityBand = 0  if totalFruitCount ≤ 3
+              1  if totalFruitCount ≤ 6
+              2  otherwise
+
+clusterBand = 0  if largestOccupiedCluster ≤ 2
+              1  if largestOccupiedCluster ≤ 5
+              2  otherwise
+
+rough-order   = roughOrder
+order-density = roughOrder × 10 + densityBand
+shape-density = clusterBand × 3 + densityBand
+combined      = roughOrder × 10 + clusterBand + densityBand
+```
+
+どのモデルもスコアが高い枠ほど「ここっぽい」候補とする。正解より高いスコアの候補数を `b`、正解と同点の候補数を `k` とし、同点内を無作為に並べたときの期待順位を次で定義する。
+
+```text
+expectedRank = b + (k + 1) / 2
+```
+
+4モデルすべてについて、正解枠の期待順位の数値が3以上でなければならない。したがって、粗い視覚判断だけで正解が上位2候補以内になる問題は生成時に不採用とする。
+
+出力メトリクスは `visualRoughOrderExpectedRank`, `visualOrderDensityExpectedRank`, `visualShapeDensityExpectedRank`, `visualCombinedExpectedRank`, `visualMinimumExpectedRank` とする。生成器と独立バリデータは順位計算を別実装で再計算する。
+
+### 5.7 密度と図柄比率
 
 盤面全体について次を満たす。
 
@@ -244,7 +276,7 @@ distanceNeumann(x)
       y ∈ Y      state ∈ {empty, apple, pear, orange}
 ```
 
-`distanceNeumann = 0` は解、`distanceNeumann = 1` は探索上の近似枠である。ただし、距離1の個数だけを教材難易度の採用条件にしてはならない。教材上の紛らわしさは5.1から5.6で判定する。
+`distanceNeumann = 0` は解、`distanceNeumann = 1` は探索上の近似枠である。ただし、距離1の個数だけを教材難易度の採用条件にしてはならない。教材上の紛らわしさは5.1から5.7で判定する。
 
 ## 7. レベルプロファイル
 
@@ -260,6 +292,7 @@ cellValues = [0, 1, 2, 3]
 cellStates = ["empty", "apple", "pear", "orange"]
 answerTriples = [[1,2,3], [1,2,4], [1,3,4]]
 requiredJointCueCount = 3
+requiredVisualExpectedRank = 3
 initialProbabilities = [0.40, 0.20, 0.20, 0.20]
 maxRestarts = 128
 maxRepairStepsPerRestart = 1024
@@ -336,6 +369,7 @@ score = (
   jointCueLeak,
   spatialCoverageShortfall,
   visualRankViolation,
+  visualSalienceShortfall,
   densityAndRatioViolation,
   uniformLineViolationCount
 )
@@ -366,6 +400,10 @@ jointCueLeak
 
 spatialCoverageShortfall
   = max(0, 3 - distractorRegionCount)
+
+visualSalienceShortfall
+  = Σ max(0, 3 - visualExpectedRank(model))
+      model ∈ {rough-order, order-density, shape-density, combined}
 ```
 
 残りの違反値も0が条件充足を表す非負値として実装する。一意解は常に第一優先とし、難易度指標を改善するために競合枠を増やしてはならない。
@@ -395,9 +433,10 @@ spatialCoverageShortfall
 6. 各単独図柄数と総果物数の一致候補がそれぞれ5枠以上ある。
 7. 5種類の手掛かりから選ぶ10通りの二要素一致候補がそれぞれ3枠以上ある。
 8. 正解枠の各図柄数と総果物数が経験分布の極端な位置にない。
-9. 正解枠内配置に禁止パターンがない。
-10. 密度、図柄比率、一様行列条件を満たす。
-11. seed再現性とデータモデル条件を満たす。
+9. 4種類の視覚モデルすべてで正解枠の期待順位が3以上である。
+10. 正解枠内配置に禁止パターンがない。
+11. 密度、図柄比率、一様行列条件を満たす。
+12. seed再現性とデータモデル条件を満たす。
 
 いずれかを満たせない場合、低いレベルへの切り替え、閾値低下、複数解許可を行わず、生成失敗を返す。
 
@@ -420,8 +459,9 @@ validateNeumannProblem(problem) -> validationResult
 7. 単独図柄数と総果物数による位置漏洩。
 8. 二つの手掛かりの組み合わせによる位置漏洩と最大連結塊。
 9. 空間分布、経験分布内順位、禁止配置。
-10. 密度、図柄比率、一様行列違反。
-11. 出力された全メトリクスとの一致。
+10. 4種類の視覚モデルによる期待順位。
+11. 密度、図柄比率、一様行列違反。
+12. 出力された全メトリクスとの一致。
 
 生成器とバリデータで同じ補助関数を共有してよいのはセル状態の定数と安定した座標列挙だけとする。正解述語、距離、採用条件は、固定盤面と表形式期待値を使って独立にテストする。
 
@@ -432,7 +472,7 @@ validateNeumannProblem(problem) -> validationResult
 ```json
 {
   "schemaVersion": 1,
-  "generatorVersion": "kazu-sagashi-v4",
+  "generatorVersion": "kazu-sagashi-v5",
   "level": 7,
   "levelLabel": "ノイマン",
   "mode": "triple-order",
@@ -476,6 +516,11 @@ validateNeumannProblem(problem) -> validationResult
     "sameOrangeClusterCount": 0,
     "sameTotalClusterCount": 0,
     "answerLargestOccupiedCluster": 0,
+    "visualRoughOrderExpectedRank": 0,
+    "visualOrderDensityExpectedRank": 0,
+    "visualShapeDensityExpectedRank": 0,
+    "visualCombinedExpectedRank": 0,
+    "visualMinimumExpectedRank": 0,
     "occupiedCellDensity": 0,
     "appleShare": 0,
     "pearShare": 0,
@@ -513,6 +558,8 @@ validateNeumannProblem(problem) -> validationResult
 - `KS-N-0RTTQSI` の固定盤面を複合手掛かり漏洩として拒否する。
 - 4領域の境界にある候補座標を正しく分類する。
 - 経験分布内順位と同順位を正しく扱う。
+- 4種類の視覚モデルについて、同順位を含む最良・期待・最悪順位を正しく扱う。
+- 視覚モデルの期待順位が2.5になる固定盤面を、生成器と独立バリデータが不採用にする。
 - 正解枠内の連結成分、2 × 2同一図柄、全セル占有を検出する。
 - `distanceNeumann` が全状態別個数に対する全探索結果と一致する。
 - 同じ入力から同じ論理問題JSONを生成する。
@@ -531,12 +578,31 @@ validateNeumannProblem(problem) -> validationResult
 - 回転・反転込みの盤面重複率1%以下。
 - 64正解座標に欠落がなく、各出現数が期待値の0.5倍から1.5倍に収まる。
 - `ANSWER_TRIPLES` の3通りに欠落がなく、各出現数が期待値の0.8倍から1.2倍に収まる。
-- `typeLeftCount`, `typeRightCount`, 部分条件候補数、単独数一致候補数、二要素一致候補数の分布を保存する。
+- `typeLeftCount`, `typeRightCount`, 部分条件候補数、単独数一致候補数、二要素一致候補数、4種類の視覚期待順位の分布を保存する。
+- 4種類の視覚期待順位がすべて3以上である。
 - 生成時間95パーセンタイルが参照環境で500ms未満である。
 
 閾値を満たせない場合は、テスト数、一意解、位置漏洩防止条件を弱めず、探索方式または根拠が暫定的な数値閾値を見直す。
 
-## 15. 人間による難易度検証
+## 15. 難易度シミュレーション
+
+専用の `difficulty-lab.html` で、ノイマンを含む各レベルの異なる固定seedを100、1,000、または10,000問ずつ評価できるようにする。実装する解法モデル、ソルバーへ渡してよい入力、操作コスト、同順位の扱い、レベル別集計は通常仕様書15.4節を正本とする。
+
+ノイマンでは最低限、次の解法を比較する。
+
+- 左上から3種類すべてを数える全走査。
+- 隣接枠との差分だけを更新する走査。
+- `リンゴ < ナシ` を先に確認し、成立した枠だけでミカンを数える走査。
+- `ナシ < ミカン` を先に確認し、成立した枠だけでリンゴを数える走査。
+- 同数を許した粗い大小、果物密度、連結塊を別々または組み合わせて候補順を付ける4種類の見た目ヒューリスティック。
+
+レベル6と同時評価したとき、代表操作コストの中央値と分布に加え、`P(Neumann cost > level6 cost)` を表示する。ただし、この確率や0〜100の相対スコアに単独の合格閾値を置かない。1,000問は探索・異常値確認、10,000問はリリース前の分布確認に使う。
+
+ラボは各レベルの低コスト問題を盤面付きで残し、最短解法、期待順位、見た目順位、解法別操作内訳を目視できるようにする。ノイマンでは4種類の見た目モデルの最小期待順位を表示し、3未満の問題を生成時に拒否する。新しい短絡経路を採用条件へ反映するときは、固定seedまたは固定盤面の回帰テストを先に追加する。
+
+シミュレーションは難易度仮説を比較し、極端に簡単な問題を見つけるための補助である。対象児童の視線、数え方、誤読、疲労、学習効果は再現しないため、ノイマンの正式な最難関判定は16節の人間試行を必要とする。
+
+## 16. 人間による難易度検証
 
 「ノイマン」を最難関として正式表示する前に、対象年齢の児童による試行でレベル6と比較する。
 
@@ -552,7 +618,7 @@ validateNeumannProblem(problem) -> validationResult
 
 単に時間が長いだけで、誤読や図柄の見づらさが原因の場合は最難関として採用しない。二つの条件を組織的に処理する必要があり、その結果としてレベル6より解答負荷が高いことを確認する。
 
-## 16. 実装完了条件
+## 17. 実装完了条件
 
 次をすべて満たした時点で「レベル: ノイマン」の実装完了とする。
 
