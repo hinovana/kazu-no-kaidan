@@ -12,7 +12,7 @@
 ## 収録ジェネレータ
 
 - `generators/kazu-no-kaidan/`: 数字の階段
-- `generators/kazu-sagashi/`: かずさがし。リンゴ1種類のレベル1〜4と、リンゴ・ナシ2種類のレベル5〜6に対応します。仕様は [`generators/kazu-sagashi/SPEC.md`](generators/kazu-sagashi/SPEC.md) を参照してください。
+- `generators/kazu-sagashi/`: かずさがし。リンゴ1種類のレベル1〜4、リンゴ・ナシ2種類のレベル5〜6、3種類の大小関係を扱う「レベル: ノイマン（試験版）」に対応します。通常仕様は [`generators/kazu-sagashi/SPEC.md`](generators/kazu-sagashi/SPEC.md)、ノイマン専用仕様は [`generators/kazu-sagashi/SPEC-NEUMANN.md`](generators/kazu-sagashi/SPEC-NEUMANN.md) を参照してください。
 
 ## 起動
 

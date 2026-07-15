@@ -1,4 +1,5 @@
-import { levelProfile } from "./config.js";
+import { levelProfile } from "./config.js?v=4";
+import { analyzeNeumannProblem, validateNeumannProblem } from "./neumann-validator.js?v=2";
 
 const EPSILON = 1e-12;
 
@@ -28,6 +29,7 @@ export function enumerateWindowCounts(grid, mode = "single-exact") {
 }
 
 export function analyzeProblem(problem) {
+  if (problem.level === 7 || problem.mode === "triple-order") return analyzeNeumannProblem(problem);
   const profile = levelProfile(problem.level);
   const cells = problem.grid.cells;
   const windows = enumerateWindowCounts(cells, problem.mode).map((window) => ({
@@ -112,6 +114,7 @@ export function validateProblem(problem, options = {}) {
   } catch (error) {
     return { valid: false, errors: [error.message], metrics: null, solutions: [] };
   }
+  if (profile.mode === "triple-order") return validateNeumannProblem(problem, options);
 
   if (problem.mode !== profile.mode) errors.push(`modeがレベル${profile.level}と一致しません`);
   if (problem.grid?.rows !== profile.rows || problem.grid?.cols !== profile.cols) {

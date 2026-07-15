@@ -1,4 +1,4 @@
-export const GENERATOR_VERSION = "kazu-sagashi-v2";
+export const GENERATOR_VERSION = "kazu-sagashi-v4";
 
 const SEARCH_LIMITS = Object.freeze({
   maxRestarts: 64,
@@ -98,6 +98,33 @@ export const LEVEL_PROFILES = Object.freeze({
     requiredAdjacentNearMissCount: 1,
     initialProbabilities: Object.freeze([0.4, 0.3, 0.3]),
     ...SEARCH_LIMITS,
+  }),
+  7: Object.freeze({
+    level: 7,
+    levelLabel: "ノイマン",
+    rows: 10,
+    cols: 10,
+    maxPerCell: 1,
+    mode: "triple-order",
+    cellValues: Object.freeze([0, 1, 2, 3]),
+    cellStates: Object.freeze(["empty", "apple", "pear", "orange"]),
+    answerTriples: Object.freeze([
+      Object.freeze([1, 2, 3]),
+      Object.freeze([1, 2, 4]),
+      Object.freeze([1, 3, 4]),
+    ]),
+    requiredPartialCandidateCount: 8,
+    requiredDistractorCount: 3,
+    requiredSameCount: 5,
+    requiredJointCueCount: 3,
+    requiredDistractorRegions: 3,
+    initialProbabilities: Object.freeze([0.4, 0.2, 0.2, 0.2]),
+    maxRestarts: 128,
+    maxRepairStepsPerRestart: 1024,
+    maxQualityMovesPerStep: 96,
+    tabuLength: 24,
+    stagnationLimit: 64,
+    maxVariantIndex: 31,
   }),
 });
 

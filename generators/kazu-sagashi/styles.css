@@ -128,6 +128,7 @@ h2 { margin: 0; font-size: 18px; }
 .is-pack .number-board { --board-size: min(100%, 108mm); }
 .number-cell {
   position: relative;
+  z-index: 2;
   min-width: 0;
   border-right: 1px dashed var(--line);
   border-bottom: 1px dashed var(--line);
@@ -197,16 +198,50 @@ h2 { margin: 0; font-size: 18px; }
   vector-effect: non-scaling-stroke;
 }
 .pear-print-tone { display: none; fill: #333; }
-.answer-frame {
-  position: absolute;
-  z-index: 5;
-  left: calc(var(--answer-col) * 100% / var(--grid-size));
-  top: calc(var(--answer-row) * 100% / var(--grid-size));
-  width: calc(3 * 100% / var(--grid-size));
-  height: calc(3 * 100% / var(--grid-size));
-  border: clamp(3px, .55vw, 6px) solid var(--answer);
-  pointer-events: none;
+.orange-silhouette {
+  fill: #e69036;
+  stroke: #784315;
+  stroke-width: 1.8;
+  vector-effect: non-scaling-stroke;
 }
+.orange-leaf {
+  fill: #668449;
+  stroke: #314725;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.orange-stem {
+  fill: none;
+  stroke: #6b4828;
+  stroke-linecap: round;
+  stroke-width: 5;
+  vector-effect: non-scaling-stroke;
+}
+.orange-print-tone { display: none; fill: none; stroke: #333; stroke-width: 1.5; }
+.order-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: .08em;
+  margin: .45em auto 0;
+  font-size: clamp(15px, 1.5vw, 20px);
+  letter-spacing: .02em;
+}
+.order-comparison { display: inline-flex; align-items: center; justify-content: center; gap: .2em; white-space: nowrap; }
+.order-fruit { display: inline-flex; align-items: center; gap: .18em; }
+.order-fruit-icon { width: 1.65em; height: 1.65em; overflow: visible; flex: none; }
+.order-fruit-label { font-weight: 800; }
+.comparison-word { font-weight: 750; }
+.answer-frame {
+  display: none;
+}
+.answer-cell { z-index: 3; }
+.answer-edge-top { border-top: clamp(3px, .55vw, 6px) solid var(--answer); }
+.answer-edge-bottom { border-bottom: clamp(3px, .55vw, 6px) solid var(--answer); }
+.answer-edge-left { border-left: clamp(3px, .55vw, 6px) solid var(--answer); }
+.answer-edge-right { border-right: clamp(3px, .55vw, 6px) solid var(--answer); }
 
 .metrics-table-wrap { overflow-x: auto; }
 .metrics-table { width: 100%; border-collapse: collapse; background: var(--paper); font-size: 12px; }
@@ -223,6 +258,7 @@ h2 { margin: 0; font-size: 18px; }
   .seed-label input { flex: 1; }
   .rule-note { align-items: flex-start; flex-direction: column; gap: 4px; }
   .worksheet-list.is-pack { grid-template-columns: minmax(0, 1fr); }
+  .order-hint { gap: .08em; }
 }
 
 @media print {
@@ -240,6 +276,7 @@ h2 { margin: 0; font-size: 18px; }
   .worksheet-card { min-height: 270mm; padding: 12mm; border: 0; border-radius: 0; box-shadow: none; break-after: page; }
   .number-board, .is-pack .number-board { --board-size: 148mm; }
   .worksheet-card h3 { font-size: 28px; }
+  .order-hint { margin: 4mm auto 3mm; font-size: 18px; }
   .fruit-silhouette {
     fill: #fff !important;
     stroke: #111 !important;
@@ -268,4 +305,11 @@ h2 { margin: 0; font-size: 18px; }
     fill: #333 !important;
     stroke: none;
   }
+  .orange-silhouette, .orange-leaf {
+    fill: #fff !important;
+    stroke: #111 !important;
+    stroke-width: 2;
+  }
+  .orange-stem { stroke: #111 !important; stroke-width: 2.4; }
+  .orange-print-tone { display: block; fill: none !important; stroke: #333 !important; }
 }
