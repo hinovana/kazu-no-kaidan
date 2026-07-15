@@ -18,9 +18,10 @@ function init() {
 }
 
 function randomUiSeed() {
-  const values = new Uint32Array(2);
-  crypto.getRandomValues(values);
-  return `ks-${values[0].toString(36)}-${values[1].toString(36)}`;
+  const bytes = new Uint8Array(6);
+  crypto.getRandomValues(bytes);
+  const randomHex = [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `ks-${randomHex}-001`;
 }
 
 function startRun() {
