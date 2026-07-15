@@ -1,0 +1,100 @@
+{
+  "schema_version": "language-db.manifest.v0.1",
+  "database_release": "language-db.v0.1-kanji-candidate",
+  "release_status": "candidate_pending_manual_check",
+  "generated_at": null,
+  "generation_time_policy": "runtime timestamp omitted from reproducible artifacts",
+  "derivation_rule_version": "import-kanji.nfc-and-code-point.v0.1",
+  "source_releases": [
+    {
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "title": "小学校学習指導要領（平成29年告示）",
+      "provider": "文部科学省",
+      "source_url": "https://www.mext.go.jp/content/20230120-mxt_kyoiku02-100002604_01.pdf",
+      "source_version": "平成29年文部科学省告示第63号（PDF更新日: 2023-01-20、ファイル名: 20230120-mxt_kyoiku02-100002604_01.pdf）",
+      "retrieved_at": "2026-07-15",
+      "artifact_sha256": "6af90f134b243e44f9767c37ee3079fac092883fd6359b836a5733dd25b43902",
+      "pre_normalization_sha256": "1dd21c2142734112fa0121e9ec7c9796891e07a1d24c3486d7d8e1787fbcce2f",
+      "license_name": "文部科学省ウェブサイト利用規約（政府標準利用規約第2.0版準拠、CC BY 4.0互換）",
+      "license_status": "open",
+      "required_attribution": "文部科学省「小学校学習指導要領（平成29年告示）」を加工して作成（2026年7月15日取得）"
+    },
+    {
+      "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+      "title": "小学校学習指導要領（平成29年告示）解説 国語編",
+      "provider": "文部科学省",
+      "source_url": "https://www.mext.go.jp/content/20220606-mxt_kyoiku02-100002607_002.pdf",
+      "source_version": "平成29年7月（取得PDFのメタデータ更新日: 2026-01-28、URL上のファイル名: 20220606-mxt_kyoiku02-100002607_002.pdf）",
+      "retrieved_at": "2026-07-15",
+      "artifact_sha256": "4a18f8d0247415c9e27a86e2688b3759cdb0c032a8e07ab51690a13a5fc27c2e",
+      "pre_normalization_sha256": "bda3f345a3cf53e7c5a925437cc80b55225d937afd936c3ec7d379f3211af5f8",
+      "license_name": "文部科学省ウェブサイト利用規約（政府標準利用規約第2.0版準拠、CC BY 4.0互換）",
+      "license_status": "open",
+      "required_attribution": "文部科学省「小学校学習指導要領（平成29年告示）解説 国語編」を加工して作成（2026年7月15日取得）"
+    }
+  ],
+  "source_comparison": {
+    "status": "matched",
+    "source_ids": [
+      "mext_elementary_curriculum_h29_kanji",
+      "mext_elementary_japanese_explanation_h29_kanji"
+    ],
+    "grades": [
+      {
+        "allocation_grade": 1,
+        "status": "matched",
+        "record_count": 80
+      },
+      {
+        "allocation_grade": 2,
+        "status": "matched",
+        "record_count": 160
+      },
+      {
+        "allocation_grade": 3,
+        "status": "matched",
+        "record_count": 200
+      }
+    ]
+  },
+  "contents": {
+    "scope": "kanji-grade-1-to-3-only",
+    "excluded": [
+      "vocabulary",
+      "readings",
+      "furigana",
+      "item-generation"
+    ],
+    "grade_counts": {
+      "1": 80,
+      "2": 160,
+      "3": 200
+    },
+    "total_record_count": 440,
+    "files": [
+      {
+        "file": "kanji-grade-1.json",
+        "allocation_grade": 1,
+        "record_count": 80,
+        "sha256": "b2d006a49c6939ed103053eb5fc375477939b532e9467b668b0cf45b89b35698"
+      },
+      {
+        "file": "kanji-grade-2.json",
+        "allocation_grade": 2,
+        "record_count": 160,
+        "sha256": "d9068a8d74041363363e0eaf27b16921166e8769f203e41e13be687f5c500d92"
+      },
+      {
+        "file": "kanji-grade-3.json",
+        "allocation_grade": 3,
+        "record_count": 200,
+        "sha256": "146b895f5ce642346e6abf07eb5faffe62f93401633899f2cda617fec9b12c75"
+      }
+    ]
+  },
+  "manual_check": {
+    "status": "pending",
+    "pending_record_count": 440,
+    "note": "AIによる公式資料2経路の照合済み。人間による原典との目視確認は未実施。"
+  }
+}

@@ -2,9 +2,18 @@
   "name": "math-worksheet-generators",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=26.5.0 <27"
+  },
   "scripts": {
     "serve": "./scripts/server.sh",
+    "serve:ai": "node generators/kokugo-no-tane/server/ai-proxy.mjs",
     "test": "for test_file in generators/*/tests/*.test.js; do node \"$test_file\"; done",
-    "test:kazu-sagashi:corpus": "node generators/kazu-sagashi/tests/corpus.mjs"
+    "test:kazu-sagashi:corpus": "node generators/kazu-sagashi/tests/corpus.mjs",
+    "test:kokugo-no-tane:corpus": "node generators/kokugo-no-tane/tests/corpus.mjs",
+    "test:kokugo-no-tane:ai:live": "node generators/kokugo-no-tane/tests/ai-proxy-live.mjs"
+  },
+  "dependencies": {
+    "openai": "^6.47.0"
   }
 }
