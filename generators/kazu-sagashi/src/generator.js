@@ -1,5 +1,6 @@
-import { GENERATOR_VERSION, levelProfile } from "./config.js";
-import { canonicalBoardSignature, validateProblem } from "./validator.js";
+import { GENERATOR_VERSION, levelProfile } from "./config.js?v=4";
+import { canonicalBoardSignature, validateProblem } from "./validator.js?v=4";
+import { buildNeumannProblem } from "./neumann-generator.js?v=2";
 
 const answerPatternCache = new Map();
 const EPSILON = 1e-12;
@@ -18,6 +19,9 @@ export function buildProblem(level, seed, options = {}) {
   const questionIndex = integerOption(options.questionIndex, 0, "questionIndex");
   const variantIndex = integerOption(options.variantIndex, 0, "variantIndex");
   if (variantIndex > profile.maxVariantIndex) throw new RangeError("variantIndexが上限を超えています");
+  if (profile.mode === "triple-order") {
+    return buildNeumannProblem(profile, normalizedSeed, questionIndex, variantIndex, GENERATOR_VERSION);
+  }
 
   const problemSeed = [GENERATOR_VERSION, profile.level, normalizedSeed, questionIndex, variantIndex].join("\0");
   const problemRng = new Rng(problemSeed);

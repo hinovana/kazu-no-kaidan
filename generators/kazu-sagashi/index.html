@@ -4,12 +4,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>かずさがしジェネレータ</title>
-    <meta name="description" content="3×3の枠に指定されたリンゴとナシの条件がある場所を探す、印刷用かずさがし問題を生成します。" />
+    <meta name="description" content="3×3の枠に指定された果物の数や関係がある場所を探す、印刷用かずさがし問題を生成します。" />
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=7" />
   </head>
   <body>
-    <div id="fruitSpriteRoot" aria-hidden="true"></div>
     <header class="toolbar">
       <div class="title-block">
         <a class="back-link" href="../../">算数教材ジェネレータ</a>
@@ -25,11 +24,16 @@
             <option value="4">4 - 1マス最大2個</option>
             <option value="5">5 - リンゴとナシの個数</option>
             <option value="6">6 - リンゴとナシの関係</option>
+            <option value="7">ノイマン（試験版）- 3種類の大小関係</option>
           </select>
         </label>
         <label>問題数
           <select id="countSelect" aria-label="問題数">
             <option value="1" selected>1問</option>
+            <option value="2">2問</option>
+            <option value="3">3問</option>
+            <option value="4">4問</option>
+            <option value="5">5問</option>
             <option value="6">6問</option>
           </select>
         </label>
@@ -64,6 +68,6 @@
         <div id="metricsOutput"></div>
       </section>
     </main>
-    <script type="module" src="src/app.js?v=3"></script>
+    <script type="module" src="src/app.js?v=11"></script>
   </body>
 </html>

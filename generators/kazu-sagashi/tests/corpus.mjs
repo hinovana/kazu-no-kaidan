@@ -8,7 +8,7 @@ import { canonicalBoardSignature, validateProblem } from "../src/validator.js";
 const CORPUS_SIZE = 10_000;
 const WARMUP_SIZE = 100;
 
-for (let level = 1; level <= 6; level += 1) {
+for (let level = 1; level <= 7; level += 1) {
   for (let index = 0; index < WARMUP_SIZE; index += 1) buildProblem(level, corpusSeed(index));
 
   const profile = LEVEL_PROFILES[level];
@@ -42,7 +42,7 @@ for (let level = 1; level <= 6; level += 1) {
   const duplicateRate = (CORPUS_SIZE - signatures.size) / CORPUS_SIZE;
   assert.equal(duplicateRate <= 0.01, true, `level ${level} duplicate rate ${duplicateRate}`);
   assertUniform(positions, (profile.rows - 2) * (profile.cols - 2), `level ${level} answer positions`);
-  const ruleBucketCount = profile.targets?.length || profile.targetPairs?.length || profile.relations.length;
+  const ruleBucketCount = profile.targets?.length || profile.targetPairs?.length || profile.relations?.length || profile.answerTriples.length;
   assertUniform(targets, ruleBucketCount, `level ${level} targets or relations`);
 
   durations.sort((a, b) => a - b);
@@ -62,6 +62,7 @@ function increment(map, key) {
 }
 
 function ruleBucket(problem) {
+  if (problem.mode === "triple-order") return problem.answerTriple.join(",");
   if (problem.mode === "pair-exact") return `${problem.rule.targetApple},${problem.rule.targetPear}`;
   if (problem.mode === "pair-relation") return problem.rule.relation;
   return problem.rule.targetApple;
