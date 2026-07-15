@@ -7,7 +7,7 @@
     <meta name="description" content="かずさがしの各レベルを複数の解法モデルで反復評価し、難易度指標を比較します。" />
     <link rel="icon" href="data:," />
     <link rel="stylesheet" href="styles.css?v=7" />
-    <link rel="stylesheet" href="difficulty-lab.css?v=1" />
+    <link rel="stylesheet" href="difficulty-lab.css?v=2" />
   </head>
   <body class="lab-page">
     <header class="lab-header">
@@ -46,9 +46,13 @@
               <option value="10000">10,000（リリース判定）</option>
             </select>
           </label>
-          <label>seed接頭辞
-            <input id="seedPrefix" type="text" value="difficulty-lab-v1" autocomplete="off" spellcheck="false" />
-          </label>
+          <div class="lab-seed-field">
+            <label for="seedPrefix">seed接頭辞</label>
+            <div class="seed-input-row">
+              <input id="seedPrefix" type="text" value="difficulty-lab-v1" autocomplete="off" spellcheck="false" />
+              <button id="newSeedButton" type="button">新しいseed</button>
+            </div>
+          </div>
           <div class="lab-actions">
             <button class="primary-button" id="runButton" type="submit">評価を開始</button>
             <button id="cancelButton" type="button" disabled>中止</button>
@@ -91,6 +95,6 @@
         <div id="galleryOutput" class="empty-state">まだ結果はありません。</div>
       </section>
     </main>
-    <script type="module" src="src/difficulty-lab.js?v=2"></script>
+    <script type="module" src="src/difficulty-lab.js?v=3"></script>
   </body>
 </html>

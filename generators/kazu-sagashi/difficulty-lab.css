@@ -30,13 +30,16 @@
 .lab-section-heading h2 { margin-top: 5px; font-size: 21px; }
 .lab-section-heading p { max-width: 520px; margin: 0; color: var(--muted); font-size: 12px; text-align: right; }
 
-.lab-controls form { display: grid; grid-template-columns: minmax(360px, 1.5fr) minmax(220px, .8fr) minmax(240px, 1fr) auto; align-items: end; gap: 16px; }
+.lab-controls form { display: grid; grid-template-columns: minmax(360px, 1.35fr) minmax(210px, .75fr) minmax(330px, 1.2fr) auto; align-items: end; gap: 16px; }
 .lab-controls fieldset { margin: 0; padding: 0; border: 0; }
 .lab-controls legend { margin-bottom: 5px; font-size: 13px; font-weight: 800; }
 .lab-controls form > label { align-items: stretch; flex-direction: column; gap: 5px; }
+.lab-seed-field > label { display: block; margin-bottom: 5px; }
+.seed-input-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px; }
+.seed-input-row button { white-space: nowrap; }
 .lab-controls select, .lab-controls input[type="text"] { width: 100%; }
-.level-options { display: flex; height: 36px; overflow: hidden; border: 1px solid #9da391; border-radius: 7px; background: #fff; }
-.level-options label { position: relative; justify-content: center; flex: 1; min-width: 38px; padding: 0 8px; border-right: 1px solid #d4d6ce; cursor: pointer; }
+.level-options { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)) minmax(76px, 1.8fr); height: 36px; overflow: hidden; border: 1px solid #9da391; border-radius: 7px; background: #fff; }
+.level-options label { position: relative; justify-content: center; min-width: 0; padding: 0 6px; border-right: 1px solid #d4d6ce; cursor: pointer; white-space: nowrap; }
 .level-options label:last-child { border-right: 0; }
 .level-options input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .level-options label:has(input:checked) { color: #fff; background: var(--lab-navy); }
@@ -107,8 +110,6 @@
   .lab-section-heading p { text-align: left; }
   .lab-controls form { grid-template-columns: 1fr; }
   .lab-controls fieldset { grid-column: auto; }
-  .level-options { height: auto; flex-wrap: wrap; }
-  .level-options label { min-height: 36px; flex-basis: 20%; }
   .lab-method-note { grid-template-columns: 1fr; gap: 5px; }
   .separation-card { grid-template-columns: 1fr; }
   .audit-grid { grid-template-columns: 1fr; }

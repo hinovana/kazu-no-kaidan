@@ -5,11 +5,22 @@ const state = { worker: null, startedAt: 0 };
 
 function init() {
   const form = document.getElementById("labForm");
+  const seedInput = document.getElementById("seedPrefix");
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     startRun();
   });
   document.getElementById("cancelButton").addEventListener("click", () => stopRun("中止しました"));
+  document.getElementById("newSeedButton").addEventListener("click", () => {
+    seedInput.value = randomUiSeed();
+    if (!state.worker) setStatus("新しいseedを設定しました", "idle");
+  });
+}
+
+function randomUiSeed() {
+  const values = new Uint32Array(2);
+  crypto.getRandomValues(values);
+  return `ks-${values[0].toString(36)}-${values[1].toString(36)}`;
 }
 
 function startRun() {
