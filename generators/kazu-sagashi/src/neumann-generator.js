@@ -1,4 +1,4 @@
-import { validateNeumannProblem } from "./neumann-validator.js?v=2";
+import { validateNeumannProblem } from "./neumann-validator.js?v=3";
 
 const EPSILON = 1e-12;
 const patternCache = new Map();
@@ -14,6 +14,12 @@ const JOINT_CUES = Object.freeze([
   ["samePearClusterCount", "pearCount", "largestOccupiedCluster"],
   ["sameOrangeClusterCount", "orangeCount", "largestOccupiedCluster"],
   ["sameTotalClusterCount", "totalFruitCount", "largestOccupiedCluster"],
+]);
+const VISUAL_MODELS = Object.freeze([
+  ["visualRoughOrderExpectedRank", "rough-order"],
+  ["visualOrderDensityExpectedRank", "order-density"],
+  ["visualShapeDensityExpectedRank", "shape-density"],
+  ["visualCombinedExpectedRank", "combined"],
 ]);
 
 export function buildNeumannProblem(profile, normalizedSeed, questionIndex, variantIndex, generatorVersion) {
@@ -146,6 +152,7 @@ function analyzeBoard(cells, answer) {
   );
   const regions = new Set([...typeLeft, ...typeRight].map((window) => `${Math.floor(window.row / 4)},${Math.floor(window.col / 4)}`));
   const answerWindow = windows.find((window) => window.row === answer.row && window.col === answer.col);
+  const visualSalience = analyzeVisualSalience(windows, answerWindow);
   const same = (key) => windows.filter((window) => window[key] === answerWindow[key]).length;
   const jointCueCounts = Object.fromEntries(
     JOINT_CUES.map(([metric, first, second]) => [
@@ -187,6 +194,7 @@ function analyzeBoard(cells, answer) {
     visualRankViolation: ["appleCount", "pearCount", "orangeCount", "totalFruitCount"].reduce(
       (sum, key) => sum + rankViolation(windows, answerWindow[key], key), 0
     ),
+    ...visualSalience.metrics,
     answerPatternViolationCount: answerPatternViolations(extractAnswer(cells, answer)),
     uniformLineViolationCount: countUniformLineViolations(cells),
   };
@@ -201,6 +209,7 @@ function scoreAnalysis(analysis, profile) {
     jointCueShortfall(analysis, profile.requiredJointCueCount),
     Math.max(0, profile.requiredDistractorRegions - analysis.distractorRegionCount),
     analysis.visualRankViolation,
+    visualSalienceShortfall(analysis, profile.requiredVisualExpectedRank),
     rangeViolation(analysis.occupiedCellDensity, 0.45, 0.7) + rangeViolation(analysis.appleShare, 0.2, 0.45) + rangeViolation(analysis.pearShare, 0.2, 0.45) + rangeViolation(analysis.orangeShare, 0.2, 0.45) + Math.max(0, Math.abs(analysis.answerOccupiedCellDensity - analysis.occupiedCellDensity) - 0.25),
     analysis.uniformLineViolationCount,
   ];
@@ -221,6 +230,7 @@ function isAcceptable(analysis, profile, answer, answerTriple) {
     Math.min(analysis.sameAppleCount, analysis.samePearCount, analysis.sameOrangeCount, analysis.sameTotalCount) >= profile.requiredSameCount &&
     jointCueShortfall(analysis, profile.requiredJointCueCount) === 0 &&
     analysis.visualRankViolation <= EPSILON &&
+    visualSalienceShortfall(analysis, profile.requiredVisualExpectedRank) <= EPSILON &&
     analysis.answerPatternViolationCount === 0 &&
     inRange(analysis.occupiedCellDensity, 0.45, 0.7) &&
     [analysis.appleShare, analysis.pearShare, analysis.orangeShare].every((value) => inRange(value, 0.2, 0.45)) &&
@@ -312,6 +322,11 @@ function makeProblem({ profile, normalizedSeed, questionIndex, variantIndex, gen
       pearShare: analysis.pearShare,
       orangeShare: analysis.orangeShare,
       visualRankViolation: analysis.visualRankViolation,
+      visualRoughOrderExpectedRank: analysis.visualRoughOrderExpectedRank,
+      visualOrderDensityExpectedRank: analysis.visualOrderDensityExpectedRank,
+      visualShapeDensityExpectedRank: analysis.visualShapeDensityExpectedRank,
+      visualCombinedExpectedRank: analysis.visualCombinedExpectedRank,
+      visualMinimumExpectedRank: analysis.visualMinimumExpectedRank,
       answerPatternViolationCount: analysis.answerPatternViolationCount,
       uniformLineViolationCount: analysis.uniformLineViolationCount,
       restartCount: restartIndex,
@@ -373,6 +388,36 @@ function largestOccupiedCluster(mask) {
 
 function jointCueShortfall(analysis, requiredCount) {
   return JOINT_CUES.reduce((sum, [metric]) => sum + Math.max(0, requiredCount - analysis[metric]), 0);
+}
+
+function visualSalienceShortfall(analysis, requiredRank) {
+  return VISUAL_MODELS.reduce(
+    (sum, [metric]) => sum + Math.max(0, requiredRank - analysis[metric]),
+    0
+  );
+}
+
+function analyzeVisualSalience(windows, answerWindow) {
+  const metrics = {};
+  for (const [metric, model] of VISUAL_MODELS) {
+    const answerScore = visualScore(answerWindow, model);
+    const better = windows.filter((window) => visualScore(window, model) > answerScore).length;
+    const tied = windows.filter((window) => visualScore(window, model) === answerScore).length;
+    metrics[metric] = better + (tied + 1) / 2;
+  }
+  metrics.visualMinimumExpectedRank = Math.min(...VISUAL_MODELS.map(([metric]) => metrics[metric]));
+  return { metrics };
+}
+
+function visualScore(window, model) {
+  const roughOrder = Number(window.appleCount >= 1 && window.appleCount <= window.pearCount)
+    + Number(window.pearCount >= 1 && window.pearCount <= window.orangeCount);
+  const density = window.totalFruitCount <= 3 ? 0 : window.totalFruitCount <= 6 ? 1 : 2;
+  const cluster = window.largestOccupiedCluster <= 2 ? 0 : window.largestOccupiedCluster <= 5 ? 1 : 2;
+  if (model === "rough-order") return roughOrder;
+  if (model === "order-density") return roughOrder * 10 + density;
+  if (model === "shape-density") return cluster * 3 + density;
+  return roughOrder * 10 + cluster + density;
 }
 
 function matchesRule(window) { return window.appleCount >= 1 && window.appleCount < window.pearCount && window.pearCount < window.orangeCount; }

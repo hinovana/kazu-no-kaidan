@@ -1,4 +1,4 @@
-import { levelProfile } from "./config.js?v=4";
+import { levelProfile } from "./config.js?v=6";
 
 const EPSILON = 1e-12;
 const ANSWER_TRIPLES = new Set(["1,2,3", "1,2,4", "1,3,4"]);
@@ -14,6 +14,12 @@ const JOINT_CUES = Object.freeze([
   ["samePearClusterCount", "pearCount", "largestOccupiedCluster"],
   ["sameOrangeClusterCount", "orangeCount", "largestOccupiedCluster"],
   ["sameTotalClusterCount", "totalFruitCount", "largestOccupiedCluster"],
+]);
+const VISUAL_METRICS = Object.freeze([
+  "visualRoughOrderExpectedRank",
+  "visualOrderDensityExpectedRank",
+  "visualShapeDensityExpectedRank",
+  "visualCombinedExpectedRank",
 ]);
 
 export function analyzeNeumannProblem(problem) {
@@ -48,6 +54,7 @@ export function analyzeNeumannProblem(problem) {
   );
   const distractorRegions = new Set([...typeLeft, ...typeRight].map((window) => `${Math.floor(window.row / 4)},${Math.floor(window.col / 4)}`));
   const answerWindow = windows.find((window) => window.row === answer.row && window.col === answer.col);
+  const visualSalienceMetrics = independentlyRankVisualModels(windows, answerWindow);
   const sameAppleCount = windows.filter((window) => window.appleCount === answerWindow.appleCount).length;
   const samePearCount = windows.filter((window) => window.pearCount === answerWindow.pearCount).length;
   const sameOrangeCount = windows.filter((window) => window.orangeCount === answerWindow.orangeCount).length;
@@ -105,6 +112,7 @@ export function analyzeNeumannProblem(problem) {
       pearShare: totals.pear / totalFruitCount,
       orangeShare: totals.orange / totalFruitCount,
       visualRankViolation,
+      ...visualSalienceMetrics,
       answerPatternViolationCount: answerPatternViolations(cells, answer),
       uniformLineViolationCount: countUniformLineViolations(cells),
     },
@@ -164,6 +172,9 @@ export function validateNeumannProblem(problem, options = {}) {
     errors.push("二つの手掛かりの組み合わせで正解位置が漏れます");
   }
   if (metrics.visualRankViolation > EPSILON) errors.push("正解枠の個数が経験分布の端にあります");
+  if (VISUAL_METRICS.some((metric) => metrics[metric] < profile.requiredVisualExpectedRank)) {
+    errors.push("見た目の目立ち方だけで正解候補が上位に来ます");
+  }
   if (metrics.answerPatternViolationCount !== 0) errors.push("正解枠に禁止された見た目があります");
   if (!inRange(metrics.occupiedCellDensity, 0.45, 0.7)) errors.push("占有密度が範囲外です");
   if (![metrics.appleShare, metrics.pearShare, metrics.orangeShare].every((value) => inRange(value, 0.2, 0.45))) {
@@ -266,6 +277,43 @@ function rankViolation(windows, value, key) {
   const lower = windows.filter((window) => window[key] < value).length / 64;
   const upper = windows.filter((window) => window[key] > value).length / 64;
   return Math.max(0, lower - 0.9) + Math.max(0, upper - 0.9);
+}
+
+function independentlyRankVisualModels(windows, answerWindow) {
+  const scoreFunctions = {
+    visualRoughOrderExpectedRank: (window) => roughOrderScore(window),
+    visualOrderDensityExpectedRank: (window) => roughOrderScore(window) * 10 + densityBand(window.totalFruitCount),
+    visualShapeDensityExpectedRank: (window) => clusterBand(window.largestOccupiedCluster) * 3 + densityBand(window.totalFruitCount),
+    visualCombinedExpectedRank: (window) => roughOrderScore(window) * 10 + clusterBand(window.largestOccupiedCluster) + densityBand(window.totalFruitCount),
+  };
+  const metrics = {};
+  for (const metric of VISUAL_METRICS) {
+    const score = scoreFunctions[metric];
+    const answerScore = score(answerWindow);
+    let better = 0;
+    let tied = 0;
+    for (const window of windows) {
+      const candidateScore = score(window);
+      if (candidateScore > answerScore) better += 1;
+      if (candidateScore === answerScore) tied += 1;
+    }
+    metrics[metric] = better + (tied + 1) / 2;
+  }
+  metrics.visualMinimumExpectedRank = Math.min(...VISUAL_METRICS.map((metric) => metrics[metric]));
+  return metrics;
+}
+
+function roughOrderScore(window) {
+  return Number(window.appleCount >= 1 && window.appleCount <= window.pearCount)
+    + Number(window.pearCount >= 1 && window.pearCount <= window.orangeCount);
+}
+
+function densityBand(totalFruitCount) {
+  return totalFruitCount <= 3 ? 0 : totalFruitCount <= 6 ? 1 : 2;
+}
+
+function clusterBand(largestOccupiedCluster) {
+  return largestOccupiedCluster <= 2 ? 0 : largestOccupiedCluster <= 5 ? 1 : 2;
 }
 
 function answerPatternViolations(cells, answer) {

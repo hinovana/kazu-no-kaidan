@@ -66,7 +66,7 @@ export function renderMetrics(problems) {
       const metrics = problem.metrics;
       return `<tr>
         <th scope="row">${index + 1}</th>
-        <td>${problem.level}</td>
+        <td>${escapeHtml(problem.levelVariant || problem.level)}</td>
         <td>${escapeHtml(ruleLabel(problem))}</td>
         <td>${problem.grid.rows} × ${problem.grid.cols}</td>
         <td>${metrics.candidateWindowCount}</td>

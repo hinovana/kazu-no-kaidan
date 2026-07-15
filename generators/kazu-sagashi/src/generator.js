@@ -1,6 +1,6 @@
-import { GENERATOR_VERSION, levelProfile } from "./config.js?v=4";
-import { canonicalBoardSignature, validateProblem } from "./validator.js?v=4";
-import { buildNeumannProblem } from "./neumann-generator.js?v=2";
+import { GENERATOR_VERSION, levelProfile } from "./config.js?v=6";
+import { canonicalBoardSignature, validateProblem } from "./validator.js?v=6";
+import { buildNeumannProblem } from "./neumann-generator.js?v=3";
 
 const answerPatternCache = new Map();
 const EPSILON = 1e-12;
@@ -14,16 +14,17 @@ export class GenerationError extends Error {
 }
 
 export function buildProblem(level, seed, options = {}) {
-  const profile = levelProfile(Number(level));
+  const publicProfile = levelProfile(Number(level));
   const normalizedSeed = normalizeSeed(seed);
   const questionIndex = integerOption(options.questionIndex, 0, "questionIndex");
   const variantIndex = integerOption(options.variantIndex, 0, "variantIndex");
-  if (variantIndex > profile.maxVariantIndex) throw new RangeError("variantIndexが上限を超えています");
+  if (variantIndex > publicProfile.maxVariantIndex) throw new RangeError("variantIndexが上限を超えています");
+  const profile = selectGenerationProfile(publicProfile, normalizedSeed, questionIndex);
   if (profile.mode === "triple-order") {
     return buildNeumannProblem(profile, normalizedSeed, questionIndex, variantIndex, GENERATOR_VERSION);
   }
 
-  const problemSeed = [GENERATOR_VERSION, profile.level, normalizedSeed, questionIndex, variantIndex].join("\0");
+  const problemSeed = [GENERATOR_VERSION, profile.profileKey, normalizedSeed, questionIndex, variantIndex].join("\0");
   const problemRng = new Rng(problemSeed);
   const answer = {
     row: problemRng.int(0, profile.rows - 3),
@@ -143,6 +144,19 @@ export function buildWorksheet(level, seed, options = {}) {
     problems.push(accepted);
   }
   return problems;
+}
+
+function selectGenerationProfile(publicProfile, normalizedSeed, questionIndex) {
+  if (!publicProfile.variants) return publicProfile;
+  const profiles = [...publicProfile.variants];
+  const cycleIndex = Math.floor(questionIndex / profiles.length);
+  const position = questionIndex % profiles.length;
+  const rng = new Rng([GENERATOR_VERSION, publicProfile.level, normalizedSeed, "profile-order", cycleIndex].join("\0"));
+  for (let index = profiles.length - 1; index > 0; index -= 1) {
+    const swapIndex = rng.int(0, index);
+    [profiles[index], profiles[swapIndex]] = [profiles[swapIndex], profiles[index]];
+  }
+  return profiles[position];
 }
 
 function selectRule(profile, rng) {
@@ -385,7 +399,7 @@ function makeProblem({
   restartIndex,
   repairStepCount,
 }) {
-  const identity = [GENERATOR_VERSION, profile.level, normalizedSeed, questionIndex, variantIndex].join("\0");
+  const identity = [GENERATOR_VERSION, profile.profileKey, normalizedSeed, questionIndex, variantIndex].join("\0");
   const metrics = {
     candidateWindowCount: analysis.windows.length,
     solutionCount: analysis.solutions.length,
@@ -406,8 +420,9 @@ function makeProblem({
   return {
     schemaVersion: 1,
     generatorVersion: GENERATOR_VERSION,
-    problemId: `KS-L${profile.level}-${fnv1a(identity).toString(36).toUpperCase().padStart(7, "0").slice(0, 7)}`,
+    problemId: `KS-L${profile.levelVariant || profile.level}-${fnv1a(identity).toString(36).toUpperCase().padStart(7, "0").slice(0, 7)}`,
     level: profile.level,
+    ...(profile.levelVariant ? { levelVariant: profile.levelVariant, levelVariantLabel: profile.levelVariantLabel } : {}),
     mode: profile.mode,
     seed: normalizedSeed,
     questionIndex,

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 
-import { LEVEL_PROFILES } from "../src/config.js";
+import { SUPPORTED_LEVELS, generationProfile } from "../src/config.js";
 import { buildProblem, buildWorksheet } from "../src/generator.js";
 import { renderBoardHtml, renderWorksheet } from "../src/renderer.js";
 import {
@@ -57,14 +57,14 @@ test("source-derived stacked board has exactly one target window", () => {
   assert.deepEqual(solutions, [{ row: 3, col: 4, count: 7, appleCount: 7, pearCount: 0 }]);
 });
 
-test("levels 1 through 6 produce valid deterministic problems", () => {
-  for (let level = 1; level <= 6; level += 1) {
+test("public numeric levels produce valid deterministic problems", () => {
+  for (const level of [1, 2, 3]) {
     const first = buildProblem(level, "deterministic-seed", { questionIndex: 3, variantIndex: 2 });
     const second = buildProblem(level, "deterministic-seed", { questionIndex: 3, variantIndex: 2 });
     assert.deepEqual(first, second);
     const validation = validateProblem(first);
     assert.equal(validation.valid, true, validation.errors.join(" / "));
-    const profile = LEVEL_PROFILES[level];
+    const profile = generationProfile(level, first.levelVariant);
     assert.equal(first.grid.rows, profile.rows);
     assert.equal(first.grid.cols, profile.cols);
     assert.equal(first.grid.maxPerCell, profile.maxPerCell);
@@ -72,12 +72,12 @@ test("levels 1 through 6 produce valid deterministic problems", () => {
     assert.equal(first.metrics.candidateWindowCount, (profile.rows - 2) * (profile.cols - 2));
     assert.equal(first.metrics.nearMissCount >= profile.requiredNearMissCount, true);
     assert.equal(first.metrics.adjacentNearMissCount >= profile.requiredAdjacentNearMissCount, true);
-    if (level >= 5) {
+    if (profile.cellStates) {
       assert.deepEqual(first.grid.cellStates, ["empty", "apple", "pear"]);
       assert.equal(first.grid.cells.flat().every((value) => profile.cellValues.includes(value)), true);
       assert.equal(first.metrics.totalFruitCount, first.metrics.totalAppleCount + first.metrics.totalPearCount);
     }
-    if (level === 6) {
+    if (level === 3) {
       const answerWindow = validation.solutions[0];
       assert.equal(answerWindow.appleCount >= 1, true);
       assert.equal(answerWindow.pearCount >= 1, true);
@@ -85,8 +85,8 @@ test("levels 1 through 6 produce valid deterministic problems", () => {
   }
 });
 
-test("normal CI corpus validates 200 fixed seeds per level", () => {
-  for (let level = 1; level <= 6; level += 1) {
+test("normal CI corpus validates 200 fixed seeds per public level", () => {
+  for (const level of [1, 2, 3]) {
     for (let index = 0; index < 200; index += 1) {
       const seed = `kazu-sagashi-ci-${String(index).padStart(3, "0")}`;
       const problem = buildProblem(level, seed);
@@ -94,6 +94,21 @@ test("normal CI corpus validates 200 fixed seeds per level", () => {
       assert.equal(validation.valid, true, `level ${level} seed ${seed}: ${validation.errors.join(" / ")}`);
     }
   }
+});
+
+test("level 2 worksheets balance and deterministically shuffle all three variants", () => {
+  for (let questionCount = 1; questionCount <= 6; questionCount += 1) {
+    const first = buildWorksheet(2, "mixed-level", { questionCount });
+    const second = buildWorksheet(2, "mixed-level", { questionCount });
+    assert.deepEqual(first, second);
+    const counts = new Map();
+    for (const problem of first) counts.set(problem.levelVariant, (counts.get(problem.levelVariant) || 0) + 1);
+    assert.equal(counts.size, Math.min(questionCount, 3));
+    const values = [...counts.values()];
+    assert.equal(Math.max(...values) - Math.min(...values) <= 1, true);
+  }
+  const six = buildWorksheet(2, "mixed-level", { questionCount: 6 });
+  assert.deepEqual([...countVariants(six).entries()].sort(), [["2A", 2], ["2B", 2], ["2C", 2]]);
 });
 
 test("Neumann validates 200 fixed seeds with every difficulty contract", () => {
@@ -125,6 +140,11 @@ test("Neumann validates 200 fixed seeds with every difficulty contract", () => {
       first.metrics.sameOrangeClusterCount,
       first.metrics.sameTotalClusterCount
     ) >= 3, true);
+    assert.equal(first.metrics.visualRoughOrderExpectedRank >= 3, true);
+    assert.equal(first.metrics.visualOrderDensityExpectedRank >= 3, true);
+    assert.equal(first.metrics.visualShapeDensityExpectedRank >= 3, true);
+    assert.equal(first.metrics.visualCombinedExpectedRank >= 3, true);
+    assert.equal(first.metrics.visualMinimumExpectedRank >= 3, true);
     triples.add(first.answerTriple.join(","));
   }
   assert.deepEqual([...triples].sort(), ["1,2,3", "1,2,4", "1,3,4"]);
@@ -171,6 +191,25 @@ test("Neumann rejects the KS-N-0RTTQSI visual-shortcut regression", () => {
   assert.equal(result.metrics.sameOrangeClusterCount, 1);
 });
 
+test("Neumann rejects a board ranked in the top two by visual salience", () => {
+  const cells = [
+    [3,2,3,3,1,2,0,3,1,0],
+    [1,0,2,0,3,2,0,2,2,3],
+    [2,3,3,0,0,0,0,2,0,1],
+    [0,0,0,3,1,2,2,0,2,0],
+    [1,0,1,0,2,0,1,1,2,3],
+    [2,0,2,0,2,0,3,1,3,1],
+    [0,3,2,3,1,2,3,0,0,0],
+    [3,3,2,3,0,1,1,3,2,0],
+    [3,2,2,2,3,1,3,3,3,0],
+    [1,1,0,3,3,1,2,1,3,0],
+  ];
+  const result = validateProblem(neumannProblem(cells, { row: 0, col: 0 }), { compareMetrics: false });
+  assert.equal(result.valid, false);
+  assert.equal(result.errors.includes("見た目の目立ち方だけで正解候補が上位に来ます"), true);
+  assert.equal(result.metrics.visualMinimumExpectedRank, 2.5);
+});
+
 test("pair predicates include degenerate windows exactly as written", () => {
   const equal = pairProblem("equal", Array.from({ length: 8 }, () => Array(8).fill(0)));
   assert.equal(analyzeProblem(equal).solutions.length, 36, "(0, 0) must satisfy equal");
@@ -185,14 +224,14 @@ test("pair predicates include degenerate windows exactly as written", () => {
 });
 
 test("validator rejects zero-solution and multiple-solution tampering", () => {
-  const source = buildProblem(2, "validator-tamper");
+  const source = level2ProblemByVariant("validator-tamper", "2A");
   const zero = structuredCloneCompat(source);
   zero.rule.targetApple = 9;
   zero.metrics = null;
   assert.equal(validateProblem(zero, { compareMetrics: false }).valid, false);
 
   const multiple = structuredCloneCompat(source);
-  multiple.grid.cells = Array.from({ length: 8 }, () => Array(8).fill(0));
+  multiple.grid.cells = Array.from({ length: source.grid.rows }, () => Array(source.grid.cols).fill(0));
   multiple.rule.targetApple = 0;
   multiple.metrics = null;
   const result = validateProblem(multiple, { compareMetrics: false });
@@ -201,7 +240,7 @@ test("validator rejects zero-solution and multiple-solution tampering", () => {
 });
 
 test("board and problem signatures handle rotations and rule changes", () => {
-  const problem = buildProblem(3, "signature-seed");
+  const problem = level2ProblemByVariant("signature-seed", "2A");
   const rotated = rotateProblem(problem);
   assert.equal(canonicalBoardSignature(problem), canonicalBoardSignature(rotated));
   assert.equal(canonicalProblemSignature(problem), canonicalProblemSignature(rotated));
@@ -213,7 +252,7 @@ test("board and problem signatures handle rotations and rule changes", () => {
 });
 
 test("six-question worksheets contain no symmetric duplicate boards", () => {
-  for (let level = 1; level <= 6; level += 1) {
+  for (const level of SUPPORTED_LEVELS) {
     const problems = buildWorksheet(level, `worksheet-${level}`, { questionCount: 6 });
     assert.equal(problems.length, 6);
     assert.equal(new Set(problems.map(canonicalBoardSignature)).size, 6);
@@ -221,16 +260,16 @@ test("six-question worksheets contain no symmetric duplicate boards", () => {
 });
 
 test("question streams are independent of previous generation work", () => {
-  const direct = buildProblem(3, "stream-seed", { questionIndex: 4 });
-  buildWorksheet(3, "stream-seed", { questionCount: 4 });
-  const after = buildProblem(3, "stream-seed", { questionIndex: 4 });
+  const direct = buildProblem(2, "stream-seed", { questionIndex: 4 });
+  buildWorksheet(2, "stream-seed", { questionCount: 4 });
+  const after = buildProblem(2, "stream-seed", { questionIndex: 4 });
   assert.deepEqual(direct, after);
 });
 
 test("renderer exposes exact fruit instances and answer frame geometry", () => {
   let problem;
   for (let index = 0; index < 20; index += 1) {
-    const candidate = buildProblem(4, `renderer-${index}`);
+    const candidate = level2ProblemByVariant(`renderer-${index}`, "2B");
     if (candidate.grid.cells.some((row) => row.includes(2))) {
       problem = candidate;
       break;
@@ -253,8 +292,7 @@ test("renderer exposes exact fruit instances and answer frame geometry", () => {
 });
 
 test("pair renderer keeps apple and pear symbols exclusive", () => {
-  for (const level of [5, 6]) {
-    const problem = buildProblem(level, `pair-renderer-${level}`);
+  for (const problem of [level2ProblemByVariant("pair-renderer-2C", "2C"), buildProblem(3, "pair-renderer-3")]) {
     const html = renderBoardHtml(problem, { answer: true });
     const occupied = problem.grid.cells.flat().filter((value) => value !== 0).length;
     assert.equal((html.match(/data-fruit-instance=/g) || []).length, occupied);
@@ -287,7 +325,7 @@ test("Neumann renderer shows three exclusive fruit symbols and its level name", 
 });
 
 test("worksheet inlines printable fruit drawings across six boards", () => {
-  const problems = buildWorksheet(6, "sprite-reuse", { questionCount: 6 });
+  const problems = buildWorksheet(3, "sprite-reuse", { questionCount: 6 });
   const html = renderWorksheet(problems);
   assert.equal((html.match(/class="fruit-symbol-sprite"/g) || []).length, 0);
   assert.equal((html.match(/<symbol /g) || []).length, 0);
@@ -298,7 +336,7 @@ test("worksheet inlines printable fruit drawings across six boards", () => {
 test("relation questions show furigana while aria labels remain plain text", () => {
   const problems = [];
   for (let index = 0; index < 30 && problems.length < 2; index += 1) {
-    const problem = buildProblem(6, `furigana-${index}`);
+    const problem = buildProblem(3, `furigana-${index}`);
     if (!problems.some((item) => item.rule.relation === problem.rule.relation)) {
       problems.push(problem);
     }
@@ -315,10 +353,11 @@ test("relation questions show furigana while aria labels remain plain text", () 
 
 test("invalid inputs fail explicitly without level fallback", () => {
   assert.throws(() => buildProblem(8, "future-level"), /未対応/);
+  for (const removedLevel of [4, 5, 6]) assert.throws(() => buildProblem(removedLevel, "removed-level"), /未対応/);
   assert.throws(() => buildProblem(1, ""), /seed/);
   assert.throws(() => buildProblem(1, "seed", { variantIndex: 32 }), /上限/);
 
-  const pair = buildProblem(5, "invalid-pair-cell");
+  const pair = level2ProblemByVariant("invalid-pair-cell", "2C");
   pair.grid.cells[0][0] = 3;
   pair.metrics = null;
   assert.equal(validateProblem(pair, { compareMetrics: false }).valid, false);
@@ -330,12 +369,24 @@ function renderProblemCardForTest(problem) {
 
 function pairProblem(relation, cells) {
   return {
-    level: 6,
+    level: 3,
     mode: "pair-relation",
     grid: { rows: 8, cols: 8, maxPerCell: 1, cellStates: ["empty", "apple", "pear"], cells },
     rule: { windowRows: 3, windowCols: 3, relation },
     answer: { row: 0, col: 0 },
   };
+}
+
+function level2ProblemByVariant(seed, levelVariant) {
+  const problem = buildWorksheet(2, seed, { questionCount: 3 }).find((candidate) => candidate.levelVariant === levelVariant);
+  assert.ok(problem, `missing ${levelVariant}`);
+  return problem;
+}
+
+function countVariants(problems) {
+  const counts = new Map();
+  for (const problem of problems) counts.set(problem.levelVariant, (counts.get(problem.levelVariant) || 0) + 1);
+  return counts;
 }
 
 function neumannProblem(cells, answer) {
