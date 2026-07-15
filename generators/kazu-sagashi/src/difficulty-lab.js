@@ -1,5 +1,5 @@
-import { renderBoardHtml } from "./renderer.js?v=8";
-import { probabilityGreater, quantile, summarizeLevel } from "./difficulty-solvers.js?v=2";
+import { renderBoardHtml } from "./renderer.js?v=9";
+import { probabilityGreater, quantile, summarizeLevel } from "./difficulty-solvers.js?v=3";
 
 const state = { worker: null, startedAt: 0 };
 
@@ -57,7 +57,7 @@ function handleWorkerMessage(event) {
   if (data.type === "done") finishRun(data);
 }
 
-function finishRun({ records, easiestByLevel, elapsedMs }) {
+function finishRun({ records, easiestByGroup, elapsedMs }) {
   stopWorkerOnly();
   setRunning(false);
   setStatus("評価完了", "done");
@@ -65,7 +65,7 @@ function finishRun({ records, easiestByLevel, elapsedMs }) {
   const summaries = [...groups.values()].map(summarizeLevel);
   renderSummary(summaries, groups, elapsedMs);
   renderDistribution(groups);
-  renderGallery(easiestByLevel);
+  renderGallery(easiestByGroup);
   document.getElementById("summaryCaption").textContent = `${formatNumber(records.length)}問 / ${(elapsedMs / 1000).toFixed(1)}秒 / seedは再現可能`;
 }
 
@@ -109,10 +109,34 @@ function updateProgress(completed, total, elapsedMs) {
 
 function renderSummary(summaries, groups, elapsedMs) {
   const allCosts = [...groups.values()].flatMap((records) => records.map((record) => record.bestExpectedCost)).sort(numericSort);
-  const rows = summaries.map((summary) => {
+  const rows = renderSummaryRows(summaries, allCosts);
+  const level2Records = groups.get(2) || [];
+  const variantSummaries = [...groupByVariant(level2Records).values()]
+    .map(summarizeLevel)
+    .sort((left, right) => left.levelVariant.localeCompare(right.levelVariant, "ja"));
+  const variantDetails = variantSummaries.length === 0 ? "" : `<details class="variant-breakdown">
+    <summary>レベル2の3種類の内訳を表示</summary>
+    <div class="lab-table-wrap"><table class="lab-table">
+      ${summaryTableHeader()}
+      <tbody>${renderSummaryRows(variantSummaries, allCosts)}</tbody>
+    </table></div>
+  </details>`;
+
+  document.getElementById("summaryOutput").innerHTML = `<div class="lab-table-wrap"><table class="lab-table">
+    ${summaryTableHeader()}
+    <tbody>${rows}</tbody>
+  </table></div>
+  ${variantDetails}
+  <p class="table-footnote">相対スコアは今回選択した全問題のコスト分布における中央値の位置です。選ぶレベルが変わると値も変わります。総実行時間 ${(elapsedMs / 1000).toFixed(1)}秒。</p>`;
+
+  renderSeparation(groups);
+}
+
+function renderSummaryRows(summaries, allCosts) {
+  return summaries.map((summary) => {
     const relativeScore = percentileRank(allCosts, summary.costMedian);
     return `<tr>
-      <th scope="row">${escapeHtml(levelLabel(summary.level))}</th>
+      <th scope="row">${escapeHtml(summaryLabel(summary))}</th>
       <td>${formatNumber(summary.sampleCount)}</td>
       <td><strong>${relativeScore.toFixed(0)}</strong><span class="score-suffix"> / 100</span></td>
       <td>${formatDecimal(summary.costMedian)}</td>
@@ -124,31 +148,27 @@ function renderSummary(summaries, groups, elapsedMs) {
       <td>${formatDecimal(summary.generationP95Ms)} ms</td>
     </tr>`;
   }).join("");
+}
 
-  document.getElementById("summaryOutput").innerHTML = `<div class="lab-table-wrap"><table class="lab-table">
-    <thead><tr><th>レベル</th><th>問題数</th><th>相対スコア</th><th>コスト中央値</th><th>P10–P90</th><th>順位中央値</th><th>見た目1位</th><th>見た目2位以内</th><th>最頻の最短解法</th><th>生成P95</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table></div>
-  <p class="table-footnote">相対スコアは今回選択した全問題のコスト分布における中央値の位置です。選ぶレベルが変わると値も変わります。総実行時間 ${(elapsedMs / 1000).toFixed(1)}秒。</p>`;
-
-  renderSeparation(groups);
+function summaryTableHeader() {
+  return "<thead><tr><th>レベル</th><th>問題数</th><th>相対スコア</th><th>コスト中央値</th><th>P10–P90</th><th>順位中央値</th><th>見た目1位</th><th>見た目2位以内</th><th>最頻の最短解法</th><th>生成P95</th></tr></thead>";
 }
 
 function renderSeparation(groups) {
-  const level6 = groups.get(6);
+  const level3 = groups.get(3);
   const level7 = groups.get(7);
   const output = document.getElementById("separationOutput");
-  if (!level6 || !level7) {
+  if (!level3 || !level7) {
     output.innerHTML = "";
     return;
   }
   const comparison = probabilityGreater(
     level7.map((record) => record.bestExpectedCost),
-    level6.map((record) => record.bestExpectedCost)
+    level3.map((record) => record.bestExpectedCost)
   );
   output.innerHTML = `<div class="separation-card">
     <div><span>LEVEL SEPARATION</span><strong>${formatPercent(comparison.greater)}</strong></div>
-    <p>ランダムに1問ずつ選んだとき、ノイマンの操作コストがレベル6より高い確率。等コストは ${formatPercent(comparison.tied)}。</p>
+    <p>ランダムに1問ずつ選んだとき、ノイマンの操作コストがレベル3より高い確率。等コストは ${formatPercent(comparison.tied)}。</p>
   </div>`;
 }
 
@@ -178,10 +198,10 @@ function renderDistribution(groups) {
   </div>`;
 }
 
-function renderGallery(easiestByLevel) {
-  const cards = Object.entries(easiestByLevel).flatMap(([level, items]) =>
+function renderGallery(easiestByGroup) {
+  const cards = Object.values(easiestByGroup).flatMap((items) =>
     items.slice(0, 3).map(({ result, problem }, index) => `<article class="audit-card">
-      <header><div><span>${escapeHtml(levelLabel(Number(level)))} / EASY ${index + 1}</span><strong>${escapeHtml(problem.problemId)}</strong></div><b>${formatDecimal(result.bestExpectedCost)} cost</b></header>
+      <header><div><span>${escapeHtml(problemLevelLabel(problem))} / EASY ${index + 1}</span><strong>${escapeHtml(problem.problemId)}</strong></div><b>${formatDecimal(result.bestExpectedCost)} cost</b></header>
       ${renderBoardHtml(problem, { answer: true })}
       <dl>
         <div><dt>最短解法</dt><dd>${escapeHtml(result.bestSolverLabel)}</dd></div>
@@ -215,6 +235,16 @@ function groupByLevel(records) {
   return groups;
 }
 
+function groupByVariant(records) {
+  const groups = new Map();
+  for (const record of records) {
+    if (!record.levelVariant) continue;
+    if (!groups.has(record.levelVariant)) groups.set(record.levelVariant, []);
+    groups.get(record.levelVariant).push(record);
+  }
+  return groups;
+}
+
 function percentileRank(sortedValues, value) {
   let below = 0;
   let equal = 0;
@@ -235,8 +265,20 @@ function levelLabel(level) {
   return level === 7 ? "ノイマン" : `レベル${level}`;
 }
 
+function summaryLabel(summary) {
+  return summary.levelVariant
+    ? `レベル${summary.levelVariant}（${summary.levelVariantLabel}）`
+    : levelLabel(summary.level);
+}
+
+function problemLevelLabel(problem) {
+  return problem.levelVariant
+    ? `レベル${problem.levelVariant}（${problem.levelVariantLabel}）`
+    : levelLabel(problem.level);
+}
+
 function levelColor(level) {
-  return ["#69865a", "#678a81", "#5e7895", "#7c6b99", "#a36f74", "#bc744e", "#b34334"][level - 1];
+  return ({ 1: "#69865a", 2: "#678a81", 3: "#5e7895", 7: "#b34334" })[level];
 }
 
 function formatNumber(value) { return new Intl.NumberFormat("ja-JP").format(value); }

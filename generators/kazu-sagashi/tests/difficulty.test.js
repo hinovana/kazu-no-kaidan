@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { buildProblem } from "../src/generator.js";
+import { SUPPORTED_LEVELS } from "../src/config.js";
 import {
   evaluateProblemDifficulty,
   probabilityGreater,
@@ -8,10 +9,11 @@ import {
 } from "../src/difficulty-solvers.js";
 
 function testAllLevelsProduceComparableResults() {
-  for (let level = 1; level <= 7; level += 1) {
+  for (const level of SUPPORTED_LEVELS) {
     const problem = buildProblem(level, "difficulty-test");
     const result = evaluateProblemDifficulty(problem);
     assert.equal(result.level, level);
+    assert.equal(result.levelVariant, problem.levelVariant || null);
     assert.ok(result.solvers.length >= 3, `level ${level} should have multiple solvers`);
     assert.ok(result.bestExpectedCost > 0);
     assert.ok(result.bestExpectedRank >= 1);
@@ -65,6 +67,13 @@ function testAggregates() {
   assert.equal(summary.visualRank1Rate, 1 / 3);
   assert.equal(summary.winnerLabel, "A");
   assert.equal(summary.generationP95Ms, 11.6);
+
+  const mixed = summarizeLevel([
+    { ...record(2, 10, 2, 1, "A", 4), levelVariant: "2A", levelVariantLabel: "リンゴ1種類" },
+    { ...record(2, 20, 4, 3, "B", 8), levelVariant: "2B", levelVariantLabel: "1マス2個まで" },
+  ]);
+  assert.equal(mixed.levelVariant, null);
+  assert.equal(mixed.levelVariantLabel, null);
 }
 
 function record(level, cost, rank, visualRank, bestSolverLabel, generationMs) {

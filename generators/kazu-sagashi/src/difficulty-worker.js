@@ -1,5 +1,5 @@
-import { buildProblem } from "./generator.js?v=5";
-import { evaluateProblemDifficulty } from "./difficulty-solvers.js?v=2";
+import { buildProblem } from "./generator.js?v=6";
+import { evaluateProblemDifficulty } from "./difficulty-solvers.js?v=3";
 
 let activeRun = 0;
 
@@ -19,7 +19,7 @@ self.addEventListener("message", (event) => {
 async function runEvaluation(runId, { levels, sampleCount, seedPrefix }) {
   const total = levels.length * sampleCount;
   const records = [];
-  const easiestByLevel = Object.fromEntries(levels.map((level) => [level, []]));
+  const easiestByGroup = {};
   const startedAt = performance.now();
   let completed = 0;
 
@@ -32,7 +32,9 @@ async function runEvaluation(runId, { levels, sampleCount, seedPrefix }) {
       const generationMs = performance.now() - generationStartedAt;
       const result = { ...evaluateProblemDifficulty(problem), generationMs, seed };
       records.push(compactResult(result));
-      retainEasiest(easiestByLevel[level], { result, problem }, 6);
+      const groupKey = problem.levelVariant || String(problem.level);
+      if (!easiestByGroup[groupKey]) easiestByGroup[groupKey] = [];
+      retainEasiest(easiestByGroup[groupKey], { result, problem }, 6);
       completed += 1;
 
       if (completed === total || completed % 10 === 0) {
@@ -53,7 +55,7 @@ async function runEvaluation(runId, { levels, sampleCount, seedPrefix }) {
     type: "done",
     runId,
     records,
-    easiestByLevel,
+    easiestByGroup,
     elapsedMs: performance.now() - startedAt,
   });
 }
@@ -72,6 +74,8 @@ function compactResult(result) {
   return {
     level: result.level,
     levelLabel: result.levelLabel,
+    levelVariant: result.levelVariant,
+    levelVariantLabel: result.levelVariantLabel,
     problemId: result.problemId,
     bestSolverId: result.bestSolverId,
     bestSolverLabel: result.bestSolverLabel,

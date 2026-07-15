@@ -1,4 +1,4 @@
-import { levelProfile } from "./config.js?v=5";
+import { levelProfile } from "./config.js?v=6";
 
 const EPSILON = 1e-12;
 const ANSWER_TRIPLES = new Set(["1,2,3", "1,2,4", "1,3,4"]);

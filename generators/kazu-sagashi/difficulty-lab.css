@@ -38,7 +38,7 @@
 .seed-input-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px; }
 .seed-input-row button { white-space: nowrap; }
 .lab-controls select, .lab-controls input[type="text"] { width: 100%; }
-.level-options { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)) minmax(76px, 1.8fr); height: 36px; overflow: hidden; border: 1px solid #9da391; border-radius: 7px; background: #fff; }
+.level-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(92px, 1.8fr); height: 36px; overflow: hidden; border: 1px solid #9da391; border-radius: 7px; background: #fff; }
 .level-options label { position: relative; justify-content: center; min-width: 0; padding: 0 6px; border-right: 1px solid #d4d6ce; cursor: pointer; white-space: nowrap; }
 .level-options label:last-child { border-right: 0; }
 .level-options input { position: absolute; width: 1px; height: 1px; opacity: 0; }
@@ -70,6 +70,9 @@
 .lab-table tbody td:nth-child(3) strong { color: var(--lab-red); font-size: 21px; }
 .score-suffix, .lab-table small { color: var(--muted); font-size: 10px; }
 .table-footnote { margin: 13px 0 0; color: var(--muted); font-size: 11px; }
+.variant-breakdown { margin-top: 16px; padding: 12px 14px; border: 1px solid #d4d6ce; border-radius: 8px; background: #fffef9; }
+.variant-breakdown summary { cursor: pointer; color: var(--lab-red); font-size: 12px; font-weight: 800; }
+.variant-breakdown .lab-table-wrap { margin-top: 10px; }
 
 .histogram { padding: 12px 10px 4px; }
 .histogram-row { display: grid; grid-template-columns: 80px 1fr; align-items: center; gap: 12px; margin-bottom: 12px; }

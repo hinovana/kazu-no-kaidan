@@ -38,6 +38,8 @@ export function evaluateProblemDifficulty(problem) {
   return {
     level: problem.level,
     levelLabel: problem.levelLabel || String(problem.level),
+    levelVariant: problem.levelVariant || null,
+    levelVariantLabel: problem.levelVariantLabel || null,
     problemId: problem.problemId,
     mode: view.mode,
     candidateWindowCount: windows.length,
@@ -53,6 +55,9 @@ export function evaluateProblemDifficulty(problem) {
 
 export function summarizeLevel(records) {
   if (records.length === 0) return null;
+  const variants = new Set(records.map((record) => record.levelVariant || null));
+  const sharedVariant = variants.size === 1 ? records[0].levelVariant || null : null;
+  const sharedVariantLabel = sharedVariant ? records[0].levelVariantLabel || null : null;
   const costs = records.map((record) => record.bestExpectedCost).sort(numericSort);
   const ranks = records.map((record) => record.bestExpectedRank).sort(numericSort);
   const visualRanks = records.map((record) => record.visualExpectedRank);
@@ -63,6 +68,8 @@ export function summarizeLevel(records) {
   return {
     level: records[0].level,
     levelLabel: records[0].levelLabel,
+    levelVariant: sharedVariant,
+    levelVariantLabel: sharedVariantLabel,
     sampleCount: records.length,
     costP10: quantile(costs, 0.1),
     costMedian: quantile(costs, 0.5),

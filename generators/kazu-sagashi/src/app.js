@@ -1,5 +1,5 @@
-import { buildProblem, buildWorksheet } from "./generator.js?v=5";
-import { renderMetrics, renderWorksheet } from "./renderer.js?v=8";
+import { buildProblem, buildWorksheet } from "./generator.js?v=6";
+import { renderMetrics, renderWorksheet } from "./renderer.js?v=9";
 
 function init() {
   const levelSelect = document.getElementById("levelSelect");
@@ -10,7 +10,9 @@ function init() {
   const printButton = document.getElementById("printButton");
 
   const params = new URLSearchParams(window.location.search);
-  if (params.has("level")) levelSelect.value = params.get("level");
+  if (params.has("level") && [...levelSelect.options].some((option) => option.value === params.get("level"))) {
+    levelSelect.value = params.get("level");
+  }
   if (params.has("count")) countSelect.value = params.get("count");
   seedInput.value = params.get("seed") || "kazu-sagashi";
 

@@ -1,4 +1,4 @@
-import { levelProfile } from "./config.js?v=5";
+import { generationProfile, levelProfile } from "./config.js?v=6";
 import { analyzeNeumannProblem, validateNeumannProblem } from "./neumann-validator.js?v=3";
 
 const EPSILON = 1e-12;
@@ -30,7 +30,7 @@ export function enumerateWindowCounts(grid, mode = "single-exact") {
 
 export function analyzeProblem(problem) {
   if (problem.level === 7 || problem.mode === "triple-order") return analyzeNeumannProblem(problem);
-  const profile = levelProfile(problem.level);
+  const profile = generationProfile(problem.level, problem.levelVariant);
   const cells = problem.grid.cells;
   const windows = enumerateWindowCounts(cells, problem.mode).map((window) => ({
     ...window,
@@ -108,13 +108,20 @@ export function validateProblem(problem, options = {}) {
     return { valid: false, errors: ["問題データがありません"], metrics: null, solutions: [] };
   }
 
-  let profile;
+  let publicProfile;
   try {
-    profile = levelProfile(problem.level);
+    publicProfile = levelProfile(problem.level);
   } catch (error) {
     return { valid: false, errors: [error.message], metrics: null, solutions: [] };
   }
-  if (profile.mode === "triple-order") return validateNeumannProblem(problem, options);
+  if (publicProfile.mode === "triple-order") return validateNeumannProblem(problem, options);
+
+  let profile;
+  try {
+    profile = generationProfile(problem.level, problem.levelVariant);
+  } catch (error) {
+    return { valid: false, errors: [error.message], metrics: null, solutions: [] };
+  }
 
   if (problem.mode !== profile.mode) errors.push(`modeがレベル${profile.level}と一致しません`);
   if (problem.grid?.rows !== profile.rows || problem.grid?.cols !== profile.cols) {
@@ -169,7 +176,7 @@ export function validateProblem(problem, options = {}) {
   if (profile.mode === "pair-relation") {
     const answerWindow = analysis.windows.find((window) => window.row === answerRow && window.col === answerCol);
     if (!answerWindow || answerWindow.appleCount < 1 || answerWindow.pearCount < 1) {
-      errors.push("レベル6の正解枠にはリンゴとナシが1個以上必要です");
+      errors.push("レベル3の正解枠にはリンゴとナシが1個以上必要です");
     }
   }
   if (metrics.nearMissCount < profile.requiredNearMissCount) errors.push("近似枠数がレベル条件を満たしません");
