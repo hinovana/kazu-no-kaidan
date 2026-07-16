@@ -11,7 +11,17 @@ assert.equal(grade2.language_database.allocated_kanji_count, 240);
 assert.equal(grade3.language_database.allocated_kanji_count, 440);
 assert.equal(grade1.language_database.database_release, "language-db.v0.1-kanji-candidate");
 assert.equal(grade1.language_database.release_status, "candidate_pending_manual_check");
-assert.equal(grade1.vocabulary_database.status, "not_implemented");
+assert.equal(grade1.vocabulary_database.status, "candidate_unreviewed_not_connected");
+assert.equal(
+  grade1.vocabulary_database.candidate_database_release,
+  "vocabulary-db.v0.1-ninjal-2009b-candidate",
+);
+assert.equal(grade1.vocabulary_database.candidate_record_count, 15485);
+assert.deepEqual(grade1.vocabulary_database.candidate_grade_bands, [
+  "lower_elementary_1_3",
+  "upper_elementary_4_6",
+]);
+assert.equal(grade1.vocabulary_database.generation_eligible, false);
 assert.ok(grade1.vocabulary_database.prototype_lexicon.length > 0);
 assert.deepEqual(
   grade1.reference_design_anchors.map((anchor) => anchor.id),

@@ -6,6 +6,7 @@ import { createStoryPlanFixture } from "./fixtures/story-plan-fixture.js";
 
 const allowedOrigin = "http://127.0.0.1:8765";
 const config = {
+  provider: "openai",
   apiKey: "test-only-key",
   model: "test-model",
   host: "127.0.0.1",
@@ -14,6 +15,7 @@ const config = {
   timeoutMs: 1_000,
   maxRetries: 0,
   saveCandidates: true,
+  logIo: true,
   localDir: "/tmp/kokugo-no-tane-ai-proxy-test",
   requestsPerMinute: 20,
 };
@@ -42,11 +44,13 @@ const openaiClient = {
 };
 const candidateStore = createMemoryCandidateStore();
 const logs = [];
+const providerIoLogs = [];
 const server = createAiProxyServer({
   config,
   openaiClient,
   candidateStore,
   logger: (entry) => logs.push(entry),
+  providerLogger: (entry) => providerIoLogs.push(entry),
 });
 
 await new Promise((resolve, reject) => {
@@ -63,6 +67,7 @@ try {
   assert.equal(health.body.protocol_version, "knt-ai-proxy.v1");
   assert.match(health.body.request_id, /^proxy-/u);
   assert.equal(health.body.model, config.model);
+  assert.equal(health.body.provider, "openai");
   assert.equal(health.body.api_key_configured, true);
 
   const preflight = await requestJson({ port, method: "OPTIONS", path: "/api/story-plan", origin: allowedOrigin });
@@ -114,7 +119,18 @@ try {
   const providerInput = JSON.parse(providerCalls[0].input);
   assert.equal(providerInput.curriculum_context.context_version, "story-plan-context.v1");
   assert.equal(providerInput.curriculum_context.language_database.allocated_kanji_count, 80);
-  assert.equal(providerInput.curriculum_context.vocabulary_database.status, "not_implemented");
+  assert.equal(
+    providerInput.curriculum_context.vocabulary_database.status,
+    "candidate_unreviewed_not_connected",
+  );
+  assert.equal(
+    providerInput.curriculum_context.vocabulary_database.candidate_record_count,
+    15485,
+  );
+  assert.equal(
+    providerInput.curriculum_context.vocabulary_database.generation_eligible,
+    false,
+  );
   assert.ok(providerInput.curriculum_context.vocabulary_database.prototype_lexicon.length > 0);
   assert.equal(candidateStore.records.length, 1);
   assert.equal(candidateStore.records[0].candidateId, generated.body.candidate_id);
@@ -145,6 +161,13 @@ try {
   assert.equal(quota.body.fallback_allowed, true);
 
   assert.ok(logs.some((entry) => entry.status === 200 && entry.candidate_id === generated.body.candidate_id));
+  const providerQueryLog = providerIoLogs.find((entry) => entry.event === "ai_provider_request");
+  const providerResponseLog = providerIoLogs.find((entry) => entry.event === "ai_provider_response");
+  assert.equal(providerQueryLog.provider, "openai");
+  assert.equal(providerQueryLog.client_request_id, requestBody.client_request_id);
+  assert.equal(JSON.parse(providerQueryLog.request.input).candidate_seed, requestBody.seed);
+  assert.equal(providerResponseLog.client_request_id, requestBody.client_request_id);
+  assert.equal(JSON.parse(providerResponseLog.response.output_text).category, "町");
   assert.ok(logs.every((entry) => !JSON.stringify(entry).includes(config.apiKey)));
 } finally {
   await new Promise((resolve) => server.close(resolve));

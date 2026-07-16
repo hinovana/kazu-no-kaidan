@@ -6,7 +6,7 @@ import {
   parseStoryPlan,
 } from "./story-plan-schema.js";
 
-const REQUEST_TIMEOUT_MS = 50_000;
+const REQUEST_TIMEOUT_MS = 135_000;
 
 export class AiProxyError extends Error {
   constructor(message, { code = "AI_PROXY_ERROR", fallbackAllowed = true, cause } = {}) {

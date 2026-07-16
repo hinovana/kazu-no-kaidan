@@ -4,7 +4,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import OpenAI from "openai";
 import { createCandidateStore } from "./candidate-store.mjs";
+import { requestCodexStoryPlan } from "./codex-story-plan.mjs";
 import { loadAiProxyConfig } from "./config.mjs";
+import { createJsonlFileLogger } from "./file-logger.mjs";
 import { requestOpenAiStoryPlan } from "./openai-story-plan.mjs";
 import {
   PROXY_PROTOCOL_VERSION,
@@ -20,12 +22,23 @@ const MAX_BODY_BYTES = 16 * 1024;
 
 export function createAiProxyServer({
   config,
+  generateStoryPlan,
   openaiClient,
   candidateStore = createCandidateStore(config.localDir),
   logger = defaultLogger,
+  providerLogger = logger,
 } = {}) {
   if (!config) throw new TypeError("config is required");
-  if (!openaiClient) throw new TypeError("openaiClient is required");
+  const storyPlanGenerator = generateStoryPlan ?? (openaiClient
+    ? ({ request, signal }) => requestOpenAiStoryPlan({
+      client: openaiClient,
+      config,
+      request,
+      signal,
+      logger: config.logIo ? providerLogger : null,
+    })
+    : createStoryPlanGenerator(config, config.logIo ? providerLogger : null));
+  if (!storyPlanGenerator) throw new TypeError("generateStoryPlan is required");
 
   const cache = new Map();
   const rateLimit = new Map();
@@ -51,12 +64,12 @@ export function createAiProxyServer({
           status: "ready",
           service: "kokugo-no-tane-ai-proxy",
           protocol_version: PROXY_PROTOCOL_VERSION,
-          provider: "openai",
+          provider: config.provider ?? "openai",
           model: config.model,
           prompt_version: STORY_PLAN_PROMPT_VERSION,
           context_version: STORY_PLAN_CONTEXT_VERSION,
           schema_version: STORY_PLAN_SCHEMA_VERSION,
-          api_key_configured: true,
+          api_key_configured: Boolean(config.apiKey),
         }, cors);
         return;
       }
@@ -75,6 +88,7 @@ export function createAiProxyServer({
 
       const cacheKey = sha256(stableJson({
         protocol_version: PROXY_PROTOCOL_VERSION,
+        provider: config.provider ?? "openai",
         model: config.model,
         prompt_version: STORY_PLAN_PROMPT_VERSION,
         context_version: STORY_PLAN_CONTEXT_VERSION,
@@ -99,7 +113,7 @@ export function createAiProxyServer({
         return;
       }
 
-      const result = await callWithRetry({ config, openaiClient, request: body });
+      const result = await callWithRetry({ config, generateStoryPlan: storyPlanGenerator, request: body });
       const candidateId = `kt-candidate-${randomUUID()}`;
       const acquiredAt = new Date().toISOString();
       const rawResponse = serializableProviderResponse(result.response);
@@ -110,7 +124,7 @@ export function createAiProxyServer({
         request_id: requestId,
         client_request_id: body.client_request_id,
         candidate_id: candidateId,
-        source: "openai",
+        source: config.provider ?? "openai",
         model: config.model,
         prompt_version: result.promptVersion,
         prompt_hash: result.promptHash,
@@ -130,7 +144,7 @@ export function createAiProxyServer({
           candidateId,
           rawRecord: {
             candidate_id: candidateId,
-            provider: "openai",
+            provider: config.provider ?? "openai",
             model: config.model,
             prompt_version: result.promptVersion,
             prompt_hash: result.promptHash,
@@ -144,7 +158,7 @@ export function createAiProxyServer({
           },
           validatedRecord: {
             candidate_id: candidateId,
-            provider: "openai",
+            provider: config.provider ?? "openai",
             model: config.model,
             prompt_version: result.promptVersion,
             prompt_hash: result.promptHash,
@@ -196,38 +210,68 @@ export function createAiProxyServer({
 
 export async function startAiProxy(env = process.env) {
   const config = loadAiProxyConfig(env);
-  const openaiClient = new OpenAI({ apiKey: config.apiKey });
-  const server = createAiProxyServer({ config, openaiClient });
+  const { filePath: logFile, logger } = createJsonlFileLogger(config.localDir);
+  const {
+    filePath: providerIoLogFile,
+    logger: providerLogger,
+  } = createJsonlFileLogger(config.localDir, "ai-provider-io.jsonl");
+  const server = createAiProxyServer({ config, logger, providerLogger });
   await new Promise((resolve, reject) => {
     server.once("error", reject);
     server.listen(config.port, config.host, resolve);
   });
-  defaultLogger({
+  logger({
     event: "ai_proxy_started",
     url: `http://${config.host}:${config.port}`,
+    provider: config.provider,
     model: config.model,
+    io_logging: config.logIo,
     protocol_version: PROXY_PROTOCOL_VERSION,
     candidates_saved: config.saveCandidates,
+    log_file: logFile,
+    provider_io_log_file: config.logIo ? providerIoLogFile : null,
   });
-  return { server, config };
+  process.stdout.write(`AI proxy ready: http://${config.host}:${config.port}\n`);
+  process.stdout.write(`AI proxy log: ${logFile}\n`);
+  if (config.logIo) process.stdout.write(`AI request/response log: ${providerIoLogFile}\n`);
+  return {
+    server,
+    config,
+    logFile,
+    providerIoLogFile: config.logIo ? providerIoLogFile : null,
+  };
 }
 
-async function callWithRetry({ config, openaiClient, request }) {
+function createStoryPlanGenerator(config, logger) {
+  if (config.provider === "codex") {
+    return ({ request, signal }) => requestCodexStoryPlan({
+      config,
+      request,
+      signal,
+      logger,
+    });
+  }
+  const openaiClient = new OpenAI({ apiKey: config.apiKey });
+  return ({ request, signal }) => requestOpenAiStoryPlan({
+    client: openaiClient,
+    config,
+    request,
+    signal,
+    logger,
+  });
+}
+
+async function callWithRetry({ config, generateStoryPlan, request }) {
   let lastError;
   for (let attempt = 0; attempt <= config.maxRetries; attempt += 1) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), config.timeoutMs);
     try {
-      return await requestOpenAiStoryPlan({
-        client: openaiClient,
-        config,
-        request,
-        signal: controller.signal,
-      });
+      return await generateStoryPlan({ request, signal: controller.signal });
     } catch (error) {
       lastError = error;
       if (controller.signal.aborted) {
-        const timeoutError = new Error("OpenAI request timed out");
+        const timeoutError = new Error("AI provider request timed out");
         timeoutError.code = "AI_TIMEOUT";
         throw timeoutError;
       }
@@ -283,6 +327,8 @@ function normalizeError(cause) {
   if (cause?.code === "SCHEMA_INVALID") return proxyError("SCHEMA_INVALID", 502, "AIの物語設計図を検証できませんでした。", true);
   if (cause?.code === "CONTENT_REJECTED") return proxyError("CONTENT_REJECTED", 502, "AIの物語設計図が教材条件を満たしませんでした。", true);
   if (cause?.code === "AI_TIMEOUT" || cause?.name === "AbortError") return proxyError("AI_TIMEOUT", 504, "物語設計図の取得が時間内に終わりませんでした。", true);
+  if (cause?.code === "AI_AUTH_FAILED") return proxyError("AI_AUTH_FAILED", 502, "AIサーバーの認証を確認してください。", true);
+  if (cause?.code === "AI_UNAVAILABLE") return proxyError("AI_UNAVAILABLE", 503, "AIサービスを利用できません。", true);
   if (cause?.status === 401 || cause?.status === 403) return proxyError("AI_AUTH_FAILED", 502, "AIサーバーの認証を確認してください。", true);
   if (cause?.code === "insufficient_quota") {
     return proxyError("AI_QUOTA_EXCEEDED", 429, "OpenAI APIの利用枠または請求設定を確認してください。", true);

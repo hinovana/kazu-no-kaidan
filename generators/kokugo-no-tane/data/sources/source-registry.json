@@ -32,6 +32,23 @@
       "license_status": "open",
       "required_attribution": "文部科学省「小学校学習指導要領（平成29年告示）解説 国語編」を加工して作成（2026年7月15日取得）",
       "content_location": "付録3 小学校学習指導要領 第2章 第1節 国語 別表「学年別漢字配当表」。PDF 195-196頁（冊子192-193頁）に第1-3学年を掲載。"
+    },
+    {
+      "source_id": "ninjal_education_basic_vocabulary_2009b",
+      "title": "教育基本語彙データベース（2009年版B）",
+      "provider": "国立国語研究所",
+      "source_url": "https://mmsrv.ninjal.ac.jp/brfvep/kyoikukihongoi_2009B.csv",
+      "published_at": null,
+      "retrieved_at": "2026-07-16",
+      "source_version": "2009年版B（ファイル名: kyoikukihongoi_2009B.csv）",
+      "artifact_sha256": "e6936dd184ce3d0bc0b714a94d40a6863ce9bcb827ffd5288ed12457c58a98bd",
+      "pre_normalization_path": "kyoikukihongoi_2009B.csv",
+      "pre_normalization_sha256": "e6936dd184ce3d0bc0b714a94d40a6863ce9bcb827ffd5288ed12457c58a98bd",
+      "source_encoding": "CP932",
+      "license_name": "クリエイティブ・コモンズ 表示 4.0 国際",
+      "license_status": "open",
+      "required_attribution": "国立国語研究所『教育基本語彙の基本的研究―増補改訂版―』教育基本語彙データベース（2009年版B）を加工して作成（CC BY 4.0、2026年7月16日取得）",
+      "content_location": "語彙配当1（小学校低学年）6,865語、語彙配当2（小学校高学年）8,620語、語彙配当3（中学校）11,749語。"
     }
   ]
 }

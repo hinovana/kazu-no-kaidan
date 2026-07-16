@@ -10,12 +10,14 @@
 
 | 文書 | 版 | 状態 | 正本とする領域 |
 | --- | --- | --- | --- |
-| [implementation-progress.md](implementation-progress.md) | `implementation-progress.v0.7` | 本文構造2種類とローカルAIプロキシ実装・実API利用枠待ち | 実装フェーズ、現在地点、完了ゲート、次アクション |
+| [typescript-module-design.md](typescript-module-design.md) | `kokugo-no-tane-typescript-module.v0.1-draft` | 設計草案・未実装 | SPA教材モジュール境界、TypeScript型、domain・UI・AI・データの依存方向、移行と同値性検証 |
+| [implementation-progress.md](implementation-progress.md) | `implementation-progress.v0.9` | 教育基本語彙の低学年・高学年候補DBとCodexヘッドレス評価経路を実装 | 実装フェーズ、現在地点、完了ゲート、次アクション |
 | [item-blueprint.md](item-blueprint.md) | `item-blueprint.v0.3-draft` | 再挑戦型・手がかり発見型の契約を実装・未実証 | 測定能力、測定対象外、文章種別、標準4問、本文構造モジュール境界、許容される変形 |
+| [question-pattern-expansion.md](question-pattern-expansion.md) | `question-pattern-expansion.v0.1-draft` | 問題6・12・18の抽象分析に基づく設計案・問題6型のみ実装 | 設問パターン、設問セット、根拠グラフ、解答欄レイアウト、機械検査、段階的実装順 |
 | [algorithm-draft.md](algorithm-draft.md) | `algorithm-spec.v0.7-draft` | AI設計図アダプターと本文構造2種類を含む限定プロトタイプ実装・未校閲 | 物語・本文・設問・正答根拠の生成、本文構造モジュール、機械検査、学年別初出ふりがな、語句間隔、A4横の縦書き印刷 |
-| [model-api-integration.md](model-api-integration.md) | `model-api-integration.v0.4-draft` | ローカルライブ経路実装・事前生成は未実装 | 文章生成モデルの責務、本文構造ごとの設計図契約、事前生成・ライブ生成、候補再利用、秘密情報、未成年者データ、検証ゲート |
-| [local-ai-proxy-spec.md](local-ai-proxy-spec.md) | `local-ai-proxy.v0.2` | 実装済み・実API利用枠待ち | Node.jsローカルプロキシの起動、HTTP API、CORS、ブラウザUI、障害時動作、候補保存、テスト |
-| [database-spec.md](database-spec.md) | `database-spec.v0.2-draft` | 検討中・漢字DB最小候補版のみ実装 | 漢字・語彙の根拠資料、権利、データモデル、配布DB |
+| [model-api-integration.md](model-api-integration.md) | `model-api-integration.v0.5-draft` | Codexヘッドレス既定・API経路も選択可能・事前生成は未実装 | 文章生成モデルの責務、本文構造ごとの設計図契約、事前生成・ライブ生成、候補再利用、秘密情報、未成年者データ、検証ゲート |
+| [local-ai-proxy-spec.md](local-ai-proxy-spec.md) | `local-ai-proxy.v0.3` | Codexヘッドレス既定・API経路も選択可能 | Node.jsローカルプロキシの起動、provider切替、HTTP API、CORS、ブラウザUI、障害時動作、候補保存、テスト |
+| [database-spec.md](database-spec.md) | `database-spec.v0.3-draft` | 漢字候補版と教育基本語彙の低学年・高学年候補版を実装・人間未確認 | 漢字・語彙の根拠資料、権利、データモデル、配布DB |
 | [item-review-and-release.md](item-review-and-release.md) | `item-review-release.v0.1-draft` | 検討中・未運用 | 個人開発での見直し、答えを隠した解き直し、修正時の再確認、公開状態 |
 | [calibration-and-fairness.md](calibration-and-fairness.md) | `calibration-fairness.v0.1-draft` | 検討中・未実施 | 児童試行、実測難易度、識別力、再採点一致、公平性、校正失効 |
 | [reference-anchor-registry.md](reference-anchor-registry.md) | `reference-anchors.v0.2-draft` | 検討中・分析専用 | 参照ID、出典位置、権利状態、抽出特徴、模倣禁止要素、解答用紙の抽象的紙面原則 |
@@ -31,21 +33,25 @@
 全体像を把握するときは、次の順に読む。
 
 1. [implementation-progress.md](implementation-progress.md) で、現在地点と次の作業を確認する。
-2. [item-blueprint.md](item-blueprint.md) で、何を測り、何を測らないかを確認する。
-3. [algorithm-draft.md](algorithm-draft.md) で、出題設計から本文・設問を作る処理を確認する。
-4. 文章生成モデルを接続する場合は [model-api-integration.md](model-api-integration.md) で、モデルの責務と検証境界を確認する。
-5. ローカルライブ接続を実装する場合は [local-ai-proxy-spec.md](local-ai-proxy-spec.md) で、起動・HTTP・UI・保存・障害時契約を確認する。
-6. [database-spec.md](database-spec.md) で、語彙・漢字・ふりがなの根拠と配布方法を確認する。
-7. [item-review-and-release.md](item-review-and-release.md) で、自動生成後の見直しと利用状態を確認する。
-8. [calibration-and-fairness.md](calibration-and-fairness.md) で、児童試行と実測値の条件を確認する。
-9. 参照問題を根拠にする場合は [reference-anchor-registry.md](reference-anchor-registry.md) のアンカーIDを確認する。
+2. SPA・TypeScript移行を行う場合は [typescript-module-design.md](typescript-module-design.md) と上位の [SPAフレームワーク設計書](../../../docs/spa-framework-design.md) で境界と移行ゲートを確認する。
+3. [item-blueprint.md](item-blueprint.md) で、何を測り、何を測らないかを確認する。
+4. 標準4問以外の設問・解答欄を検討する場合は [question-pattern-expansion.md](question-pattern-expansion.md) を確認する。
+5. [algorithm-draft.md](algorithm-draft.md) で、出題設計から本文・設問を作る処理を確認する。
+6. 文章生成モデルを接続する場合は [model-api-integration.md](model-api-integration.md) で、モデルの責務と検証境界を確認する。
+7. ローカルライブ接続を実装する場合は [local-ai-proxy-spec.md](local-ai-proxy-spec.md) で、起動・HTTP・UI・保存・障害時契約を確認する。
+8. [database-spec.md](database-spec.md) で、語彙・漢字・ふりがなの根拠と配布方法を確認する。
+9. [item-review-and-release.md](item-review-and-release.md) で、自動生成後の見直しと利用状態を確認する。
+10. [calibration-and-fairness.md](calibration-and-fairness.md) で、児童試行と実測値の条件を確認する。
+11. 参照問題を根拠にする場合は [reference-anchor-registry.md](reference-anchor-registry.md) のアンカーIDを確認する。
 
 目的別の入口は次のとおり。
 
 | 目的 | 最初に読む文書 |
 | --- | --- |
+| SPAモジュール化、TypeScript移行、React UI移植を行う | [typescript-module-design.md](typescript-module-design.md)、[SPAフレームワーク設計書](../../../docs/spa-framework-design.md) |
 | 現在の進捗や次の作業を確認する | [implementation-progress.md](implementation-progress.md) |
 | 本文や設問の生成規則を変更する | [algorithm-draft.md](algorithm-draft.md) |
+| 標準4問以外の設問パターン、設問セット、解答欄を追加する | [question-pattern-expansion.md](question-pattern-expansion.md)、採用時は [item-blueprint.md](item-blueprint.md) と [algorithm-draft.md](algorithm-draft.md) |
 | 文章生成モデル、API接続、事前生成・ライブ生成を変更する | [model-api-integration.md](model-api-integration.md) |
 | ローカルAIプロキシのURL、起動、HTTP API、CORS、接続UIを変更する | [local-ai-proxy-spec.md](local-ai-proxy-spec.md) |
 | 生成難度、採点、機械的品質検査を変更する | [algorithm-draft.md](algorithm-draft.md) |

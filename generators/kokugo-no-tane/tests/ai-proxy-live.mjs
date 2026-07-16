@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import http from "node:http";
 import OpenAI from "openai";
 import { createAiProxyServer } from "../server/ai-proxy.mjs";
+import { requestCodexStoryPlan } from "../server/codex-story-plan.mjs";
 import { loadAiProxyConfig } from "../server/config.mjs";
+import { requestOpenAiStoryPlan } from "../server/openai-story-plan.mjs";
 import { generateWorksheet } from "../src/generator.js";
 
 const baseConfig = loadAiProxyConfig(process.env);
@@ -11,11 +13,13 @@ const config = {
   port: 0,
   maxRetries: 0,
 };
-const openaiClient = new OpenAI({ apiKey: config.apiKey });
+const generateStoryPlan = config.provider === "codex"
+  ? ({ request, signal }) => requestCodexStoryPlan({ config, request, signal })
+  : createOpenAiGenerator(config);
 const logs = [];
 const server = createAiProxyServer({
   config,
-  openaiClient,
+  generateStoryPlan,
   logger: (entry) => logs.push(entry),
 });
 
@@ -40,7 +44,7 @@ try {
     proxy_log: logs.at(-1),
   }));
   assert.equal(response.body.ok, true);
-  assert.equal(response.body.source, "openai");
+  assert.equal(response.body.source, config.provider);
   assert.equal(response.body.story_plan.category, "町");
   assert.match(response.body.candidate_id, /^kt-candidate-/u);
 
@@ -59,12 +63,12 @@ try {
       prompt_version: response.body.prompt_version,
     },
   });
-  const failedChecks = generated.worksheet.machine_checks.checks.filter((check) => !check.passed);
+  const failedChecks = generated.machine_checks.checks.filter((check) => !check.passed);
   assert.deepEqual(failedChecks, []);
-  assert.equal(generated.worksheet.generation_provenance.generation_source, "ai_proxy");
-  assert.equal(generated.worksheet.generation_provenance.candidate_id, response.body.candidate_id);
-  assert.equal(generated.worksheet.questions.length, 4);
-  assert.ok(logs.every((entry) => !JSON.stringify(entry).includes(config.apiKey)));
+  assert.equal(generated.generation_provenance.generation_source, "ai_proxy");
+  assert.equal(generated.generation_provenance.candidate_id, response.body.candidate_id);
+  assert.equal(generated.questions.length, 4);
+  assert.ok(!config.apiKey || logs.every((entry) => !JSON.stringify(entry).includes(config.apiKey)));
 
   process.stdout.write(`${JSON.stringify({
     ok: true,
@@ -72,11 +76,16 @@ try {
     candidate_id: response.body.candidate_id,
     prompt_version: response.body.prompt_version,
     schema_version: response.body.schema_version,
-    question_count: generated.worksheet.questions.length,
+    question_count: generated.questions.length,
     candidate_directory: `${config.localDir}/model-candidates`,
   }, null, 2)}\n`);
 } finally {
   await new Promise((resolve) => server.close(resolve));
+}
+
+function createOpenAiGenerator(config) {
+  const openaiClient = new OpenAI({ apiKey: config.apiKey });
+  return ({ request, signal }) => requestOpenAiStoryPlan({ client: openaiClient, config, request, signal });
 }
 
 function postJson(port, body, origin) {

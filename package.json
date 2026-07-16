@@ -8,7 +8,8 @@
   "scripts": {
     "serve": "./scripts/server.sh",
     "serve:ai": "node generators/kokugo-no-tane/server/ai-proxy.mjs",
-    "test": "for test_file in generators/*/tests/*.test.js; do node \"$test_file\"; done",
+    "build:kokugo-no-tane:vocabulary-db": "node generators/kokugo-no-tane/scripts/import-vocabulary.mjs && node generators/kokugo-no-tane/scripts/build-vocabulary-db.mjs && node generators/kokugo-no-tane/scripts/validate-vocabulary-db.mjs",
+    "test": "for test_file in generators/*/tests/*.test.js; do node \"$test_file\" || exit 1; done",
     "test:kazu-sagashi:corpus": "node generators/kazu-sagashi/tests/corpus.mjs",
     "test:kokugo-no-tane:corpus": "node generators/kokugo-no-tane/tests/corpus.mjs",
     "test:kokugo-no-tane:ai:live": "node generators/kokugo-no-tane/tests/ai-proxy-live.mjs"

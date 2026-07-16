@@ -56,24 +56,17 @@ export const STORY_PLAN_INSTRUCTIONS = `
 {"schema_version":"story-plan.v1","category":"動物","title_concept":"きのみのかざり","setting":{"type":"forest","name":"どんぐりのもり"},"protagonist":{"name":"ミミ","role":"こりす"},"supporting_character":{"name":"トト","role":"ことり"},"goal":"きのみのかざりをかんせいさせる","event":{"action":"きのみをいろべつにならべよう","problem":"ちゃいろのきのみをあかいれつにおいてしまいました","decision":"かごのはしからいろをたしかめること","resolution":"きのみをただしいれつにならべなおしました"},"emotion":{"before":"わくわく","after":"はずかしい"},"evidence_requirements":["せいかくをしめすことばをおける","あいてのしせんとしゅじんこうのはんのうをわけられる","まちがいとたしかめかたをむすべられる"]}
 `.trim();
 
-export async function requestOpenAiStoryPlan({ client, config, request, signal }) {
-  const curriculumContext = buildStoryPlanContext(request.grade);
+export async function requestOpenAiStoryPlan({ client, config, request, signal, logger }) {
+  const generationInput = buildStoryPlanGenerationInput(request);
+  const curriculumContext = generationInput.curriculum_context;
   const promptHash = createHash("sha256")
     .update(`${STORY_PLAN_INSTRUCTIONS}\n${stableJson(curriculumContext)}`)
     .digest("hex");
-  const response = await client.responses.create({
+  const providerRequest = {
     model: config.model,
     reasoning: { effort: "high" },
     instructions: STORY_PLAN_INSTRUCTIONS,
-    input: JSON.stringify({
-      target_grade: request.grade,
-      generation_profile: request.profile,
-      passage_length: request.length,
-      topic: request.topic,
-      candidate_seed: request.seed,
-      requested_category: expectedCategoryForTopic(request.topic),
-      curriculum_context: curriculumContext,
-    }),
+    input: JSON.stringify(generationInput),
     text: {
       format: {
         type: "json_schema",
@@ -84,22 +77,73 @@ export async function requestOpenAiStoryPlan({ client, config, request, signal }
     },
     max_output_tokens: 1200,
     store: false,
-  }, { signal });
+  };
+  logProviderIo(logger, {
+    event: "ai_provider_request",
+    provider: "openai",
+    model: config.model,
+    client_request_id: request.client_request_id,
+    request: providerRequest,
+  });
+  const response = await client.responses.create(providerRequest, { signal });
 
   const refusal = findRefusal(response);
+  const outputText = response.output_text || findOutputText(response);
+  logProviderIo(logger, {
+    event: "ai_provider_response",
+    provider: "openai",
+    model: response.model ?? config.model,
+    client_request_id: request.client_request_id,
+    response: {
+      id: response.id ?? null,
+      status: response.status ?? null,
+      output_text: outputText || null,
+      refusal,
+      usage: response.usage ?? null,
+    },
+  });
   if (refusal) {
     const error = new Error("The model refused to create a story plan");
     error.code = "AI_REFUSAL";
     throw error;
   }
 
-  const outputText = response.output_text || findOutputText(response);
   if (!outputText) {
     const error = new Error("The model response did not contain structured output");
     error.code = "SCHEMA_INVALID";
     throw error;
   }
 
+  const storyPlan = parseGeneratedStoryPlan(outputText, request);
+
+  return {
+    storyPlan,
+    response,
+    providerResponseId: response.id ?? null,
+    usage: response.usage ?? null,
+    promptVersion: STORY_PLAN_PROMPT_VERSION,
+    promptHash,
+    contextVersion: STORY_PLAN_CONTEXT_VERSION,
+  };
+}
+
+function logProviderIo(logger, value) {
+  if (typeof logger === "function") logger(value);
+}
+
+export function buildStoryPlanGenerationInput(request) {
+  return {
+    target_grade: request.grade,
+    generation_profile: request.profile,
+    passage_length: request.length,
+    topic: request.topic,
+    candidate_seed: request.seed,
+    requested_category: expectedCategoryForTopic(request.topic),
+    curriculum_context: buildStoryPlanContext(request.grade),
+  };
+}
+
+export function parseGeneratedStoryPlan(outputText, request) {
   let decoded;
   try {
     decoded = JSON.parse(outputText);
@@ -115,16 +159,7 @@ export async function requestOpenAiStoryPlan({ client, config, request, signal }
     error.code = "CONTENT_REJECTED";
     throw error;
   }
-
-  return {
-    storyPlan,
-    response,
-    providerResponseId: response.id ?? null,
-    usage: response.usage ?? null,
-    promptVersion: STORY_PLAN_PROMPT_VERSION,
-    promptHash,
-    contextVersion: STORY_PLAN_CONTEXT_VERSION,
-  };
+  return storyPlan;
 }
 
 function findRefusal(response) {

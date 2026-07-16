@@ -4,6 +4,7 @@ import { STORY_PLAN_CONTEXT_VERSION } from "../src/story-plan-schema.js";
 
 const dataRoot = new URL("../data/generated/", import.meta.url);
 const manifest = readJson(new URL("language-db.manifest.json", dataRoot));
+const vocabularyManifest = readJson(new URL("vocabulary-db.manifest.json", dataRoot));
 const kanjiByGrade = new Map([1, 2, 3].map((grade) => [
   grade,
   readJson(new URL(`kanji-grade-${grade}.json`, dataRoot)),
@@ -28,8 +29,12 @@ export function buildStoryPlanContext(grade) {
       warning: "かんじはいちらんをくだりぶんのひょうきけんしょうにつかうだけでせっけいずにはかんじをかかない",
     },
     vocabulary_database: {
-      status: "not_implemented",
+      status: "candidate_unreviewed_not_connected",
       guarantee: "ごいのがくねんてきごうをほしょうしない",
+      candidate_database_release: vocabularyManifest.database_release,
+      candidate_record_count: vocabularyManifest.contents.total_record_count,
+      candidate_grade_bands: vocabularyManifest.contents.included_grade_bands,
+      generation_eligible: false,
       prototype_lexicon: Object.entries(PROTOTYPE_LEXICON).map(([id, entry]) => ({ id, ...entry })),
     },
     reference_design_anchors: [

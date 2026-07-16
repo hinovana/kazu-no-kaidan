@@ -1,5 +1,7 @@
 # 複数ジェネレータ向けディレクトリ構成案
 
+> 現在の静的HTML・JavaScript構成と教材単位の配置原則は本書を参照する。Vite・TypeScript・ReactによるSPAホストと段階移行の目標設計は [spa-framework-design.md](spa-framework-design.md) を参照する。SPA移行後も、教材固有の仕様・domain・UI・印刷・テストを `generators/<slug>/` に閉じる原則は維持する。
+
 ## 結論
 
 プロジェクトを実行方式（`web/`, `cli/`）ではなく、教材ジェネレータ単位で分ける。
