@@ -10,13 +10,18 @@ import {
 } from "./story-plan-schema.js";
 import { PROTOTYPE_LEXICON } from "./prototype-lexicon.js";
 import {
+  VOCABULARY_CANDIDATE_DATABASE_RELEASE,
+  buildVocabularyAudit,
+  validateVocabularyAudit,
+} from "./vocabulary-evidence.js";
+import {
   getBlueprint,
   selectBlueprintId,
 } from "./blueprints/index.js";
 
 export { PROTOTYPE_LEXICON } from "./prototype-lexicon.js";
 
-const GENERATOR_VERSION = "kokugo-no-tane.prototype.v0.7";
+const GENERATOR_VERSION = "kokugo-no-tane.prototype.v0.8";
 const LENGTH_SETTINGS = Object.freeze({
   short: { extra_count: 2, character_band: [250, 370], label: "短め" },
   standard: { extra_count: 8, character_band: [370, 570], label: "ふつう" },
@@ -204,6 +209,7 @@ export function runMachineChecks(worksheet) {
   }
   const segmentIssues = validateSegments(worksheet);
   const rubyPlanIssues = validateRubyPlan(worksheet);
+  const vocabularyAuditIssues = validateVocabularyAudit(worksheet);
   const checks = [
     {
       check_id: "story_plan_contract",
@@ -257,6 +263,17 @@ export function runMachineChecks(worksheet) {
           : occurrence.reason === "grade_known";
       }),
       details: { lexicon: "prototype_lexicon", issues: segmentIssues },
+    },
+    {
+      check_id: "vocabulary_band_candidate_evidence",
+      passed: vocabularyAuditIssues.length === 0,
+      details: {
+        database_release: worksheet.vocabulary_audit?.database_release ?? null,
+        coverage_scope: worksheet.vocabulary_audit?.coverage_scope ?? null,
+        checked_lexeme_count: worksheet.vocabulary_audit?.checked_lexeme_count ?? 0,
+        checked_occurrence_count: worksheet.vocabulary_audit?.checked_occurrence_count ?? 0,
+        issues: vocabularyAuditIssues,
+      },
     },
     {
       check_id: "first_occurrence_ruby_scopes",
@@ -391,16 +408,20 @@ export function generateWorksheet({
       grade_kanji_source: KANJI_DATABASE_RELEASE,
       vocabulary_source: "prototype_lexicon",
       vocabulary_database_used: false,
+      vocabulary_candidate_database_consulted: VOCABULARY_CANDIDATE_DATABASE_RELEASE,
+      vocabulary_candidate_evidence_scope: "prototype_lexicon_occurrences_only",
       phrase_spacing: "ideographic-space-v0.1",
       scope_policy: ["title", "passage", "each_question", "each_answer"],
     },
     ruby_plan: rubyPlan,
+    vocabulary_audit: buildVocabularyAudit(rubyPlan),
     generation_provenance: {
       generator_version: GENERATOR_VERSION,
-      algorithm_spec_version: "algorithm-spec.v0.7-draft",
+      algorithm_spec_version: "algorithm-spec.v0.8-draft",
       blueprint_version: "item-blueprint.v0.3-draft",
       blueprint_id: blueprint.id,
       database_release: KANJI_DATABASE_RELEASE,
+      vocabulary_candidate_database_release: VOCABULARY_CANDIDATE_DATABASE_RELEASE,
       template_version: blueprint.templateVersion({ storyPlan: normalizedStoryPlan }),
       story_structure_id: blueprint.storyStructureId,
       generation_source: generationSource,

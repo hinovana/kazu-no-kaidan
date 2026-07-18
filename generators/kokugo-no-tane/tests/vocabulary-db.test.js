@@ -5,8 +5,14 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { buildVocabularyDb } from "../scripts/build-vocabulary-db.mjs";
+import { buildGeneratorVocabularyProjection } from "../scripts/build-generator-vocabulary-projection.mjs";
 import { importVocabulary } from "../scripts/import-vocabulary.mjs";
 import { validateVocabularyDatabase } from "../scripts/validate-vocabulary-db.mjs";
+import { PROTOTYPE_LEXICON } from "../src/prototype-lexicon.js";
+import {
+  PROTOTYPE_VOCABULARY_EVIDENCE,
+  VOCABULARY_CANDIDATE_DATABASE_RELEASE,
+} from "../src/generated/prototype-vocabulary-evidence.js";
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const GENERATOR_DIR = resolve(TEST_DIR, "..");
@@ -44,6 +50,21 @@ assert.ok([...lower.records, ...upper.records].every(
     record.usage_status === "candidate_unreviewed" &&
     record.active_for_generation === false,
 ));
+assert.equal(
+  VOCABULARY_CANDIDATE_DATABASE_RELEASE,
+  "vocabulary-db.v0.1-ninjal-2009b-candidate",
+);
+assert.deepEqual(
+  Object.keys(PROTOTYPE_VOCABULARY_EVIDENCE),
+  Object.keys(PROTOTYPE_LEXICON),
+);
+for (const [id, entry] of Object.entries(PROTOTYPE_LEXICON)) {
+  const evidence = PROTOTYPE_VOCABULARY_EVIDENCE[id];
+  assert.equal(evidence.surface, entry.surface);
+  assert.equal(evidence.reading, entry.reading);
+  assert.equal(evidence.grade_band, "lower_elementary_1_3");
+  assert.equal(evidence.source_allocation_code, 1);
+}
 
 const deterministicRoot = await mkdtemp(resolve(tmpdir(), "kokugo-vocabulary-db-"));
 const normalizedPath = resolve(deterministicRoot, "vocabulary-candidate.json");
@@ -69,6 +90,43 @@ for (const fileName of FILE_NAMES) {
     `${fileName} must byte-match the checked-in generated artifact`,
   );
 }
+const projectionA = resolve(deterministicRoot, "projection-a.js");
+const projectionB = resolve(deterministicRoot, "projection-b.js");
+await buildGeneratorVocabularyProjection({
+  manifestPath: resolve(outputA, "vocabulary-db.manifest.json"),
+  lowerPath: resolve(outputA, "vocabulary-lower-elementary.json"),
+  upperPath: resolve(outputA, "vocabulary-upper-elementary.json"),
+  outputPath: projectionA,
+});
+await buildGeneratorVocabularyProjection({
+  manifestPath: resolve(outputB, "vocabulary-db.manifest.json"),
+  lowerPath: resolve(outputB, "vocabulary-lower-elementary.json"),
+  upperPath: resolve(outputB, "vocabulary-upper-elementary.json"),
+  outputPath: projectionB,
+});
+assert.deepEqual(
+  await readFile(projectionA),
+  await readFile(projectionB),
+  "generator vocabulary projections must be byte-identical",
+);
+assert.deepEqual(
+  await readFile(projectionA),
+  await readFile(resolve(GENERATOR_DIR, "src/generated/prototype-vocabulary-evidence.js")),
+  "fresh generator projection must byte-match the checked-in artifact",
+);
+await assert.rejects(
+  buildGeneratorVocabularyProjection({
+    manifestPath: resolve(outputA, "vocabulary-db.manifest.json"),
+    lowerPath: resolve(outputA, "vocabulary-lower-elementary.json"),
+    upperPath: resolve(outputA, "vocabulary-upper-elementary.json"),
+    outputPath: resolve(deterministicRoot, "upper-only-projection.js"),
+    prototypeLexicon: {
+      upper_only_example: { surface: "愛", reading: "あい" },
+    },
+  }),
+  /upper_only=true/,
+  "a lexeme supported only by the upper-elementary band must fail the prototype projection build",
+);
 
 const tamperRoot = await mkdtemp(resolve(tmpdir(), "kokugo-vocabulary-tamper-"));
 const tamperGenerated = resolve(tamperRoot, "generated");

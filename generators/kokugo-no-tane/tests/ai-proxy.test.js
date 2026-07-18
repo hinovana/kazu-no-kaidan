@@ -121,7 +121,7 @@ try {
   assert.equal(providerInput.curriculum_context.language_database.allocated_kanji_count, 80);
   assert.equal(
     providerInput.curriculum_context.vocabulary_database.status,
-    "candidate_unreviewed_not_connected",
+    "candidate_unreviewed_audit_projection_only",
   );
   assert.equal(
     providerInput.curriculum_context.vocabulary_database.candidate_record_count,
@@ -130,6 +130,10 @@ try {
   assert.equal(
     providerInput.curriculum_context.vocabulary_database.generation_eligible,
     false,
+  );
+  assert.equal(
+    providerInput.curriculum_context.vocabulary_database.audit_projection_scope,
+    "prototype_lexicon_occurrences_only",
   );
   assert.ok(providerInput.curriculum_context.vocabulary_database.prototype_lexicon.length > 0);
   assert.equal(candidateStore.records.length, 1);

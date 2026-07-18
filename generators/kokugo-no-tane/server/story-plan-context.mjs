@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { PROTOTYPE_LEXICON } from "../src/prototype-lexicon.js";
+import { PROTOTYPE_VOCABULARY_EVIDENCE } from "../src/generated/prototype-vocabulary-evidence.js";
 import { STORY_PLAN_CONTEXT_VERSION } from "../src/story-plan-schema.js";
 
 const dataRoot = new URL("../data/generated/", import.meta.url);
@@ -29,12 +30,14 @@ export function buildStoryPlanContext(grade) {
       warning: "かんじはいちらんをくだりぶんのひょうきけんしょうにつかうだけでせっけいずにはかんじをかかない",
     },
     vocabulary_database: {
-      status: "candidate_unreviewed_not_connected",
+      status: "candidate_unreviewed_audit_projection_only",
       guarantee: "ごいのがくねんてきごうをほしょうしない",
       candidate_database_release: vocabularyManifest.database_release,
       candidate_record_count: vocabularyManifest.contents.total_record_count,
       candidate_grade_bands: vocabularyManifest.contents.included_grade_bands,
       generation_eligible: false,
+      audit_projection_scope: "prototype_lexicon_occurrences_only",
+      audit_projection_lexeme_count: Object.keys(PROTOTYPE_VOCABULARY_EVIDENCE).length,
       prototype_lexicon: Object.entries(PROTOTYPE_LEXICON).map(([id, entry]) => ({ id, ...entry })),
     },
     reference_design_anchors: [

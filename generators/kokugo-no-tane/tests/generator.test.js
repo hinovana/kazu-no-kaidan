@@ -225,7 +225,53 @@ for (const blueprintId of BLUEPRINT_STRUCTURES.keys()) {
   }
   assert.equal(worksheet.orthography.vocabulary_source, "prototype_lexicon");
   assert.equal(worksheet.orthography.vocabulary_database_used, false);
+  assert.equal(
+    worksheet.orthography.vocabulary_candidate_database_consulted,
+    "vocabulary-db.v0.1-ninjal-2009b-candidate",
+  );
+  assert.equal(
+    worksheet.generation_provenance.vocabulary_candidate_database_release,
+    worksheet.orthography.vocabulary_candidate_database_consulted,
+  );
+  assert.equal(
+    worksheet.orthography.vocabulary_candidate_evidence_scope,
+    "prototype_lexicon_occurrences_only",
+  );
+  assert.equal(
+    worksheet.machine_checks.checks.find(
+      (check) => check.check_id === "vocabulary_band_candidate_evidence",
+    ).passed,
+    true,
+  );
+  assert.equal(
+    worksheet.vocabulary_audit.checked_occurrence_count,
+    worksheet.ruby_plan.length,
+  );
+  assert.ok(worksheet.vocabulary_audit.checked_lexeme_count > 0);
+  assert.ok(worksheet.vocabulary_audit.occurrences.every(
+    (occurrence) =>
+      occurrence.grade_band === "lower_elementary_1_3"
+      && occurrence.source_lexeme_id?.startsWith("ninjal-ebv-2009b-"),
+  ));
   assert.equal(Object.keys(PROTOTYPE_LEXICON).length > 0, true);
+}
+
+{
+  const worksheet = generateWorksheet({
+    grade: 1,
+    profile: 3,
+    seed: "reject-tampered-vocabulary-audit",
+    topic: "school",
+  });
+  worksheet.vocabulary_audit.occurrences[0].grade_band = "upper_elementary_4_6";
+  const checks = runMachineChecks(worksheet);
+  assert.equal(checks.all_passed, false, "tampered vocabulary evidence must fail");
+  assert.equal(
+    checks.checks.find(
+      (check) => check.check_id === "vocabulary_band_candidate_evidence",
+    ).passed,
+    false,
+  );
 }
 
 {
