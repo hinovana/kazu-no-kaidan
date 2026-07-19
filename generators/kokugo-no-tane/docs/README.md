@@ -10,17 +10,24 @@
 
 | 文書 | 版 | 状態 | 正本とする領域 |
 | --- | --- | --- | --- |
-| [typescript-module-design.md](typescript-module-design.md) | `kokugo-no-tane-typescript-module.v0.3-draft` | runtime TypeScript化、React UI、SPA登録、旧URL互換転送を実装 | SPA教材モジュール境界、TypeScript型、domain・UI・AI・データの依存方向、移行と同値性検証 |
-| [implementation-progress.md](implementation-progress.md) | `implementation-progress.v0.12` | 教育基本語彙候補DB、Codexヘッドレス評価経路、TypeScript/React SPAを実装 | 実装フェーズ、現在地点、完了ゲート、次アクション |
-| [item-blueprint.md](item-blueprint.md) | `item-blueprint.v0.3-draft` | 再挑戦型・手がかり発見型の契約を実装・未実証 | 測定能力、測定対象外、文章種別、標準4問、本文構造モジュール境界、許容される変形 |
-| [question-pattern-expansion.md](question-pattern-expansion.md) | `question-pattern-expansion.v0.1-draft` | 問題6・12・18の抽象分析に基づく設計案・問題6型のみ実装 | 設問パターン、設問セット、根拠グラフ、解答欄レイアウト、機械検査、段階的実装順 |
-| [algorithm-draft.md](algorithm-draft.md) | `algorithm-spec.v0.8-draft` | AI設計図アダプターと本文構造2種類を含む限定プロトタイプ実装・未校閲 | 物語・本文・設問・正答根拠の生成、本文構造モジュール、機械検査、学年別初出ふりがな、語句間隔、A4横の縦書き印刷 |
-| [model-api-integration.md](model-api-integration.md) | `model-api-integration.v0.5-draft` | Codexヘッドレス既定・API経路も選択可能・事前生成は未実装 | 文章生成モデルの責務、本文構造ごとの設計図契約、事前生成・ライブ生成、候補再利用、秘密情報、未成年者データ、検証ゲート |
-| [local-ai-proxy-spec.md](local-ai-proxy-spec.md) | `local-ai-proxy.v0.3` | Codexヘッドレス既定・API経路も選択可能 | Node.jsローカルプロキシの起動、provider切替、HTTP API、CORS、ブラウザUI、障害時動作、候補保存、テスト |
+| [implementation-progress.md](implementation-progress.md) | `implementation-progress.v0.13` | 教育基本語彙候補DB、Codexヘッドレス評価経路、TypeScript/React SPA、設問セット3種類を実装 | 実装フェーズ、現在地点、完了ゲート、次アクション |
+| [item-blueprint.md](item-blueprint.md) | `item-blueprint.v0.4-draft` | 本文構造2種類・設問セット3種類の契約を実装・未実証 | 測定能力、測定対象外、文章種別、設問セット、本文構造モジュール境界、許容される変形 |
+| [question-pattern-expansion.md](question-pattern-expansion.md) | `question-pattern-expansion.v0.2-draft` | 設問・解答欄の分離と3セットを実装、指示内容・複数空欄等は未実装 | 設問パターン、設問セット、根拠グラフ、解答欄レイアウト、機械検査、段階的実装順 |
+| [algorithm-draft.md](algorithm-draft.md) | `algorithm-spec.v0.9-draft` | AI設計図アダプター、本文構造2種類、設問セット3種類を含む限定プロトタイプ実装・未校閲 | 物語・本文・設問・正答根拠の生成、本文構造モジュール、機械検査、学年別初出ふりがな、語句間隔、A4横の縦書き印刷 |
+| [model-api-integration.md](model-api-integration.md) | `model-api-integration.v0.6-draft` | Codexヘッドレス既定・API経路も選択可能・事前生成は未実装 | 文章生成モデルの責務、本文構造ごとの設計図契約、事前生成・ライブ生成、候補再利用、秘密情報、未成年者データ、検証ゲート |
+| [local-ai-proxy-spec.md](local-ai-proxy-spec.md) | `local-ai-proxy.v0.4` | Codexヘッドレス既定・API経路も選択可能 | Node.jsローカルプロキシの起動、provider切替、HTTP API、CORS、ブラウザUI、障害時動作、候補保存、テスト |
 | [database-spec.md](database-spec.md) | `database-spec.v0.4-draft` | 漢字候補版と教育基本語彙の低学年・高学年候補版を実装・人間未確認 | 漢字・語彙の根拠資料、権利、データモデル、配布DB |
 | [item-review-and-release.md](item-review-and-release.md) | `item-review-release.v0.1-draft` | 検討中・未運用 | 個人開発での見直し、答えを隠した解き直し、修正時の再確認、公開状態 |
 | [calibration-and-fairness.md](calibration-and-fairness.md) | `calibration-fairness.v0.1-draft` | 検討中・未実施 | 児童試行、実測難易度、識別力、再採点一致、公平性、校正失効 |
 | [reference-anchor-registry.md](reference-anchor-registry.md) | `reference-anchors.v0.3-draft` | 検討中・分析専用 | 参照ID、出典位置、権利状態、抽出特徴、模倣禁止要素、解答用紙の抽象的紙面原則 |
+
+## アーカイブ
+
+完了した移行計画や、現在の正本として更新しない実装記録は [archive/](archive/) に置く。アーカイブ文書は当時の判断や移行経緯を確認するための資料であり、現在地点や次の作業の正本にはしない。
+
+| 文書 | アーカイブ日 | 理由 | 現在の参照先 |
+| --- | --- | --- | --- |
+| [TypeScriptモジュール化・最適化設計書](archive/typescript-module-design.md) | 2026-07-19 | runtime TypeScript化、React UI移植、SPA登録、旧URL互換転送が完了 | [implementation-progress.md](implementation-progress.md)、[question-pattern-expansion.md](question-pattern-expansion.md)、[SPAフレームワーク設計書](../../../docs/spa-framework-design.md) |
 
 各文書の先頭で、版、個人開発であること、最終更新日、実装状態、実証または運用状態を管理する。文書は草案のままだが、コードとして実装された範囲は各文書の実装状態に明記する。
 
@@ -33,22 +40,21 @@
 全体像を把握するときは、次の順に読む。
 
 1. [implementation-progress.md](implementation-progress.md) で、現在地点と次の作業を確認する。
-2. SPA・TypeScript移行を行う場合は [typescript-module-design.md](typescript-module-design.md) と上位の [SPAフレームワーク設計書](../../../docs/spa-framework-design.md) で境界と移行ゲートを確認する。
-3. [item-blueprint.md](item-blueprint.md) で、何を測り、何を測らないかを確認する。
-4. 標準4問以外の設問・解答欄を検討する場合は [question-pattern-expansion.md](question-pattern-expansion.md) を確認する。
-5. [algorithm-draft.md](algorithm-draft.md) で、出題設計から本文・設問を作る処理を確認する。
-6. 文章生成モデルを接続する場合は [model-api-integration.md](model-api-integration.md) で、モデルの責務と検証境界を確認する。
-7. ローカルライブ接続を実装する場合は [local-ai-proxy-spec.md](local-ai-proxy-spec.md) で、起動・HTTP・UI・保存・障害時契約を確認する。
-8. [database-spec.md](database-spec.md) で、語彙・漢字・ふりがなの根拠と配布方法を確認する。
-9. [item-review-and-release.md](item-review-and-release.md) で、自動生成後の見直しと利用状態を確認する。
-10. [calibration-and-fairness.md](calibration-and-fairness.md) で、児童試行と実測値の条件を確認する。
-11. 参照問題を根拠にする場合は [reference-anchor-registry.md](reference-anchor-registry.md) のアンカーIDを確認する。
+2. [item-blueprint.md](item-blueprint.md) で、何を測り、何を測らないかを確認する。
+3. 標準4問以外の設問・解答欄を検討する場合は [question-pattern-expansion.md](question-pattern-expansion.md) を確認する。
+4. [algorithm-draft.md](algorithm-draft.md) で、出題設計から本文・設問を作る処理を確認する。
+5. 文章生成モデルを接続する場合は [model-api-integration.md](model-api-integration.md) で、モデルの責務と検証境界を確認する。
+6. ローカルライブ接続を実装する場合は [local-ai-proxy-spec.md](local-ai-proxy-spec.md) で、起動・HTTP・UI・保存・障害時契約を確認する。
+7. [database-spec.md](database-spec.md) で、語彙・漢字・ふりがなの根拠と配布方法を確認する。
+8. [item-review-and-release.md](item-review-and-release.md) で、自動生成後の見直しと利用状態を確認する。
+9. [calibration-and-fairness.md](calibration-and-fairness.md) で、児童試行と実測値の条件を確認する。
+10. 参照問題を根拠にする場合は [reference-anchor-registry.md](reference-anchor-registry.md) のアンカーIDを確認する。
 
 目的別の入口は次のとおり。
 
 | 目的 | 最初に読む文書 |
 | --- | --- |
-| SPAモジュール化、TypeScript移行、React UI移植を行う | [typescript-module-design.md](typescript-module-design.md)、[SPAフレームワーク設計書](../../../docs/spa-framework-design.md) |
+| SPAホストや後続教材の移行を変更する | [SPAフレームワーク設計書](../../../docs/spa-framework-design.md)。完了した国語移行の経緯は [アーカイブ](archive/typescript-module-design.md) |
 | 現在の進捗や次の作業を確認する | [implementation-progress.md](implementation-progress.md) |
 | 本文や設問の生成規則を変更する | [algorithm-draft.md](algorithm-draft.md) |
 | 標準4問以外の設問パターン、設問セット、解答欄を追加する | [question-pattern-expansion.md](question-pattern-expansion.md)、採用時は [item-blueprint.md](item-blueprint.md) と [algorithm-draft.md](algorithm-draft.md) |
@@ -108,7 +114,7 @@ algorithm-draft.md に従って本文・設問・解答を生成
 
 ## 生成難度と実測難易度
 
-現行の1〜5は、問4の根拠間距離を指定する**生成難度プロファイル**であり、児童にとっての難しさを実測した値ではない。本文長は「短め・ふつう・長め」から独立して選択する。
+現行の1〜5は、各設問セットの心情記述問題に使う根拠間距離を指定する**生成難度プロファイル**であり、児童にとっての難しさを実測した値ではない。本文長は「短め・ふつう・長め」から独立して選択する。
 
 児童試行によって正答率、識別力、無回答率、選択肢別選択率などを確認し、採否基準を満たした固定問題だけに実測難易度を付与する。校正方法とラベルの付与条件は [calibration-and-fairness.md](calibration-and-fairness.md) に従う。
 

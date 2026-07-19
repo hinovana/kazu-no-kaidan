@@ -21,7 +21,11 @@ import type {
   StoryLength,
   TopicId,
 } from "../domain/types/generation.js";
-import type { Question } from "../domain/types/questions.js";
+import type {
+  ChoiceQuestion,
+  Question,
+  ReasonAndEmotionLayout,
+} from "../domain/types/questions.js";
 import type { RichText, RichTextSegment } from "../domain/types/text.js";
 import type { MachineCheck, Worksheet } from "../domain/types/worksheet.js";
 
@@ -183,9 +187,24 @@ export function KokugoNoTanePage({ onRequestPrint }: GeneratorModuleProps) {
     void generate(form);
   }
 
+  function randomizeSeed() {
+    const nextForm = { ...form, seed: createRandomSeed() };
+    setForm(nextForm);
+
+    if (generationMode === "local") {
+      void generate(nextForm);
+      return;
+    }
+
+    setGenerationMessage({
+      text: "seedを変更しました。「この条件でつくる」を押すまで生成しません。",
+      isError: false,
+    });
+  }
+
   const aiEnabled = generationMode === "ai_proxy";
   const generationModeHelp = aiEnabled
-    ? "すべての条件をAIへ送り、AIは再挑戦型の物語の種を作ります。本文・4問・長さ・根拠距離・表記は既存アルゴリズムが確定します。"
+    ? "すべての条件をAIへ送り、AIは再挑戦型の物語の種を作ります。本文・問題セット・長さ・根拠距離・表記は既存アルゴリズムが確定します。"
     : "学年・プロファイル・長さ・カテゴリ・seedを、ブラウザ内の決定的アルゴリズムへ適用します。本文構造もseedから選びます。";
   const seedHelp = aiEnabled
     ? "AI生成では候補ID・キャッシュ・来歴に使います。同じseedだけでモデル出力の完全一致は保証しません。"
@@ -288,7 +307,7 @@ export function KokugoNoTanePage({ onRequestPrint }: GeneratorModuleProps) {
               <SelectField
                 label="生成条件プロファイル"
                 value={String(form.profile)}
-                help={<> <strong>実測した難易度ではありません。</strong> 問4の根拠どうしの距離を指定します。</>}
+                help={<> <strong>実測した難易度ではありません。</strong> 気持ちを考える問題で使う、根拠どうしの距離を指定します。</>}
                 disabled={isGenerating}
                 onChange={(value) => setForm({ ...form, profile: toProfile(value) })}
                 options={[
@@ -339,13 +358,7 @@ export function KokugoNoTanePage({ onRequestPrint }: GeneratorModuleProps) {
                     className="seed-random-button"
                     type="button"
                     disabled={isGenerating}
-                    onClick={() => {
-                      setForm({ ...form, seed: createRandomSeed() });
-                      setGenerationMessage({
-                        text: "seedを変更しました。「この条件でつくる」を押すまで生成しません。",
-                        isError: false,
-                      });
-                    }}
+                    onClick={randomizeSeed}
                   >
                     ランダムseed
                   </button>
@@ -475,6 +488,7 @@ function SelectField({ label, value, help, disabled, onChange, options }: {
 }
 
 function WorksheetView({ worksheet, grade }: { readonly worksheet: Worksheet; readonly grade: Grade }) {
+  const printQuestionPages = paginateQuestions(worksheet.questions);
   return (
     <>
       <section className="worksheet-reading-page">
@@ -486,25 +500,64 @@ function WorksheetView({ worksheet, grade }: { readonly worksheet: Worksheet; re
           ))}
         </section>
       </section>
-      <section className="questions">
-        <header className="question-sheet-meta">
-          <p className="question-sheet-subject">小学{grade}年・国語</p>
-          <p className="question-sheet-name">なまえ</p>
-          <span className="question-sheet-number">2</span>
-        </header>
-        <ol className="question-list">
-          {worksheet.questions.map((question) => <QuestionView question={question} key={question.question_id} />)}
-        </ol>
+      <section className="questions screen-question-sheet">
+        <QuestionSheetMeta grade={grade} pageNumber={2} showName />
+        <QuestionList questions={worksheet.questions} />
       </section>
+      <div className="print-question-pages" aria-hidden="true">
+        {printQuestionPages.map((questions, pageIndex) => (
+          <section className="questions print-question-sheet" key={questions[0]?.question_id ?? pageIndex}>
+            <QuestionSheetMeta grade={grade} pageNumber={pageIndex + 2} showName={pageIndex === 0} />
+            <QuestionList questions={questions} startIndex={pageIndex * 3} />
+          </section>
+        ))}
+      </div>
     </>
   );
 }
 
-function QuestionView({ question }: { readonly question: Question }) {
+function paginateQuestions(questions: readonly Question[]): readonly (readonly Question[])[] {
+  const questionsPerPage = questions.length <= 4 ? 4 : 3;
+  return Array.from(
+    { length: Math.ceil(questions.length / questionsPerPage) },
+    (_, pageIndex) => questions.slice(pageIndex * questionsPerPage, (pageIndex + 1) * questionsPerPage),
+  );
+}
+
+function QuestionSheetMeta({ grade, pageNumber, showName }: {
+  readonly grade: Grade;
+  readonly pageNumber: number;
+  readonly showName: boolean;
+}) {
   return (
-    <li className="question">
+    <header className="question-sheet-meta">
+      <p className="question-sheet-subject">小学{grade}年・国語</p>
+      {showName && <p className="question-sheet-name">なまえ</p>}
+      <span className="question-sheet-number">{pageNumber}</span>
+    </header>
+  );
+}
+
+function QuestionList({ questions, startIndex = 0 }: {
+  readonly questions: readonly Question[];
+  readonly startIndex?: number;
+}) {
+  return (
+    <ol
+      className={`question-list question-list-${questions.length}`}
+      style={startIndex === 0 ? undefined : { counterReset: `question ${startIndex}` }}
+    >
+      {questions.map((question) => <QuestionView question={question} key={question.question_id} />)}
+    </ol>
+  );
+}
+
+function QuestionView({ question }: { readonly question: Question }) {
+  const layout = question.answer_layout;
+  return (
+    <li className={`question question-layout-${layout.kind}`}>
       <p className="question-prompt"><RichTextView value={question.prompt} /></p>
-      {question.type === "emotion_choice" ? (
+      {layout.kind === "choice-list" && isChoiceQuestion(question) ? (
         <ul className="choice-list">
           {question.choices.map((choice, index) => (
             <li key={choice.choice_id}>
@@ -513,27 +566,31 @@ function QuestionView({ question }: { readonly question: Question }) {
             </li>
           ))}
         </ul>
-      ) : question.type === "extract_explicit_trait_term" ? (
-        <div className="character-grid" aria-label={`${Array.from(question.answer.plainText).length}文字の答えを書く欄`}>
-          {Array.from(question.answer.plainText).map((_, index) => <span aria-hidden="true" key={index} />)}
+      ) : layout.kind === "fixed-character-boxes" ? (
+        <div className="character-grid" aria-label={`${layout.cells}文字の答えを書く欄`}>
+          {Array.from({ length: layout.cells }, (_, index) => <span aria-hidden="true" key={index} />)}
         </div>
-      ) : question.type === "extract_fact" ? (
+      ) : layout.kind === "single-extract" ? (
         <div className="answer-box" aria-label="本文から抜き出した答えを書く欄" />
-      ) : (
-        <ResponseZones />
-      )}
+      ) : layout.kind === "reason-and-emotion" ? (
+        <ResponseZones zones={layout.zones} />
+      ) : null}
     </li>
   );
 }
 
-function ResponseZones() {
+function isChoiceQuestion(question: Question): question is ChoiceQuestion {
+  return "choices" in question;
+}
+
+function ResponseZones({ zones }: { readonly zones: ReasonAndEmotionLayout["zones"] }) {
   return (
     <div className="response-zones" aria-label="理由と気持ちを書く欄">
-      {([ ["りゆう", 2], ["きもち", 1] ] as const).map(([label, count]) => (
-        <section className="response-zone" key={label}>
-          <h4 className="response-zone-label">{label}</h4>
+      {zones.map((zone) => (
+        <section className="response-zone" key={zone.label}>
+          <h4 className="response-zone-label">{zone.label}</h4>
           <div className="response-columns">
-            {Array.from({ length: count }, (_, index) => <span aria-hidden="true" key={index} />)}
+            {Array.from({ length: zone.columns }, (_, index) => <span aria-hidden="true" key={index} />)}
           </div>
         </section>
       ))}
@@ -586,6 +643,7 @@ function EvidencePanel({ worksheet }: { readonly worksheet: Worksheet }) {
     ["題材", worksheet.requested_topic ?? "auto"],
     ["blueprint", provenance.blueprint_id],
     ["本文構造", provenance.story_structure_id],
+    ["問題セット", provenance.question_set_blueprint_id],
     ["生成方式", provenance.generation_source],
     ["AI model", provenance.model ?? "未使用"],
     ["AI candidate", provenance.candidate_id ?? "未使用"],

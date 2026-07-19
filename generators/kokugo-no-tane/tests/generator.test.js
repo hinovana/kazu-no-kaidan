@@ -14,6 +14,11 @@ import {
   STORY_RETRY_CRAFT_STRUCTURE_ID,
   STORY_STANDARD_4Q_BLUEPRINT_ID,
 } from "../domain/blueprints/story-retry-craft/blueprint.ts";
+import {
+  CAUSAL_TRACE_6Q_ID,
+  CONTEXT_AND_INFERENCE_4Q_ID,
+  STANDARD_READING_4Q_ID,
+} from "../domain/questions/question-set-registry.ts";
 
 const BLUEPRINT_STRUCTURES = new Map([
   [STORY_STANDARD_4Q_BLUEPRINT_ID, STORY_RETRY_CRAFT_STRUCTURE_ID],
@@ -22,22 +27,25 @@ const BLUEPRINT_STRUCTURES = new Map([
 
 const countOccurrences = (text, target) => text.split(target).length - 1;
 
-function assertStandardWorksheet(worksheet) {
+const QUESTION_SET_TYPES = new Map([
+  [STANDARD_READING_4Q_ID, ["extract_explicit_trait_term", "emotion_choice", "extract_fact", "infer_emotion"]],
+  [CAUSAL_TRACE_6Q_ID, ["cause_result_choice", "emotion_choice", "extract_fact", "event_sequence_choice", "infer_emotion", "extract_resolution"]],
+  [CONTEXT_AND_INFERENCE_4Q_ID, ["scene_emotion_choice", "extract_resolution", "event_sequence_choice", "infer_emotion"]],
+]);
+
+function assertWorksheet(worksheet) {
   assert.equal(worksheet.text_type, "narrative");
   assert.ok(BLUEPRINT_STRUCTURES.has(worksheet.blueprint_id));
   assert.equal(worksheet.story_structure_id, BLUEPRINT_STRUCTURES.get(worksheet.blueprint_id));
   assert.equal(worksheet.generation_provenance.story_structure_id, worksheet.story_structure_id);
-  assert.equal(worksheet.questions.length, 4);
+  assert.equal(worksheet.generation_provenance.question_set_blueprint_id, worksheet.question_set_blueprint_id);
+  assert.ok(QUESTION_SET_TYPES.has(worksheet.question_set_blueprint_id));
   assert.deepEqual(
     worksheet.questions.map((question) => question.type),
-    ["extract_explicit_trait_term", "emotion_choice", "extract_fact", "infer_emotion"],
+    QUESTION_SET_TYPES.get(worksheet.question_set_blueprint_id),
   );
-  assert.deepEqual(
-    worksheet.questions.map((question) => question.primary_construct),
-    ["C1_LOCATE_EXPLICIT", "C2_INTERPRET_EXPLICIT_EMOTION", "C1_LOCATE_EXPLICIT", "C3_INFER_EMOTION"],
-  );
-  assert.deepEqual(worksheet.questions[3].secondary_demands, ["C5_COMPOSE_WITH_EVIDENCE"]);
-  assert.equal(worksheet.total_points, 5);
+  assert.equal(worksheet.questions.length, QUESTION_SET_TYPES.get(worksheet.question_set_blueprint_id).length);
+  assert.equal(worksheet.total_points, worksheet.questions.reduce((sum, question) => sum + question.points, 0));
 
   const sentenceIds = new Set(worksheet.passage.sentences.map((sentence) => sentence.sentence_id));
   for (const question of worksheet.questions) {
@@ -45,19 +53,34 @@ function assertStandardWorksheet(worksheet) {
     question.evidence_ids.forEach((id) => assert.ok(sentenceIds.has(id), `missing evidence ${id}`));
     assert.ok(question.answer.plainText.length > 0);
     assert.ok(question.scoring_elements.length > 0);
+    assert.ok(question.question_pattern_id.startsWith("QP_"));
+    assert.ok(question.answer_layout.answer_layout_id.startsWith("AL_"));
+    if (question.answer_layout.kind === "fixed-character-boxes" || question.answer_layout.kind === "single-extract") {
+      assert.equal(countOccurrences(worksheet.passage.plainText, question.answer.plainText), 1);
+    }
+    if ("choices" in question) {
+      assert.equal(question.choices.length, 3);
+      assert.equal(question.choices.filter((choice) => choice.is_correct).length, 1);
+      assert.equal(
+        question.correct_choice_id,
+        question.choices.find((choice) => choice.is_correct).choice_id,
+      );
+    }
   }
-  for (const question of [worksheet.questions[0], worksheet.questions[2]]) {
-    assert.equal(countOccurrences(worksheet.passage.plainText, question.answer.plainText), 1);
-  }
-  assert.equal(worksheet.questions[1].choices.length, 3);
-  assert.equal(worksheet.questions[1].choices.filter((choice) => choice.is_correct).length, 1);
-  assert.equal(
-    worksheet.questions[1].correct_choice_id,
-    worksheet.questions[1].choices.find((choice) => choice.is_correct).choice_id,
-  );
-  assert.equal(worksheet.questions[3].scoring_elements.length, 2);
   assert.equal(worksheet.machine_checks.all_passed, true);
   assert.equal(runMachineChecks(worksheet).all_passed, true);
+}
+
+function assertStandardWorksheet(worksheet) {
+  assert.equal(worksheet.question_set_blueprint_id, STANDARD_READING_4Q_ID);
+  assertWorksheet(worksheet);
+  assert.deepEqual(
+    worksheet.questions.map((question) => question.primary_construct),
+    ["C1_LOCATE_EXPLICIT", "C2_INTERPRET_EXPLICIT_EMOTION", "C1_LOCATE_EXPLICIT", "C3_INFER_EMOTION"],
+  );
+  assert.deepEqual(worksheet.questions[3].secondary_demands, ["C5_COMPOSE_WITH_EVIDENCE"]);
+  assert.equal(worksheet.total_points, 5);
+  assert.equal(worksheet.questions[3].scoring_elements.length, 2);
 }
 
 {
@@ -72,8 +95,9 @@ function assertStandardWorksheet(worksheet) {
   const variants = Array.from({ length: 12 }, (_, seed) =>
     generateWorksheet({ grade: 2, profile: 3, seed: `variation-${seed}` }));
   assert.ok(new Set(variants.map((item) => item.passage.plainText)).size >= 5, "seeds should vary story surfaces");
-  assert.ok(new Set(variants.map((item) => item.questions[1].correct_choice_id)).size >= 2, "seeds should vary choice positions");
+  assert.ok(new Set(variants.flatMap((item) => item.questions.filter((question) => "choices" in question).map((question) => question.correct_choice_id))).size >= 2, "seeds should vary choice positions");
   assert.deepEqual(new Set(variants.map((item) => item.blueprint_id)), new Set(BLUEPRINT_STRUCTURES.keys()));
+  assert.deepEqual(new Set(variants.map((item) => item.question_set_blueprint_id)), new Set(QUESTION_SET_TYPES.keys()));
 }
 
 {
@@ -98,7 +122,7 @@ function assertStandardWorksheet(worksheet) {
     assert.doesNotMatch(worksheet.passage.plainText, /まちがえ|しっぱい|やりなお/u);
     assert.equal(worksheet.story.event.problem, null);
     assert.ok(worksheet.story.event.clue.length > 0);
-    assertStandardWorksheet(worksheet);
+    assertWorksheet(worksheet);
   }
 }
 
@@ -106,7 +130,7 @@ for (const blueprintId of BLUEPRINT_STRUCTURES.keys()) {
   for (let grade = 1; grade <= 3; grade += 1) {
     for (let profile = 1; profile <= 5; profile += 1) {
       for (const length of Object.keys(LENGTH_SETTINGS)) {
-        const worksheet = generateWorksheet({ grade, profile, length, seed: `bounds-${grade}-${profile}-${length}`, blueprintId });
+        const worksheet = generateWorksheet({ grade, profile, length, seed: `bounds-${grade}-${profile}-${length}`, blueprintId, questionSetBlueprintId: STANDARD_READING_4Q_ID });
       assertStandardWorksheet(worksheet);
       const [minimum, maximum] = LENGTH_SETTINGS[length].character_band;
       assert.ok(
@@ -147,7 +171,7 @@ for (const blueprintId of BLUEPRINT_STRUCTURES.keys()) {
 }
 
 {
-  const worksheet = generateWorksheet({ grade: 1, profile: 3, length: "standard", seed: "phrase-spacing", topic: "school" });
+  const worksheet = generateWorksheet({ grade: 1, profile: 3, length: "standard", seed: "phrase-spacing", topic: "school", questionSetBlueprintId: STANDARD_READING_4Q_ID });
   assert.match(worksheet.passage.plainText, /、　/);
   assert.match(worksheet.passage.plainText, /。　/);
   assert.match(worksheet.questions[1].prompt.plainText, /とき、　/);
@@ -166,7 +190,7 @@ for (const blueprintId of BLUEPRINT_STRUCTURES.keys()) {
 }
 
 {
-  const worksheet = generateWorksheet({ grade: 1, profile: 3, seed: "ruby-scopes", topic: "nature" });
+  const worksheet = generateWorksheet({ grade: 1, profile: 3, seed: "ruby-scopes", topic: "nature", questionSetBlueprintId: STANDARD_READING_4Q_ID });
   const park = worksheet.ruby_plan.filter((entry) => entry.lexeme_id === "park");
   const passage = park.filter((entry) => entry.scope === "passage");
   assert.equal(passage[0].render_ruby, true);
@@ -289,7 +313,7 @@ for (const blueprintId of BLUEPRINT_STRUCTURES.keys()) {
 }
 
 {
-  const worksheet = generateWorksheet({ grade: 1, profile: 3, seed: "reject-wrong-choice", topic: "school" });
+  const worksheet = generateWorksheet({ grade: 1, profile: 3, seed: "reject-wrong-choice", topic: "school", questionSetBlueprintId: STANDARD_READING_4Q_ID });
   const q2 = worksheet.questions[1];
   const wrongChoice = q2.choices.find((choice) => !choice.is_correct);
   q2.choices.forEach((choice) => { choice.is_correct = choice === wrongChoice; });
@@ -299,8 +323,25 @@ for (const blueprintId of BLUEPRINT_STRUCTURES.keys()) {
   assert.equal(checks.checks.find((check) => check.check_id === "template_answer_evidence_contract").passed, false);
 }
 
+for (const questionSetBlueprintId of [CAUSAL_TRACE_6Q_ID, CONTEXT_AND_INFERENCE_4Q_ID]) {
+  const worksheet = generateWorksheet({
+    grade: 1,
+    profile: 3,
+    seed: `reject-wrong-choice-${questionSetBlueprintId}`,
+    topic: "school",
+    questionSetBlueprintId,
+  });
+  const choiceQuestion = worksheet.questions.find((question) => "choices" in question);
+  const wrongChoice = choiceQuestion.choices.find((choice) => !choice.is_correct);
+  choiceQuestion.choices.forEach((choice) => { choice.is_correct = choice === wrongChoice; });
+  choiceQuestion.correct_choice_id = wrongChoice.choice_id;
+  const checks = runMachineChecks(worksheet);
+  assert.equal(checks.all_passed, false, `${questionSetBlueprintId} must reject a semantically wrong choice`);
+  assert.equal(checks.checks.find((check) => check.check_id === "template_answer_evidence_contract").passed, false);
+}
+
 {
-  const worksheet = generateWorksheet({ grade: 1, profile: 3, seed: "reject-wrong-response", topic: "home", blueprintId: STORY_STANDARD_4Q_BLUEPRINT_ID });
+  const worksheet = generateWorksheet({ grade: 1, profile: 3, seed: "reject-wrong-response", topic: "home", blueprintId: STORY_STANDARD_4Q_BLUEPRINT_ID, questionSetBlueprintId: STANDARD_READING_4Q_ID });
   worksheet.questions[3].answer = {
     plainText: "うれしい気持ち。",
     segments: [{ type: "text", text: "うれしい気持ち。" }],

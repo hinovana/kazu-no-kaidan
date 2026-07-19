@@ -2,13 +2,16 @@
 
 | 項目 | 値 |
 | --- | --- |
-| 文書状態 | 設計草案 |
+| 文書状態 | アーカイブ（移行完了） |
 | 文書版 | `kokugo-no-tane-typescript-module.v0.3-draft` |
 | 最終更新日 | 2026-07-18 |
+| アーカイブ日 | 2026-07-19 |
 | 対象 | `generators/kokugo-no-tane/` |
-| 上位設計 | [教材ジェネレータ SPAフレームワーク設計書](../../../docs/spa-framework-design.md) |
+| 上位設計 | [教材ジェネレータ SPAフレームワーク設計書](../../../../docs/spa-framework-design.md) |
 | 実装状態 | ブラウザ・作問domain・blueprint・AI client・NodeプロキシをTypeScript化し、React UIをルートSPAへ登録。旧runtime JavaScript入口は互換転送へ置換済み |
 | 移行原則 | 作問結果と印刷契約を保った段階移行 |
+
+> この文書はTypeScript／React SPA移行時の設計と検証記録であり、移行完了に伴ってアーカイブした。現在の進捗と次の作業は [implementation-progress.md](../implementation-progress.md)、設問・解答欄の後続設計は [question-pattern-expansion.md](../question-pattern-expansion.md)、リポジトリ全体のSPA基盤は上位設計を参照する。
 
 ## 1. 目的
 

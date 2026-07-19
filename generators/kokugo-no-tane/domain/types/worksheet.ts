@@ -1,5 +1,12 @@
 import type { Grade, GenerationProfile, StoryLength } from "./generation.js";
-import type { AnchorId, BlueprintId, LexemeId, SentenceId, StoryStructureId } from "./ids.js";
+import type {
+  AnchorId,
+  BlueprintId,
+  LexemeId,
+  QuestionSetBlueprintId,
+  SentenceId,
+  StoryStructureId,
+} from "./ids.js";
 import type { Question } from "./questions.js";
 import type { StoryPlanV1 } from "./story-plan.js";
 import type { RichText, RichTextSegment } from "./text.js";
@@ -50,6 +57,7 @@ export interface Worksheet {
   readonly text_type: "narrative";
   readonly blueprint_id: BlueprintId;
   readonly story_structure_id: StoryStructureId;
+  readonly question_set_blueprint_id: QuestionSetBlueprintId;
   readonly anchor_ids: readonly AnchorId[];
   readonly grade: Grade;
   readonly generation_profile: GenerationProfile;
@@ -118,6 +126,7 @@ export interface Worksheet {
     readonly algorithm_spec_version: string;
     readonly blueprint_version: string;
     readonly blueprint_id: BlueprintId;
+    readonly question_set_blueprint_id: QuestionSetBlueprintId;
     readonly database_release: string;
     readonly vocabulary_candidate_database_release: string;
     readonly template_version: string;

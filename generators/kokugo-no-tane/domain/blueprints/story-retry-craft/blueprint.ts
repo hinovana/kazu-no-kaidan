@@ -2,7 +2,7 @@ import {
   expectedCategoryForTopic,
   parseStoryPlan,
 } from "../../schemas/story-plan-v1.ts";
-import { runStandardFourQuestionChecks } from "../standard-four-question-checks.ts";
+import { runQuestionSetChecks } from "../standard-four-question-checks.ts";
 import type {
   Blueprint,
   BlueprintTrait,
@@ -10,16 +10,14 @@ import type {
   ScenarioInput,
   StorySentenceDraft,
 } from "../blueprint.js";
-import type { TemplateRenderer } from "../../language/template-renderer.js";
+import type { QuestionContent } from "../../questions/question-content.js";
 import type { GenerationProfile, TopicId } from "../../types/generation.js";
 import type {
   AnchorId,
   BlueprintId,
   LexemeId,
-  SentenceId,
   StoryStructureId,
 } from "../../types/ids.js";
-import type { Question } from "../../types/questions.js";
 import type { StoryPlanV1 } from "../../types/story-plan.js";
 
 export const STORY_STANDARD_4Q_BLUEPRINT_ID = "story-standard-4q.v1" as BlueprintId;
@@ -45,41 +43,6 @@ interface RetryScenario {
 interface RetryTrait extends BlueprintTrait {
   readonly sentence: string;
   readonly expectation: (name: string, action: string) => string;
-}
-
-interface QuestionBuildInput {
-  readonly render: TemplateRenderer;
-  readonly scenario: RetryScenario;
-  readonly trait: string;
-  readonly evidence: Readonly<Record<string, SentenceId>>;
-  readonly random: () => number;
-}
-
-interface RawChoice {
-  readonly text: string;
-  readonly correct: boolean;
-}
-
-interface RawQuestionSpec {
-  readonly question_id: string;
-  readonly type: Question["type"];
-  readonly primary_construct: string;
-  readonly secondary_demands: readonly string[];
-  readonly prompt: string;
-  readonly answer: string;
-  readonly acceptable_answers: readonly string[];
-  readonly evidence_ids: readonly SentenceId[];
-  readonly required_inference_steps: number;
-  readonly scoring_elements: readonly {
-    readonly element_id: string;
-    readonly points: number;
-    readonly description: string;
-  }[];
-  readonly disqualifying_answers: readonly string[];
-  readonly points: number;
-  readonly choices?: readonly RawChoice[];
-  readonly answer_policy?: "evidence_supported_open_response";
-  readonly validation_contract?: Readonly<Record<string, unknown>>;
 }
 
 type DetailStage = "before" | "working" | "after" | "resolution";
@@ -270,15 +233,6 @@ function substitute(
     .replaceAll("ともだち", values.friend);
 }
 
-function requireEvidence(
-  evidence: Readonly<Record<string, SentenceId>>,
-  role: string,
-): SentenceId {
-  const sentenceId = evidence[role];
-  if (sentenceId === undefined) throw new Error(`evidence role is missing: ${role}`);
-  return sentenceId;
-}
-
 function chooseScenario(random: () => number, topic: string | undefined): RetryScenario {
   if (topic) {
     const topicAliases: Partial<Record<TopicId, string>> = {
@@ -392,112 +346,131 @@ function buildStorySentences({
   ];
 }
 
-function buildQuestions({
-  render,
-  scenario,
-  trait,
-  evidence,
-  random,
-}: QuestionBuildInput): Question[] {
-  const traitLength = Array.from(trait).length;
-  const questionSpecs: RawQuestionSpec[] = [
-    {
-      question_id: "q1",
-      type: "extract_explicit_trait_term",
-      primary_construct: "C1_LOCATE_EXPLICIT",
-      secondary_demands: ["指定字数の抜き出し"],
+function buildQuestionContent({ scenario, trait }: {
+  readonly scenario: RetryScenario;
+  readonly trait: RetryTrait;
+}): QuestionContent {
+  const traitLength = Array.from(trait.term).length;
+  return {
+    trait: {
       prompt: `${scenario.protagonist}は、|どのような|ひとですか。|ぶんしょうから|${traitLength}もじで|かきぬきましょう。`,
-      answer: trait,
-      acceptable_answers: [trait],
-      evidence_ids: [requireEvidence(evidence, "trait")],
-      required_inference_steps: 0,
-      scoring_elements: [{ element_id: "exact_extract", points: 1, description: `${trait}を過不足なく抜き出す` }],
-      disqualifying_answers: ["本文にない性格語"],
+      answer: trait.term,
+      acceptableAnswers: [trait.term],
+      evidenceRole: "trait",
+      scoringElements: [{ element_id: "exact_extract", points: 1, description: `${trait.term}を過不足なく抜き出す` }],
+      disqualifyingAnswers: ["本文にない性格語"],
       points: 1,
     },
-    {
-      question_id: "q2",
-      type: "emotion_choice",
-      primary_construct: "C2_INTERPRET_EXPLICIT_EMOTION",
-      secondary_demands: ["場面と明示心情の対応", "選択肢比較"],
+    explicitEmotion: {
       prompt: `{{${scenario.location}}}で|つくりはじめたとき、|${scenario.protagonist}は|どのような|{{feeling}}でしたか。|えらびましょう。`,
-      choices: shuffled(random, [
+      answer: `{{${scenario.location}}}で、|じょうずに|できそうで、|うれしい。`,
+      acceptableAnswers: ["じょうずにできそうで、うれしい。"],
+      choices: [
         { text: "じょうずに|できそうで、|うれしい。", correct: true },
         { text: "うまく|できないと|おもい、|かなしい。", correct: false },
         { text: "はやく|かえりたいと|おもい、|つまらない。", correct: false },
-      ]),
-      answer: `{{${scenario.location}}}で、|じょうずに|できそうで、|うれしい。`,
-      acceptable_answers: ["じょうずにできそうで、うれしい。"],
-      evidence_ids: [requireEvidence(evidence, "explicit_emotion")],
-      required_inference_steps: 0,
-      scoring_elements: [{ element_id: "correct_choice", points: 1, description: "明示された心情と一致する選択肢を選ぶ" }],
-      disqualifying_answers: ["本文の別場面だけに対応する選択肢"],
+      ],
+      evidenceRoles: ["explicit_emotion"],
+      primaryConstruct: "C2_INTERPRET_EXPLICIT_EMOTION",
+      secondaryDemands: ["場面と明示心情の対応", "選択肢比較"],
+      requiredInferenceSteps: 0,
+      scoringElements: [{ element_id: "correct_choice", points: 1, description: "明示された心情と一致する選択肢を選ぶ" }],
+      disqualifyingAnswers: ["本文の別場面だけに対応する選択肢"],
       points: 1,
-      validation_contract: {
-        evidence_role: "explicit_emotion",
-        evidence_fragment: "じょうずにできそうだとおもい、うれしくなりました",
-        correct_choice_text: "じょうずにできそうで、うれしい。",
-      },
+      evidenceFragments: ["じょうずにできそうだとおもい、うれしくなりました"],
+      correctChoiceText: "じょうずにできそうで、うれしい。",
     },
-    {
-      question_id: "q3",
-      type: "extract_fact",
-      primary_construct: "C1_LOCATE_EXPLICIT",
-      secondary_demands: ["明示情報の探索"],
+    fact: {
       prompt: `${scenario.protagonist}は、|やりなおすために、|なにを|することにしましたか。|ぶんしょうから|かきぬきましょう。`,
       answer: scenario.decision,
-      acceptable_answers: [removePhraseMarkers(scenario.decision)],
-      evidence_ids: [requireEvidence(evidence, "fact")],
-      required_inference_steps: 0,
-      scoring_elements: [{ element_id: "exact_fact", points: 1, description: `${removePhraseMarkers(scenario.decision)}を過不足なく抜き出す` }],
-      disqualifying_answers: ["出来事の結果だけを書いた答え"],
+      acceptableAnswers: [removePhraseMarkers(scenario.decision)],
+      evidenceRole: "fact",
+      scoringElements: [{ element_id: "exact_fact", points: 1, description: `${removePhraseMarkers(scenario.decision)}を過不足なく抜き出す` }],
+      disqualifyingAnswers: ["出来事の結果だけを書いた答え"],
       points: 1,
     },
-    {
-      question_id: "q4",
-      type: "infer_emotion",
-      primary_construct: "C3_INFER_EMOTION",
-      secondary_demands: ["C5_COMPOSE_WITH_EVIDENCE"],
+    emotionOpen: {
       prompt: `したを|みたとき、|${scenario.protagonist}は|どのような|{{feeling}}でしたか。|りゆうと|いっしょに|かきましょう。`,
       answer: `まちがえたところを|${scenario.friend}に|みられて、|はずかしい|{{feeling}}。`,
-      acceptable_answers: ["まちがいを見られてはずかしい", "しっぱいを見られてこまった"],
-      evidence_ids: [
-        requireEvidence(evidence, "inference_situation"),
-        requireEvidence(evidence, "inference_reaction"),
-      ],
-      required_inference_steps: 1,
-      answer_policy: "evidence_supported_open_response",
-      scoring_elements: [
+      acceptableAnswers: ["まちがいを見られてはずかしい", "しっぱいを見られてこまった"],
+      evidenceRole: "inference_situation",
+      evidenceRoles: ["inference_situation", "inference_reaction"],
+      evidenceFragments: ["まちがえたところ", "みられたくなくて"],
+      answerFragmentsAny: ["はずかしい", "きまずい", "こまった"],
+      scoringElements: [
         { element_id: "situation", points: 1, description: "まちがいを友だちに見られた状況を捉える" },
         { element_id: "emotion", points: 1, description: "見られたくない気持ちと合う、はずかしい・きまずい・困ったなどの心情を示す" },
       ],
-      disqualifying_answers: ["うれしいなど根拠と反対の心情だけを書き、本文根拠を示さない"],
+      disqualifyingAnswers: ["うれしいなど根拠と反対の心情だけを書き、本文根拠を示さない"],
       points: 2,
-      validation_contract: {
-        evidence_roles: ["inference_situation", "inference_reaction"],
-        evidence_fragments: ["まちがえたところ", "みられたくなくて"],
-        answer_fragments_any: ["はずかしい", "きまずい", "こまった"],
-      },
     },
-  ];
-
-  return questionSpecs.map((spec) => {
-    const scope = `question_${spec.question_id}`;
-    const prompt = render(spec.prompt, scope, `${spec.question_id}_prompt`);
-    const choices = spec.choices?.map((choice, index) => ({
-      choice_id: String.fromCharCode(97 + index),
-      ...render(choice.text, scope, `${spec.question_id}_choice_${index + 1}`),
-      is_correct: choice.correct,
-    }));
-    const answer = render(spec.answer, `answer_${spec.question_id}`, `${spec.question_id}_answer`);
-    return {
-      ...spec,
-      prompt,
-      answer,
-      choices,
-      correct_choice_id: choices?.find((choice) => choice.is_correct)?.choice_id,
-    };
-  }) as Question[];
+    causeResult: {
+      prompt: "なぜ、|うまく|いかなかったのですか。|えらびましょう。",
+      answer: "そのまま|いそいだから。",
+      acceptableAnswers: ["そのままいそいだから"],
+      choices: [
+        { text: "そのまま|いそいだから。", correct: true },
+        { text: `${scenario.friend}が|さきに|おわったから。`, correct: false },
+        { text: "つくるものが|なくなったから。", correct: false },
+      ],
+      evidenceRoles: ["problem"],
+      evidenceFragments: ["そのままいそいだため"],
+      correctChoiceText: "そのままいそいだから。",
+      primaryConstruct: "C6_CONNECT_CAUSE_RESULT",
+      secondaryDemands: ["原因と結果の対応", "選択肢比較"],
+      requiredInferenceSteps: 1,
+      scoringElements: [{ element_id: "cause", points: 1, description: "失敗の原因を本文から捉える" }],
+      disqualifyingAnswers: ["本文にない原因を選ぶ"],
+      points: 1,
+    },
+    eventSequence: {
+      prompt: `うまく|いかなかったあと、|${scenario.protagonist}は|つぎに|なにをしましたか。|えらびましょう。`,
+      answer: scenario.decision,
+      acceptableAnswers: [removePhraseMarkers(scenario.decision)],
+      choices: [
+        { text: `${scenario.decision}。`, correct: true },
+        { text: "そのまま|かえりました。", correct: false },
+        { text: `${scenario.friend}に|ぜんぶ|まかせました。`, correct: false },
+      ],
+      evidenceRoles: ["problem", "fact"],
+      evidenceFragments: ["そのままいそいだため", removePhraseMarkers(scenario.decision)],
+      correctChoiceText: `${removePhraseMarkers(scenario.decision)}。`,
+      primaryConstruct: "C7_INTEGRATE_CONTEXT",
+      secondaryDemands: ["出来事の順序", "前後文脈の統合"],
+      requiredInferenceSteps: 1,
+      scoringElements: [{ element_id: "next_action", points: 1, description: "失敗後に選んだ行動を捉える" }],
+      disqualifyingAnswers: ["別場面の行動を選ぶ"],
+      points: 1,
+    },
+    sceneEmotion: {
+      prompt: `やりなおしたあと、|${scenario.protagonist}は|どのような|{{feeling}}でしたか。|えらびましょう。`,
+      answer: "うまく|できて、|うれしい|{{feeling}}。",
+      acceptableAnswers: ["うれしい", "ほっとした", "よろこんでいる"],
+      choices: [
+        { text: "うまく|できて、|うれしい。", correct: true },
+        { text: "また|まちがえて、|かなしい。", correct: false },
+        { text: "つくるのが|いやで、|おこっている。", correct: false },
+      ],
+      evidenceRoles: ["resolution", "closing"],
+      evidenceFragments: [removePhraseMarkers(scenario.resolution), "ふたりはわらいました"],
+      correctChoiceText: "うまくできて、うれしい。",
+      primaryConstruct: "C3_INFER_EMOTION",
+      secondaryDemands: ["結果と反応からの心情推論", "選択肢比較"],
+      requiredInferenceSteps: 1,
+      scoringElements: [{ element_id: "scene_emotion", points: 1, description: "やり直した結果と反応に合う心情を選ぶ" }],
+      disqualifyingAnswers: ["根拠と反対の心情を選ぶ"],
+      points: 1,
+    },
+    resolution: {
+      prompt: `やりなおしたあと、|どうなりましたか。|ぶんしょうから|かきぬきましょう。`,
+      answer: scenario.resolution,
+      acceptableAnswers: [removePhraseMarkers(scenario.resolution)],
+      evidenceRole: "resolution",
+      scoringElements: [{ element_id: "result", points: 1, description: "やり直した結果を過不足なく抜き出す" }],
+      disqualifyingAnswers: ["やり直す前の出来事だけを書いた答え"],
+      points: 1,
+    },
+  };
 }
 
 export const storyStandard4qBlueprint = Object.freeze({
@@ -510,7 +483,16 @@ export const storyStandard4qBlueprint = Object.freeze({
     "ANCHOR-RUBY-Q12" as AnchorId,
     "ANCHOR-RUBY-Q18" as AnchorId,
   ]),
-  evidenceRoles: Object.freeze(["trait", "explicit_emotion", "fact", "inference_situation", "inference_reaction"]),
+  evidenceRoles: Object.freeze([
+    "trait",
+    "explicit_emotion",
+    "problem",
+    "fact",
+    "inference_situation",
+    "inference_reaction",
+    "resolution",
+    "closing",
+  ]),
   createScenario({ storyPlan, topic, random }: ScenarioInput) {
     return storyPlan ? scenarioFromStoryPlan(storyPlan, topic) : chooseScenario(random, topic);
   },
@@ -521,7 +503,7 @@ export const storyStandard4qBlueprint = Object.freeze({
     return `{{${scenario.location}}}でのやりなおし`;
   },
   buildStorySentences,
-  buildQuestions,
+  buildQuestionContent,
   buildStoryMetadata({ scenario, trait, storyPlan }: {
     readonly scenario: RetryScenario;
     readonly trait: RetryTrait;
@@ -548,5 +530,5 @@ export const storyStandard4qBlueprint = Object.freeze({
   templateVersion({ storyPlan }: { readonly storyPlan: StoryPlanV1 | null }) {
     return storyPlan ? "ai-story-plan-adapter.v0.1" : "deterministic-story-template.v0.3";
   },
-  runMachineChecks: runStandardFourQuestionChecks,
+  runMachineChecks: runQuestionSetChecks,
 } satisfies Blueprint<RetryScenario, RetryTrait>);

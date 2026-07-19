@@ -33,7 +33,7 @@ for (const registeredBlueprint of listBlueprints()) {
     "pickTrait",
     "buildTitle",
     "buildStorySentences",
-    "buildQuestions",
+    "buildQuestionContent",
     "buildStoryMetadata",
     "templateVersion",
     "runMachineChecks",

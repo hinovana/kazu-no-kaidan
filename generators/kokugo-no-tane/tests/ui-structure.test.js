@@ -48,6 +48,10 @@ for (const text of [
   "あとの　もんだいに　こたえましょう",
   "diagnostic-grid",
   "本文構造",
+  "問題セット",
+  "question-list-",
+  "print-question-pages",
+  "question-layout-",
 ]) {
   assert.match(page, new RegExp(text), `React UI must contain: ${text}`);
 }
@@ -67,12 +71,21 @@ assert.match(page, /checkAiProxy\(aiProxyUrl\)/);
 assert.match(page, /source:\s*["']story-plan\.v1["']/);
 assert.match(page, /source:\s*["']local-fallback["']/);
 assert.match(page, /今回はローカルアルゴリズムで生成しました/);
+assert.match(page, /const nextForm = \{ \.\.\.form, seed: createRandomSeed\(\) \}/);
+assert.match(page, /if \(generationMode === ["']local["']\) \{\s*void generate\(nextForm\);\s*return;/);
+assert.match(page, /onClick=\{randomizeSeed\}/);
 assert.match(page, /autogenerate/);
 assert.match(page, /document\.documentElement\.dataset\.printLayout\s*=\s*["']vertical["']/);
-assert.match(page, /question\.type === ["']infer_emotion["']|<ResponseZones/);
-assert.match(page, /\[\s*\["りゆう", 2\], \["きもち", 1\]\s*\]/);
+assert.match(page, /layout\.kind === ["']reason-and-emotion["']/);
+assert.match(page, /zones\.map\(\(zone\)/);
+assert.match(page, /layout\.cells/);
 assert.match(page, /entry\.render_ruby/);
 assert.match(page, /story_structure_id/);
+assert.match(page, /question_set_blueprint_id/);
+assert.match(page, /function paginateQuestions/);
+assert.match(page, /questions\.length <= 4 \? 4 : 3/);
+assert.match(page, /pageNumber=\{pageIndex \+ 2\}/);
+assert.match(page, /counterReset:\s*`question \$\{startIndex\}`/);
 assert.doesNotMatch(page, /worksheet-kind|name-field|questions-heading|answer-field-label|worksheet-meta/);
 assert.match(aiProxyClient, /globalThis\.crypto\?\.getRandomValues/);
 
@@ -86,17 +99,21 @@ assert.match(css, /\.question::before\s*\{[\s\S]{0,500}text-combine-upright:\s*a
 assert.match(css, /\.question-prompt\s*\{[\s\S]{0,300}text-orientation:\s*upright/);
 assert.match(css, /data-print-layout=["']vertical["']\]\s+\.questions\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) 13mm/);
 assert.match(css, /data-print-layout=["']vertical["']\]\s+\.question-sheet-meta\s*\{[^}]*grid-column:\s*2/);
-assert.match(css, /\.question-list\s*\{[\s\S]{0,400}grid-template-columns:\s*\.85fr 1\.05fr \.9fr 1\.2fr/);
+assert.match(css, /data-print-layout=["']vertical["']\]\s+\.question-list\s*\{[^}]*display:\s*flex/);
+assert.match(css, /\.question-layout-reason-and-emotion\s*\{[^}]*flex:\s*1\.25 1 0/);
+assert.doesNotMatch(css, /\.question-list-6\s*\{[^}]*grid-template-columns:\s*repeat\(6/);
+assert.match(css, /\.print-question-pages\s*\{\s*display:\s*none/);
+assert.match(css, /@media print[\s\S]*\.print-question-pages\s*\{\s*display:\s*block/);
 assert.match(css, /\.character-grid span\s*\{[\s\S]{0,300}width:\s*9mm[\s\S]{0,300}height:\s*9mm/);
 
 const answerBoxRules = [...css.matchAll(/\.answer-box\s*\{([^}]*)\}/g)].map((match) => match[1]);
 const responseColumnRules = [...css.matchAll(/\.response-columns span\s*\{([^}]*)\}/g)].map((match) => match[1]);
+const borderedResponseColumnRules = responseColumnRules.filter((rule) => /border:\s*1px solid/.test(rule));
 assert.equal(answerBoxRules.length, 2, "screen and print must both style the question 3 answer area");
-assert.equal(responseColumnRules.length, 2, "screen and print must both style the question 4 answer area");
+assert.equal(borderedResponseColumnRules.length, 2, "screen and print must both style the open-response answer area");
 assert.ok(answerBoxRules.every((rule) => !rule.includes("repeating-linear-gradient")));
-assert.ok(responseColumnRules.every((rule) => !rule.includes("repeating-linear-gradient")));
+assert.ok(borderedResponseColumnRules.every((rule) => !rule.includes("repeating-linear-gradient")));
 assert.ok(answerBoxRules.every((rule) => /border:\s*1px solid/.test(rule)));
-assert.ok(responseColumnRules.every((rule) => /border:\s*1px solid/.test(rule)));
 assert.match(css, /\.control-panel\s*\{[^}]*position:\s*static[^}]*max-height:\s*none[^}]*overflow:\s*visible/);
 assert.doesNotMatch(css, /\.control-panel\s*\{[^}]*overflow-y:\s*auto/);
 assert.match(css, /\.generation-tabs\s*\{[^}]*grid-template-columns:\s*repeat\(2/);

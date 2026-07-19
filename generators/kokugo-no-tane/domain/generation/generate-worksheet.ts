@@ -26,6 +26,11 @@ import {
   getBlueprint,
   selectBlueprintId,
 } from "../blueprints/registry.ts";
+import { buildQuestionSet } from "../questions/build-question-set.ts";
+import {
+  getQuestionSetBlueprint,
+  selectQuestionSetBlueprintId,
+} from "../questions/question-set-registry.ts";
 import type { LengthSetting } from "../blueprints/blueprint.js";
 import type {
   GenerationProfile,
@@ -33,7 +38,11 @@ import type {
   StoryLength,
   TopicId,
 } from "../types/generation.js";
-import type { BlueprintId, SentenceId } from "../types/ids.js";
+import type {
+  BlueprintId,
+  QuestionSetBlueprintId,
+  SentenceId,
+} from "../types/ids.js";
 import type { Choice, Question } from "../types/questions.js";
 import type { StoryPlanV1 } from "../types/story-plan.js";
 import type { RichText } from "../types/text.js";
@@ -45,7 +54,7 @@ import type {
   WorksheetCheckInput,
 } from "../types/worksheet.js";
 
-const GENERATOR_VERSION = "kokugo-no-tane.prototype.v0.8";
+const GENERATOR_VERSION = "kokugo-no-tane.prototype.v0.9";
 export const LENGTH_SETTINGS = Object.freeze({
   short: { extra_count: 2, character_band: [250, 370], label: "短め" },
   standard: { extra_count: 8, character_band: [370, 570], label: "ふつう" },
@@ -70,6 +79,7 @@ export interface LegacyGenerateWorksheetOptions {
   readonly seed: string | number;
   readonly topic?: TopicId;
   readonly blueprintId?: BlueprintId;
+  readonly questionSetBlueprintId?: QuestionSetBlueprintId;
   readonly storyPlan?: StoryPlanV1;
   readonly sourceMetadata?: LegacySourceMetadata;
 }
@@ -81,12 +91,13 @@ interface UncheckedGenerateWorksheetOptions {
   readonly seed?: unknown;
   readonly topic?: unknown;
   readonly blueprintId?: unknown;
+  readonly questionSetBlueprintId?: unknown;
   readonly storyPlan?: unknown;
   readonly sourceMetadata?: unknown;
 }
 
 function questionChoices(question: Question): readonly Choice[] {
-  return question.type === "emotion_choice" ? question.choices : [];
+  return "choices" in question ? question.choices : [];
 }
 
 function validateSegments(worksheet: WorksheetCheckInput): string[] {
@@ -292,6 +303,7 @@ export function generateWorksheet(
     seed,
     topic,
     blueprintId,
+    questionSetBlueprintId,
     storyPlan,
     sourceMetadata,
   } = options;
@@ -318,6 +330,9 @@ export function generateWorksheet(
     storyPlan: normalizedStoryPlan,
   });
   const blueprint = getBlueprint(resolvedBlueprintId);
+  const resolvedQuestionSetBlueprintId = questionSetBlueprintId === undefined
+    ? selectQuestionSetBlueprintId({ seed: normalizedSeed, storyStructureId: blueprint.storyStructureId })
+    : getQuestionSetBlueprint(questionSetBlueprintId as QuestionSetBlueprintId).id;
   const storyPlanSignature = normalizedStoryPlan ? (stableJson(normalizedStoryPlan) ?? "") : "";
   const random = createRandomFunction(`${blueprint.id}|${normalizedSeed}|${grade}|${profile}|${length}|${topic ?? ""}|${storyPlanSignature}`);
   const scenario = blueprint.createScenario({
@@ -350,10 +365,17 @@ export function generateWorksheet(
       evidence[sentence.role] = sentence.sentence_id;
     }
   }
-  const questions = blueprint.buildQuestions({ render, scenario, trait: trait.term, evidence, random, profile });
+  const questionContent = blueprint.buildQuestionContent({ scenario, trait });
+  const questions = buildQuestionSet({
+    questionSetBlueprintId: resolvedQuestionSetBlueprintId,
+    content: questionContent,
+    render,
+    evidence,
+    random,
+  });
   const paragraphs = buildParagraphs(sentences, profile);
   const passageText = sentences.map((sentence) => sentence.plainText).join("　");
-  const itemHash = hash32(`${blueprint.id}|${normalizedSeed}|${grade}|${profile}|${length}|${topic ?? ""}|${storyPlanSignature}`).toString(16).padStart(8, "0");
+  const itemHash = hash32(`${blueprint.id}|${resolvedQuestionSetBlueprintId}|${normalizedSeed}|${grade}|${profile}|${length}|${topic ?? ""}|${storyPlanSignature}`).toString(16).padStart(8, "0");
   const generationSource = normalizedSourceMetadata?.source
     ?? (normalizedStoryPlan ? "ai_proxy" : "local");
   const worksheet: WorksheetCheckInput = {
@@ -365,6 +387,7 @@ export function generateWorksheet(
     text_type: blueprint.textType,
     blueprint_id: blueprint.id,
     story_structure_id: blueprint.storyStructureId,
+    question_set_blueprint_id: resolvedQuestionSetBlueprintId,
     anchor_ids: [...blueprint.anchorIds],
     grade,
     generation_profile: profile,
@@ -399,9 +422,10 @@ export function generateWorksheet(
     vocabulary_audit: buildVocabularyAudit(rubyPlan),
     generation_provenance: {
       generator_version: GENERATOR_VERSION,
-      algorithm_spec_version: "algorithm-spec.v0.8-draft",
-      blueprint_version: "item-blueprint.v0.3-draft",
+      algorithm_spec_version: "algorithm-spec.v0.9-draft",
+      blueprint_version: "item-blueprint.v0.4-draft",
       blueprint_id: blueprint.id,
+      question_set_blueprint_id: resolvedQuestionSetBlueprintId,
       database_release: KANJI_DATABASE_RELEASE,
       vocabulary_candidate_database_release: VOCABULARY_CANDIDATE_DATABASE_RELEASE,
       template_version: blueprint.templateVersion({ storyPlan: normalizedStoryPlan }),

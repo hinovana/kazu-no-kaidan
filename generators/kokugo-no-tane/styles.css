@@ -532,6 +532,7 @@ rt {
 }
 
 .question-sheet-meta { display: none; }
+.print-question-pages { display: none; }
 
 .character-grid {
   display: flex;
@@ -711,6 +712,7 @@ rt {
   }
 
   .screen-only,
+  .screen-question-sheet,
   .prototype-notice,
   .detail-controls,
   .answer-panel,
@@ -750,6 +752,8 @@ rt {
   .question > * { grid-column: 2; }
   .question-prompt { font-size: 11pt; }
   rt { color: #111; }
+
+  .print-question-pages { display: block; }
 
   html[data-print-layout="vertical"] .worksheet-reading-page {
     position: relative;
@@ -893,12 +897,16 @@ rt {
   html[data-print-layout="vertical"] .question-list {
     grid-column: 1;
     grid-row: 1;
-    display: grid;
-    grid-template-columns: .85fr 1.05fr .9fr 1.2fr;
+    display: flex;
     gap: 0;
     height: 166mm;
     direction: rtl;
   }
+
+  html[data-print-layout="vertical"] .question-layout-fixed-character-boxes { flex: .9 1 0; }
+  html[data-print-layout="vertical"] .question-layout-choice-list { flex: 1.05 1 0; }
+  html[data-print-layout="vertical"] .question-layout-single-extract { flex: .95 1 0; }
+  html[data-print-layout="vertical"] .question-layout-reason-and-emotion { flex: 1.25 1 0; }
 
   html[data-print-layout="vertical"] .question {
     position: relative;
