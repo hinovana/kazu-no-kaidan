@@ -15,6 +15,10 @@ import {
   STORY_STANDARD_4Q_BLUEPRINT_ID,
 } from "../domain/blueprints/story-retry-craft/blueprint.ts";
 import {
+  STORY_LATE_ARRIVAL_4Q_BLUEPRINT_ID,
+  STORY_LATE_ARRIVAL_STRUCTURE_ID,
+} from "../domain/blueprints/story-late-arrival/blueprint.ts";
+import {
   CAUSAL_TRACE_6Q_ID,
   CONTEXT_AND_INFERENCE_4Q_ID,
   STANDARD_READING_4Q_ID,
@@ -23,6 +27,7 @@ import {
 const BLUEPRINT_STRUCTURES = new Map([
   [STORY_STANDARD_4Q_BLUEPRINT_ID, STORY_RETRY_CRAFT_STRUCTURE_ID],
   [STORY_CLUE_DISCOVERY_4Q_BLUEPRINT_ID, STORY_CLUE_DISCOVERY_STRUCTURE_ID],
+  [STORY_LATE_ARRIVAL_4Q_BLUEPRINT_ID, STORY_LATE_ARRIVAL_STRUCTURE_ID],
 ]);
 
 const countOccurrences = (text, target) => text.split(target).length - 1;
@@ -69,6 +74,44 @@ function assertWorksheet(worksheet) {
   }
   assert.equal(worksheet.machine_checks.all_passed, true);
   assert.equal(runMachineChecks(worksheet).all_passed, true);
+}
+
+{
+  const expectedCategories = new Map([
+    ["home", "家庭"],
+    ["school", "学校"],
+    ["nature", "自然"],
+    ["town", "町"],
+    ["animal", "動物"],
+  ]);
+  for (const [topic, category] of expectedCategories) {
+    for (const questionSetBlueprintId of QUESTION_SET_TYPES.keys()) {
+      const worksheet = generateWorksheet({
+        grade: 1,
+        profile: 4,
+        length: "standard",
+        seed: `late-arrival-${topic}-${questionSetBlueprintId}`,
+        topic,
+        blueprintId: STORY_LATE_ARRIVAL_4Q_BLUEPRINT_ID,
+        questionSetBlueprintId,
+      });
+      const lateArrivalIndex = worksheet.passage.sentences.findIndex((sentence) => sentence.role === "late_arrival");
+      const problemIndex = worksheet.passage.sentences.findIndex((sentence) => sentence.role === "problem");
+      const intervention = worksheet.passage.sentences.find((sentence) => sentence.role === "intervention");
+      const firstLateEntrantMention = worksheet.passage.sentences.findIndex((sentence) =>
+        new RegExp(`(?:^|[\\s　、。])${worksheet.story.late_arriving_character}(?:は|が|と|も|を|に|へ|で|、|。|$)`, "u")
+          .test(sentence.plainText));
+      assert.equal(worksheet.story.category, category);
+      assert.equal(worksheet.story.character_structure, "late_arrival_three_person");
+      assert.ok(worksheet.story.late_arriving_character);
+      assert.ok(problemIndex < lateArrivalIndex);
+      assert.equal(firstLateEntrantMention, lateArrivalIndex);
+      assert.match(worksheet.passage.sentences.at(-1).plainText, /さんにん/);
+      assert.ok(worksheet.questions.some((question) => question.evidence_ids.includes(intervention.sentence_id)));
+      assert.equal(worksheet.machine_checks.checks.find((check) => check.check_id === "late_arrival_character_contract").passed, true);
+      assertWorksheet(worksheet);
+    }
+  }
 }
 
 function assertStandardWorksheet(worksheet) {
@@ -190,7 +233,7 @@ for (const blueprintId of BLUEPRINT_STRUCTURES.keys()) {
 }
 
 {
-  const worksheet = generateWorksheet({ grade: 1, profile: 3, seed: "ruby-scopes", topic: "nature", questionSetBlueprintId: STANDARD_READING_4Q_ID });
+  const worksheet = generateWorksheet({ grade: 1, profile: 3, seed: "ruby-scopes", topic: "nature", blueprintId: STORY_STANDARD_4Q_BLUEPRINT_ID, questionSetBlueprintId: STANDARD_READING_4Q_ID });
   const park = worksheet.ruby_plan.filter((entry) => entry.lexeme_id === "park");
   const passage = park.filter((entry) => entry.scope === "passage");
   assert.equal(passage[0].render_ruby, true);
@@ -207,7 +250,7 @@ for (const blueprintId of BLUEPRINT_STRUCTURES.keys()) {
 }
 
 {
-  const worksheet = generateWorksheet({ grade: 1, profile: 3, seed: "grade1-known-kanji-ruby", topic: "animal" });
+  const worksheet = generateWorksheet({ grade: 1, profile: 3, seed: "grade1-known-kanji-ruby", topic: "animal", blueprintId: STORY_STANDARD_4Q_BLUEPRINT_ID });
   const forest = worksheet.ruby_plan.filter((entry) => entry.lexeme_id === "forest");
   const passage = forest.filter((entry) => entry.scope === "passage");
   assert.ok(passage.length >= 2);
@@ -220,7 +263,7 @@ for (const blueprintId of BLUEPRINT_STRUCTURES.keys()) {
 }
 
 {
-  const worksheet = generateWorksheet({ grade: 3, profile: 3, seed: "known-kanji", topic: "nature" });
+  const worksheet = generateWorksheet({ grade: 3, profile: 3, seed: "known-kanji", topic: "nature", blueprintId: STORY_STANDARD_4Q_BLUEPRINT_ID });
   const park = worksheet.ruby_plan.filter((entry) => entry.lexeme_id === "park");
   assert.ok(park.length >= 4);
   assert.ok(park.every((entry) => entry.reason === "grade_known" && !entry.render_ruby));
@@ -294,6 +337,25 @@ for (const blueprintId of BLUEPRINT_STRUCTURES.keys()) {
     checks.checks.find(
       (check) => check.check_id === "vocabulary_band_candidate_evidence",
     ).passed,
+    false,
+  );
+}
+
+{
+  const worksheet = generateWorksheet({
+    grade: 1,
+    profile: 4,
+    seed: "reject-tampered-late-arrival-role",
+    topic: "town",
+    blueprintId: STORY_LATE_ARRIVAL_4Q_BLUEPRINT_ID,
+    questionSetBlueprintId: STANDARD_READING_4Q_ID,
+  });
+  const lateArrivalSentence = worksheet.passage.sentences.find((sentence) => sentence.role === "late_arrival");
+  lateArrivalSentence.role = "detail_after";
+  const checks = runMachineChecks(worksheet);
+  assert.equal(checks.all_passed, false, "removing the late-arrival role must fail");
+  assert.equal(
+    checks.checks.find((check) => check.check_id === "late_arrival_character_contract").passed,
     false,
   );
 }

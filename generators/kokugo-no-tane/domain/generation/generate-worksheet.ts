@@ -54,7 +54,7 @@ import type {
   WorksheetCheckInput,
 } from "../types/worksheet.js";
 
-const GENERATOR_VERSION = "kokugo-no-tane.prototype.v0.9";
+const GENERATOR_VERSION = "kokugo-no-tane.prototype.v0.10";
 export const LENGTH_SETTINGS = Object.freeze({
   short: { extra_count: 2, character_band: [250, 370], label: "短め" },
   standard: { extra_count: 8, character_band: [370, 570], label: "ふつう" },
@@ -422,8 +422,8 @@ export function generateWorksheet(
     vocabulary_audit: buildVocabularyAudit(rubyPlan),
     generation_provenance: {
       generator_version: GENERATOR_VERSION,
-      algorithm_spec_version: "algorithm-spec.v0.9-draft",
-      blueprint_version: "item-blueprint.v0.4-draft",
+      algorithm_spec_version: "algorithm-spec.v0.10-draft",
+      blueprint_version: "item-blueprint.v0.5-draft",
       blueprint_id: blueprint.id,
       question_set_blueprint_id: resolvedQuestionSetBlueprintId,
       database_release: KANJI_DATABASE_RELEASE,

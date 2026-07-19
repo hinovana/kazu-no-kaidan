@@ -7,6 +7,9 @@ import {
   STORY_STANDARD_4Q_BLUEPRINT_ID,
 } from "../domain/blueprints/story-retry-craft/blueprint.ts";
 import {
+  STORY_LATE_ARRIVAL_4Q_BLUEPRINT_ID,
+} from "../domain/blueprints/story-late-arrival/blueprint.ts";
+import {
   CAUSAL_TRACE_6Q_ID,
   CONTEXT_AND_INFERENCE_4Q_ID,
   STANDARD_READING_4Q_ID,
@@ -84,6 +87,7 @@ for (let grade = 1; grade <= 3; grade += 1) {
       assert.deepEqual(blueprintIds, new Set([
         STORY_STANDARD_4Q_BLUEPRINT_ID,
         STORY_CLUE_DISCOVERY_4Q_BLUEPRINT_ID,
+        STORY_LATE_ARRIVAL_4Q_BLUEPRINT_ID,
       ]));
       assert.deepEqual(questionSetIds, new Set(QUESTION_COUNTS.keys()));
     }

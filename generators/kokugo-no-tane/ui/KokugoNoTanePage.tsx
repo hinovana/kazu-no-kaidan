@@ -643,6 +643,7 @@ function EvidencePanel({ worksheet }: { readonly worksheet: Worksheet }) {
     ["題材", worksheet.requested_topic ?? "auto"],
     ["blueprint", provenance.blueprint_id],
     ["本文構造", provenance.story_structure_id],
+    ["人物構造", worksheet.story.character_structure === "late_arrival_three_person" ? "途中参加の3人" : "2人"],
     ["問題セット", provenance.question_set_blueprint_id],
     ["生成方式", provenance.generation_source],
     ["AI model", provenance.model ?? "未使用"],

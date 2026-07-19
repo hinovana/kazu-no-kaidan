@@ -6,6 +6,10 @@ import {
   STORY_STANDARD_4Q_BLUEPRINT_ID,
   storyStandard4qBlueprint,
 } from "./story-retry-craft/blueprint.ts";
+import {
+  STORY_LATE_ARRIVAL_4Q_BLUEPRINT_ID,
+  storyLateArrival4qBlueprint,
+} from "./story-late-arrival/blueprint.ts";
 import { hash32 } from "../generation/random.ts";
 import type { Blueprint, BlueprintTrait, ResolvedBlueprint } from "./blueprint.js";
 import type { BlueprintId } from "../types/ids.js";
@@ -16,11 +20,13 @@ export const DEFAULT_BLUEPRINT_ID = STORY_STANDARD_4Q_BLUEPRINT_ID;
 const BLUEPRINTS = new Map<BlueprintId, ResolvedBlueprint>([
   [storyStandard4qBlueprint.id, eraseBlueprint(storyStandard4qBlueprint)],
   [storyClueDiscovery4qBlueprint.id, eraseBlueprint(storyClueDiscovery4qBlueprint)],
+  [storyLateArrival4qBlueprint.id, eraseBlueprint(storyLateArrival4qBlueprint)],
 ]);
 
 const LOCAL_BLUEPRINT_IDS = Object.freeze([
   STORY_STANDARD_4Q_BLUEPRINT_ID,
   STORY_CLUE_DISCOVERY_4Q_BLUEPRINT_ID,
+  STORY_LATE_ARRIVAL_4Q_BLUEPRINT_ID,
 ]);
 
 export function getBlueprint(blueprintId: string = DEFAULT_BLUEPRINT_ID): ResolvedBlueprint {

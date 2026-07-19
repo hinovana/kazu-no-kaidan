@@ -2,12 +2,12 @@
 
 | 項目 | 現在値 |
 | --- | --- |
-| 文書版 | `implementation-progress.v0.14` |
+| 文書版 | `implementation-progress.v0.15` |
 | 最終更新日 | 2026-07-19 |
-| 現在地点 | 本文構造2種類、設問セット3種類、TypeScript作問domain、TypeScript NodeローカルAIプロキシ、React UI、ルートSPAへのlazy登録を実装 |
+| 現在地点 | 本文構造3種類、設問セット3種類、TypeScript作問domain、TypeScript NodeローカルAIプロキシ、React UI、ルートSPAへのlazy登録を実装 |
 | 実装フェーズ完了数 | 0 / 7 |
-| 実装状態 | 漢字440字候補版、教育基本語彙の低学年6,865語・高学年8,620語候補版、限定語彙11語の監査用投影、決定的作問エンジン、本文構造2種類、設問セット3種類、設問パターン・解答欄契約、ローカルAIプロキシ、AI設計図アダプター、候補保存、障害時フォールバック、4問1ページ・6問3問ずつ2ページの縦書き解答用紙を実装。国語runtimeはTypeScript `5.9.3` strict、UIはReact `19.2.7`、ホストはVite `8.1.5` とHash Routerへ移行 |
-| 次の開始候補 | 3種類の設問セットについて、開発者本人による本文・設問・表記・解答欄の十分さの人間レビューへ進む。指示内容・様子語・複数空欄・全件列挙は、対応する本文根拠契約を先に設計する |
+| 実装状態 | 漢字440字候補版、教育基本語彙の低学年6,865語・高学年8,620語候補版、限定語彙11語の監査用投影、決定的作問エンジン、本文構造3種類、設問セット3種類、設問パターン・解答欄契約、ローカルAIプロキシ、AI設計図アダプター、候補保存、障害時フォールバック、4問1ページ・6問3問ずつ2ページの縦書き解答用紙を実装。国語runtimeはTypeScript `5.9.3` strict、UIはReact `19.2.7`、ホストはVite `8.1.5` とHash Routerへ移行 |
+| 次の開始候補 | 途中参加型を含む3種類の本文構造×3種類の設問セットについて、開発者本人による本文・設問・表記・解答欄の十分さの人間レビューへ進む。指示内容・様子語・複数空欄・全件列挙は、対応する本文根拠契約を先に設計する |
 | 開発形態 | 個人開発 |
 
 本書は、仕様の内容ではなく、実装・検証・評価が現在どこまで進んでいるかを管理する。各仕様の正本は [README.md](README.md) の「正本の境界」に従う。
@@ -142,6 +142,7 @@
 - [x] seed付き乱数と生成来歴を実装する。
 - [x] `story-standard-4q.v1` の本文構造を `story-retry-craft.v1` としてモジュール化し、レジストリから選択できるようにする。
 - [x] 失敗ややり直しを含まない `story-clue-discovery-4q.v1`／`story-clue-discovery.v1` を追加し、seedから2構造を決定的に選ぶ。
+- [x] 二人で始めた作業へ第三人物が途中参加し、介入を経て三人で解決する `story-late-arrival-4q.v1`／`story-late-arrival.v1` を追加し、seedから3構造を決定的に選ぶ。
 - [x] 正答と本文根拠を先に固定する生成順序を実装する。
 - [x] 漢字候補DBと `prototype_lexicon` による限定的な学年別表記選択を実装する。
 - [x] `prototype_lexicon` の出現だけを語彙候補DBの低学年区分へ照合し、候補DB版・出典語ID・範囲を生成物へ記録する。
@@ -159,7 +160,7 @@
 - [x] [local-ai-proxy-spec.md](local-ai-proxy-spec.md) に従い、Node.jsプロキシ、`/health`、`/api/story-plan`、CORS、接続UI、ローカルフォールバックを実装する。
 - [x] AI候補のraw responseと検証済みstory-plan candidateをGit管理外へ分離して保存する。
 - [x] `GenerationRequest`、`Worksheet`、`Question`、`StoryPlanV1` のTypeScript型、`unknown` のruntime入力parser、型付きapplication入口を追加する。
-- [x] random、template renderer、language provider、共通作問エンジン、blueprint registryと2構造をTypeScriptへ移行する。
+- [x] random、template renderer、language provider、共通作問エンジン、blueprint registryと3構造をTypeScriptで実装する。
 - [x] AI proxy clientとNodeローカルプロキシをTypeScriptへ移行し、browser/server別のstrict typecheckを通す。
 - [x] React UIをルートSPAのlazy moduleとして登録し、旧URLを互換転送へ切り替える。
 - [x] ローカル・AI・フォールバックのdifferential test、既存回帰、1,350件コーパスで作問契約を保護する。
@@ -284,15 +285,17 @@ git diff --check
 
 - `domain/generation/generate-worksheet.ts`：本文構造と設問セットを解決し、同一seedで再現できる問題セット、段落、表記、生成来歴、共通機械検査を構成
 - `domain/blueprints/registry.ts`：登録済み本文構造モジュールの既定ID、列挙、未登録ID拒否を実装
-- `domain/blueprints/story-retry-craft/blueprint.ts`、`story-clue-discovery/blueprint.ts`：各本文構造固有の題名、scenario、本文役割列、設問パターン用content、正答根拠、構造固有検査を実装
+- `domain/blueprints/story-retry-craft/blueprint.ts`、`story-clue-discovery/blueprint.ts`、`story-late-arrival/blueprint.ts`：各本文構造固有の題名、scenario、本文役割列、設問パターン用content、正答根拠、構造固有検査を実装
 - `domain/questions/question-set-registry.ts`、`build-question-set.ts`：標準4問、因果6問、文脈・心情4問の構成と、8つの設問パターン・4つの解答欄を実装
 - `domain/blueprints/standard-four-question-checks.ts`：3設問セットが共有する根拠距離、一意解、選択肢、標準セット意味契約、採点要素の検査を実装
 - `infrastructure/language/kanji-data.ts`、`prototype-language-data-provider.ts`、`domain/language/template-renderer.ts`：漢字候補DBと限定語彙を使う学年別表記、1年生の全漢字を含む範囲別の初出ふりがな
 - `module.tsx`、`ui/KokugoNoTanePage.tsx`、`styles.css`：アルゴリズム／AI生成タブ、両方式に共通する生成条件、アルゴリズム生成では問題生成まで行いAI生成では値だけを変えるランダムseed、問題用紙、解答、生成根拠、未校閲警告、A4横・縦書き固定印刷
-- `tests/blueprint-registry.test.js`、`tests/generator.test.js`、`tests/corpus.mjs`、`tests/ui-structure.test.js`：2構造・3設問セットの契約、未登録ID拒否、構造ID改ざん検知、AI設計図との非対応組合せ拒否、決定性、3学年×5プロファイル×3本文長、1,350件コーパスで全セットが生成され、先頭根拠位置と解答欄構成が複数になること、UI契約を検証
+- `tests/blueprint-registry.test.js`、`tests/generator.test.js`、`tests/corpus.mjs`、`tests/ui-structure.test.js`：3構造・3設問セットの契約、途中参加人物の初出位置・介入根拠、未登録ID拒否、構造ID改ざん検知、AI設計図との非対応組合せ拒否、決定性、3学年×5プロファイル×3本文長、1,350件コーパスで全セットが生成され、先頭根拠位置と解答欄構成が複数になること、UI契約を検証
 - ルートの `index.html`、`src/app/`、`README.md`：Vite SPA、Hash Router、型付き教材registry、プロトタイプへの導線を追加
 - 実ブラウザ：`animal-demo` で再挑戦型「森でのやりなおし」、`clue-demo` で手がかり発見型「森のあしあとをたどって」がseedから自動選択され、生成来歴に各 `story_structure_id` が残ることを確認。発見型の画面表示、品質表示、コンソール警告・エラーなしを確認
+- 実ブラウザ：`browser-late-1` と `browser-late-151` で途中参加型がseedから自動選択され、問題発生後に第三人物が初登場する本文、介入と介入後の行動を問う4問／6問、生成根拠の「途中参加の3人」、構造固有検査合格、コンソール警告・エラーなしを確認
 - A4横の縦書き印刷：手がかり発見型 `clue-demo` のChrome印刷PDFを2ページで画像化し、1ページ目の導入文・題名・本文、2ページ目だけの名前欄、外枠、ページ識別、右から左への4問、指定字数マス、丸数字付き選択肢、抜き出し欄、理由・気持ち別記述欄、ふりがな、全角空白に欠落・重なり・不自然な改ページがないことを確認。生成メタデータと重複する設問見出しは児童用紙面から除外
+- A4横の縦書き印刷：途中参加型の4問版を2ページ、6問版を3ページのChrome印刷PDFへ出力して全5ページを画像確認。本文の第三人物初出、設問・選択肢・解答欄、3問ずつの改ページ、ページ番号に欠落・重なり・はみ出しがないことを確認
 
 自動検査を通過した生成物のライフサイクルは `automated_checks_passed` だが、利用区分は `development_preview`、`child_use_permitted=false`、品質評価は `not_formally_assessed` のままである。
 
@@ -336,6 +339,7 @@ TypeScript化とSPA移行に加え、`answer_layout` 導入とblueprintから設
 
 | 日付 | 変更 | 状態 |
 | --- | --- | --- |
+| 2026-07-19 | 二人で始めた作業の問題発生後に第三人物が初登場し、その介入を受けて主人公が方法を決め、三人で解決する `story-late-arrival.v1` を追加。人物構造メタデータ、初出順・役割順・介入根拠の構造固有検査、全題材×全設問セットの回帰を追加。実ブラウザと4問2ページ・6問3ページの印刷PDF全5ページを確認 | フェーズ3の本文構造を3種類へ拡張・自動検査と紙面確認済み・教育内容は人間未確認 |
 | 2026-07-19 | 6問を1ページ6列へ詰めた際の設問・選択肢・解答欄の重なりを再現し、3問ずつ2ページへ分割。設問形式ごとの列幅と通し番号を維持し、標準4問・因果6問・文脈と心情4問をChrome印刷PDFの全7ページで画像確認 | 4問は2ページ、6問は3ページ。欠落・重なり・はみ出し・不自然な改ページなし |
 | 2026-07-19 | 本文構造が正規化済み設問内容を供給し、共通レジストリが標準4問・因果6問・文脈と心情4問をseedから選ぶ構成へ変更。設問パターン・解答欄ID、4問／6問UI、セット別機械検査を追加し、1,350件で3セット・先頭根拠位置・解答欄構成の多様性を検証 | フェーズ3の反復利用時の設問・解答用紙パターン固定を緩和。人間レビューと印刷画像確認は未完了 |
 | 2026-07-19 | ランダムseed操作を生成方式ごとに分岐。アルゴリズム生成では新しいseedを反映してそのまま問題を生成し、AI生成ではモデルを呼び出さずseed値だけを変更する | フェーズ3の操作導線を改善 |

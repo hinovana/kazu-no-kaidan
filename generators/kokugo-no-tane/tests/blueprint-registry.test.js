@@ -13,6 +13,10 @@ import {
   STORY_RETRY_CRAFT_STRUCTURE_ID,
   STORY_STANDARD_4Q_BLUEPRINT_ID,
 } from "../domain/blueprints/story-retry-craft/blueprint.ts";
+import {
+  STORY_LATE_ARRIVAL_4Q_BLUEPRINT_ID,
+  STORY_LATE_ARRIVAL_STRUCTURE_ID,
+} from "../domain/blueprints/story-late-arrival/blueprint.ts";
 import { generateWorksheet, runMachineChecks } from "../domain/generation/generate-worksheet.ts";
 import { createStoryPlanFixture } from "./fixtures/story-plan-fixture.js";
 
@@ -20,6 +24,7 @@ assert.equal(DEFAULT_BLUEPRINT_ID, STORY_STANDARD_4Q_BLUEPRINT_ID);
 assert.deepEqual(listBlueprints().map((blueprint) => blueprint.id), [
   STORY_STANDARD_4Q_BLUEPRINT_ID,
   STORY_CLUE_DISCOVERY_4Q_BLUEPRINT_ID,
+  STORY_LATE_ARRIVAL_4Q_BLUEPRINT_ID,
 ]);
 
 const blueprint = getBlueprint();
@@ -59,6 +64,7 @@ assert.equal(byAutomaticSelection.machine_checks.checks.find((check) => check.ch
 const expectedStructures = new Map([
   [STORY_STANDARD_4Q_BLUEPRINT_ID, STORY_RETRY_CRAFT_STRUCTURE_ID],
   [STORY_CLUE_DISCOVERY_4Q_BLUEPRINT_ID, STORY_CLUE_DISCOVERY_STRUCTURE_ID],
+  [STORY_LATE_ARRIVAL_4Q_BLUEPRINT_ID, STORY_LATE_ARRIVAL_STRUCTURE_ID],
 ]);
 for (const [blueprintId, structureId] of expectedStructures) {
   const worksheet = generateWorksheet({ ...options, blueprintId });
@@ -69,8 +75,10 @@ for (const [blueprintId, structureId] of expectedStructures) {
   assert.equal(worksheet.machine_checks.checks.find((check) => check.check_id === "blueprint_contract").passed, true);
 }
 
-assert.equal(selectBlueprintId({ seed: "string:variation-0" }), STORY_STANDARD_4Q_BLUEPRINT_ID);
-assert.equal(selectBlueprintId({ seed: "string:variation-1" }), STORY_CLUE_DISCOVERY_4Q_BLUEPRINT_ID);
+assert.deepEqual(
+  new Set(Array.from({ length: 12 }, (_, index) => selectBlueprintId({ seed: `string:variation-${index}` }))),
+  new Set(expectedStructures.keys()),
+);
 assert.equal(selectBlueprintId({ seed: "any", storyPlan: {} }), STORY_STANDARD_4Q_BLUEPRINT_ID);
 
 const tampered = structuredClone(byAutomaticSelection);
@@ -93,6 +101,15 @@ assert.throws(
     ...options,
     topic: "town",
     blueprintId: STORY_CLUE_DISCOVERY_4Q_BLUEPRINT_ID,
+    storyPlan: createStoryPlanFixture(),
+  }),
+  /does not accept story-plan\.v1/iu,
+);
+
+assert.throws(
+  () => generateWorksheet({
+    ...options,
+    blueprintId: STORY_LATE_ARRIVAL_4Q_BLUEPRINT_ID,
     storyPlan: createStoryPlanFixture(),
   }),
   /does not accept story-plan\.v1/iu,

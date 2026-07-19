@@ -79,12 +79,14 @@ export interface Worksheet {
     readonly genre: "物語文";
     readonly category: string;
     readonly setting_lexeme_id: LexemeId;
+    readonly character_structure: "two_person" | "late_arrival_three_person";
     readonly protagonist: {
       readonly name: string;
       readonly trait: string;
       readonly goal: string;
     };
     readonly supporting_character: string;
+    readonly late_arriving_character: string | null;
     readonly event: {
       readonly problem: string | null;
       readonly resolution: string;

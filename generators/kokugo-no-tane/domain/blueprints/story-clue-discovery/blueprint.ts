@@ -454,12 +454,14 @@ export const storyClueDiscovery4qBlueprint = Object.freeze({
       genre: "物語文",
       category: scenario.category,
       setting_lexeme_id: scenario.location as LexemeId,
+      character_structure: "two_person",
       protagonist: {
         name: scenario.protagonist,
         trait: trait.term,
         goal: `${removePhraseMarkers(scenario.subject)}のひみつをみつける`,
       },
       supporting_character: scenario.friend,
+      late_arriving_character: null,
       event: {
         problem: null,
         clue: removePhraseMarkers(scenario.clue),
