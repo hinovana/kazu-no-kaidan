@@ -5,87 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>教材ジェネレータ</title>
     <link rel="icon" href="data:," />
-    <style>
-      :root {
-        color-scheme: light;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        color: #24303f;
-        background: #f4f7fa;
-      }
-
-      body {
-        margin: 0;
-      }
-
-      main {
-        width: min(920px, calc(100% - 40px));
-        margin: 0 auto;
-        padding: 64px 0;
-      }
-
-      h1 {
-        margin: 0;
-        font-size: clamp(2rem, 6vw, 3.5rem);
-      }
-
-      .intro {
-        margin: 16px 0 40px;
-        color: #5b6878;
-      }
-
-      .generator-list {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 20px;
-      }
-
-      .generator-card {
-        display: block;
-        padding: 28px;
-        color: inherit;
-        text-decoration: none;
-        background: #fff;
-        border: 1px solid #dbe2ea;
-        border-radius: 16px;
-        box-shadow: 0 8px 24px rgb(36 48 63 / 8%);
-        transition: transform 120ms ease, box-shadow 120ms ease;
-      }
-
-      .generator-card:hover,
-      .generator-card:focus-visible {
-        transform: translateY(-2px);
-        box-shadow: 0 12px 30px rgb(36 48 63 / 14%);
-      }
-
-      .generator-card h2 {
-        margin: 0 0 8px;
-      }
-
-      .generator-card p {
-        margin: 0;
-        color: #5b6878;
-      }
-    </style>
   </head>
   <body>
-    <main>
-      <h1>教材ジェネレータ</h1>
-      <p class="intro">作りたい教材を選んでください。</p>
-
-      <div class="generator-list">
-        <a class="generator-card" href="generators/kazu-sagashi/">
-          <h2>かずさがし</h2>
-          <p>3×3の枠に指定されたリンゴとナシの数や関係がある場所を探します。</p>
-        </a>
-        <a class="generator-card" href="generators/kazu-no-kaidan/">
-          <h2>数字の階段</h2>
-          <p>等差数列のルールを使った問題・解答・解き方を生成します。</p>
-        </a>
-        <a class="generator-card" href="generators/kokugo-no-tane/">
-          <h2>こくごのたね</h2>
-          <p>小学1〜3年生向けの物語文と読解問題を作る、構造的自動検査済み・人間未確認の開発プロトタイプです。</p>
-        </a>
-      </div>
-    </main>
+    <div id="root"></div>
+    <script type="module" src="/src/app/main.tsx"></script>
   </body>
 </html>

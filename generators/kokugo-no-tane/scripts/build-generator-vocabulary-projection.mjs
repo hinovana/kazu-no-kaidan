@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { PROTOTYPE_LEXICON } from "../src/prototype-lexicon.js";
+import { PROTOTYPE_LEXICON } from "../infrastructure/language/prototype-language-data-provider.ts";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const GENERATOR_DIR = resolve(SCRIPT_DIR, "..");
@@ -11,7 +11,7 @@ export const DEFAULT_GENERATOR_VOCABULARY_PROJECTION_PATHS = Object.freeze({
   manifestPath: resolve(GENERATOR_DIR, "data/generated/vocabulary-db.manifest.json"),
   lowerPath: resolve(GENERATOR_DIR, "data/generated/vocabulary-lower-elementary.json"),
   upperPath: resolve(GENERATOR_DIR, "data/generated/vocabulary-upper-elementary.json"),
-  outputPath: resolve(GENERATOR_DIR, "src/generated/prototype-vocabulary-evidence.js"),
+  outputPath: resolve(GENERATOR_DIR, "src/generated/prototype-vocabulary-evidence.ts"),
 });
 
 async function readJson(path) {

@@ -10,15 +10,10 @@
   --leaf-dark: #214633;
   --leaf-soft: #dce8d8;
   --seed: #b85c35;
-  --seed-soft: #f8e4d8;
   --warning: #744025;
   --warning-soft: #fff3df;
   --danger: #9f312c;
   --shadow: 0 20px 55px rgb(42 57 49 / 10%);
-}
-
-[hidden] {
-  display: none !important;
 }
 
 * { box-sizing: border-box; }
@@ -536,20 +531,6 @@ rt {
   font-weight: 900;
 }
 
-.answer-lines {
-  display: grid;
-  gap: 13px;
-  margin-top: 18px;
-}
-
-.answer-lines span {
-  display: block;
-  height: 1.45em;
-  border-bottom: 1px solid #838c86;
-}
-
-.answer-lines.is-short { width: min(100%, 330px); }
-
 .question-sheet-meta { display: none; }
 
 .character-grid {
@@ -683,7 +664,6 @@ rt {
 .check-symbol { flex: 0 0 auto; font-weight: 900; }
 .check-pass .check-symbol { color: var(--leaf); }
 .check-fail .check-symbol { color: var(--danger); }
-.check-unknown .check-symbol { color: var(--muted); }
 
 .generation-error {
   min-height: 590px;
@@ -769,7 +749,6 @@ rt {
   }
   .question > * { grid-column: 2; }
   .question-prompt { font-size: 11pt; }
-  .answer-lines { gap: 3mm; margin-top: 3mm; }
   rt { color: #111; }
 
   html[data-print-layout="vertical"] .worksheet-reading-page {
@@ -1068,24 +1047,6 @@ rt {
     height: 101mm;
     border: 1px solid #77736d;
     background: #fff;
-    box-sizing: border-box;
-  }
-
-  html[data-print-layout="vertical"] .answer-lines {
-    display: flex;
-    flex-direction: row-reverse;
-    gap: 2mm;
-    width: auto;
-    height: 92mm;
-    margin: 0 3mm 0 0;
-    writing-mode: horizontal-tb;
-  }
-
-  html[data-print-layout="vertical"] .answer-lines span {
-    width: 9mm;
-    height: 92mm;
-    border: 1px solid #77736d;
-    background: repeating-linear-gradient(to bottom, transparent 0 8.8mm, #cbc8c2 8.8mm 9mm);
     box-sizing: border-box;
   }
 

@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import http from "node:http";
 import OpenAI from "openai";
-import { createAiProxyServer } from "../server/ai-proxy.mjs";
-import { requestCodexStoryPlan } from "../server/codex-story-plan.mjs";
-import { loadAiProxyConfig } from "../server/config.mjs";
-import { requestOpenAiStoryPlan } from "../server/openai-story-plan.mjs";
-import { generateWorksheet } from "../src/generator.js";
+import { createAiProxyServer } from "../server/ai-proxy.ts";
+import { requestCodexStoryPlan } from "../server/codex-story-plan.ts";
+import { loadAiProxyConfig } from "../server/config.ts";
+import { requestOpenAiStoryPlan } from "../server/openai-story-plan.ts";
+import { generateWorksheet } from "../domain/generation/generate-worksheet.ts";
 
 const baseConfig = loadAiProxyConfig(process.env);
 const config = {

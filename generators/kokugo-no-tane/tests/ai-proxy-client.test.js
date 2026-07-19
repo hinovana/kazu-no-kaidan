@@ -3,7 +3,7 @@ import {
   checkAiProxy,
   normalizeAiProxyUrl,
   requestStoryPlan,
-} from "../src/ai-proxy-client.js";
+} from "../infrastructure/ai/ai-proxy-client.ts";
 import { createStoryPlanFixture } from "./fixtures/story-plan-fixture.js";
 
 assert.equal(normalizeAiProxyUrl("http://127.0.0.1:8787"), "http://127.0.0.1:8787");

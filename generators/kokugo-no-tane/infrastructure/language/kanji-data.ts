@@ -1,0 +1,34 @@
+import type { Grade } from "../../domain/types/generation.js";
+
+// These sets are a browser-safe projection of data/generated/kanji-grade-*.json.
+// Keep the release id with the projection so generated items can disclose its source.
+export const KANJI_DATABASE_RELEASE = "language-db.v0.1-kanji-candidate";
+
+const BY_GRADE: Readonly<Record<Grade, string>> = Object.freeze({
+  1: "一右雨円王音下火花貝学気九休玉金空月犬見五口校左三山子四糸字耳七車手十出女小上森人水正生青夕石赤千川先早草足村大男竹中虫町天田土二日入年白八百文木本名目立力林六",
+  2: "引羽雲園遠何科夏家歌画回会海絵外角楽活間丸岩顔汽記帰弓牛魚京強教近兄形計元言原戸古午後語工公広交光考行高黄合谷国黒今才細作算止市矢姉思紙寺自時室社弱首秋週春書少場色食心新親図数西声星晴切雪船線前組走多太体台地池知茶昼長鳥朝直通弟店点電刀冬当東答頭同道読内南肉馬売買麦半番父風分聞米歩母方北毎妹万明鳴毛門夜野友用曜来里理話",
+  3: "悪安暗医委意育員院飲運泳駅央横屋温化荷界開階寒感漢館岸起期客究急級宮球去橋業曲局銀区苦具君係軽血決研県庫湖向幸港号根祭皿仕死使始指歯詩次事持式実写者主守取酒受州拾終習集住重宿所暑助昭消商章勝乗植申身神真深進世整昔全相送想息速族他打対待代第題炭短談着注柱丁帳調追定庭笛鉄転都度投豆島湯登等動童農波配倍箱畑発反坂板皮悲美鼻筆氷表秒病品負部服福物平返勉放味命面問役薬由油有遊予羊洋葉陽様落流旅両緑礼列練路和",
+});
+
+const CUMULATIVE = new Map<Grade, ReadonlySet<string>>();
+
+export function getKnownKanjiSet(grade: Grade): ReadonlySet<string> {
+  if (!CUMULATIVE.has(grade)) {
+    CUMULATIVE.set(
+      grade,
+      new Set(Array.from(
+        { length: grade },
+        (_, index) => BY_GRADE[(index + 1) as Grade],
+      ).join("")),
+    );
+  }
+  const known = CUMULATIVE.get(grade);
+  if (known === undefined) throw new Error(`kanji projection is missing for grade ${grade}`);
+  return new Set(known);
+}
+
+export function isKnownOrthography(surface: string, grade: Grade): boolean {
+  const known = getKnownKanjiSet(grade);
+  const kanji = Array.from(surface).filter((character) => /\p{Script=Han}/u.test(character));
+  return kanji.every((character) => known.has(character));
+}

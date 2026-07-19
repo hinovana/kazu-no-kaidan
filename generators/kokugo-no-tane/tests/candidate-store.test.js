@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { createCandidateStore } from "../server/candidate-store.mjs";
+import { createCandidateStore } from "../server/candidate-store.ts";
 
 const temporaryRoot = await mkdtemp(path.join(tmpdir(), "kokugo-no-tane-candidates-"));
 try {

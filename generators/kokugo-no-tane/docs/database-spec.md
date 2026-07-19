@@ -451,7 +451,7 @@ kanji-grade-3.json
 vocabulary-db.manifest.json
 vocabulary-lower-elementary.json
 vocabulary-upper-elementary.json
-prototype-vocabulary-evidence.js
+prototype-vocabulary-evidence.ts
 lexeme-forms.json
 ```
 
@@ -463,7 +463,7 @@ lexeme-forms.json
 
 ### 11.1 現行generatorへの監査用投影
 
-ブラウザへ15,485件の候補JSON全体を読み込ませず、現行 `prototype_lexicon` の語だけをビルド時に照合し、`src/generated/prototype-vocabulary-evidence.js` を生成する。照合キーは限定語彙の表記と読みであり、低学年候補に一意に一致しない場合はビルドを失敗させる。高学年候補にしか一致しない語も失敗対象とする。
+ブラウザへ15,485件の候補JSON全体を読み込ませず、現行 `prototype_lexicon` の語だけをビルド時に照合し、`src/generated/prototype-vocabulary-evidence.ts` を生成する。照合キーは限定語彙の表記と読みであり、低学年候補に一意に一致しない場合はビルドを失敗させる。高学年候補にしか一致しない語も失敗対象とする。
 
 この投影は、既存の限定語彙が低学年候補母集団に根拠を持つことを検査し、生成物へ候補DB版・出典語ID・照合範囲を残すためのものである。`active_for_generation=false` の候補を文章生成の選択肢へ昇格させず、人間による意味・安全性・個別学年の確認済みとも扱わない。監査範囲は `prototype_lexicon` でタグ付けされた出現だけで、テンプレート中のその他の語句や文法は対象外とする。
 

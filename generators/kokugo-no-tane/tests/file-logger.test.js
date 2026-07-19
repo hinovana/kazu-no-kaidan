@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, readFile, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { createJsonlFileLogger } from "../server/file-logger.mjs";
+import { createJsonlFileLogger } from "../server/file-logger.ts";
 
 const localDir = await mkdtemp(path.join(tmpdir(), "kokugo-no-tane-file-logger-"));
 const { filePath, logger } = createJsonlFileLogger(localDir);

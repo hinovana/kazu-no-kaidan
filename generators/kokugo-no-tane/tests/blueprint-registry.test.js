@@ -4,16 +4,16 @@ import {
   getBlueprint,
   listBlueprints,
   selectBlueprintId,
-} from "../src/blueprints/index.js";
+} from "../domain/blueprints/registry.ts";
 import {
   STORY_CLUE_DISCOVERY_4Q_BLUEPRINT_ID,
   STORY_CLUE_DISCOVERY_STRUCTURE_ID,
-} from "../src/blueprints/story-clue-discovery-4q.js";
+} from "../domain/blueprints/story-clue-discovery/blueprint.ts";
 import {
   STORY_RETRY_CRAFT_STRUCTURE_ID,
   STORY_STANDARD_4Q_BLUEPRINT_ID,
-} from "../src/blueprints/story-standard-4q.js";
-import { generateWorksheet, runMachineChecks } from "../src/generator.js";
+} from "../domain/blueprints/story-retry-craft/blueprint.ts";
+import { generateWorksheet, runMachineChecks } from "../domain/generation/generate-worksheet.ts";
 import { createStoryPlanFixture } from "./fixtures/story-plan-fixture.js";
 
 assert.equal(DEFAULT_BLUEPRINT_ID, STORY_STANDARD_4Q_BLUEPRINT_ID);

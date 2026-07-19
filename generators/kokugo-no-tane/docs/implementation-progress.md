@@ -2,12 +2,12 @@
 
 | 項目 | 現在値 |
 | --- | --- |
-| 文書版 | `implementation-progress.v0.10` |
-| 最終更新日 | 2026-07-16 |
-| 現在地点 | 再挑戦型・手がかり発見型の2構造、Node.jsローカルAIプロキシ、ブラウザ接続を実装。評価用AI providerをCodexヘッドレス既定へ変更し、API経路も選択可能 |
+| 文書版 | `implementation-progress.v0.12` |
+| 最終更新日 | 2026-07-18 |
+| 現在地点 | 再挑戦型・手がかり発見型の2構造、TypeScript作問domain、TypeScript NodeローカルAIプロキシ、React UI、ルートSPAへのlazy登録を実装 |
 | 実装フェーズ完了数 | 0 / 7 |
-| 実装状態 | 漢字440字候補版、教育基本語彙の低学年6,865語・高学年8,620語候補版、限定語彙11語の監査用投影、決定的作問エンジン、本文構造レジストリ、`story-retry-craft.v1`、`story-clue-discovery.v1`、seedによる自動選択、ローカルAIプロキシ、AI設計図アダプター、候補保存、障害時フォールバック、設問型別の縦書き解答用紙を実装 |
-| 次の開始候補 | Codexヘッドレスで候補生成の実モデル品質を確認し、その後プロトタイプを人間とAIで確認する |
+| 実装状態 | 漢字440字候補版、教育基本語彙の低学年6,865語・高学年8,620語候補版、限定語彙11語の監査用投影、決定的作問エンジン、本文構造レジストリ、2構造、ローカルAIプロキシ、AI設計図アダプター、候補保存、障害時フォールバック、縦書き解答用紙を実装。国語runtimeはTypeScript `5.9.3` strict、UIはReact `19.2.7`、ホストはVite `8.1.5` とHash Routerへ移行 |
+| 次の開始候補 | TypeScript化とは分離して、開発者本人による本文・設問・表記・印刷の人間レビューへ進む。設計上の後続最適化は `responseLayout` 導入とblueprint責務再配置 |
 | 開発形態 | 個人開発 |
 
 本書は、仕様の内容ではなく、実装・検証・評価が現在どこまで進んでいるかを管理する。各仕様の正本は [README.md](README.md) の「正本の境界」に従う。
@@ -155,11 +155,16 @@
 - [ ] [model-api-integration.md](model-api-integration.md) に従い、文章生成モデルから物語設計図候補を事前生成するパイプラインを実装する。
 - [x] [local-ai-proxy-spec.md](local-ai-proxy-spec.md) に従い、Node.jsプロキシ、`/health`、`/api/story-plan`、CORS、接続UI、ローカルフォールバックを実装する。
 - [x] AI候補のraw responseと検証済みstory-plan candidateをGit管理外へ分離して保存する。
+- [x] `GenerationRequest`、`Worksheet`、`Question`、`StoryPlanV1` のTypeScript型、`unknown` のruntime入力parser、型付きapplication入口を追加する。
+- [x] random、template renderer、language provider、共通作問エンジン、blueprint registryと2構造をTypeScriptへ移行する。
+- [x] AI proxy clientとNodeローカルプロキシをTypeScriptへ移行し、browser/server別のstrict typecheckを通す。
+- [x] React UIをルートSPAのlazy moduleとして登録し、旧URLを互換転送へ切り替える。
+- [x] ローカル・AI・フォールバックのdifferential test、既存回帰、1,350件コーパスで作問契約を保護する。
 - [ ] 検証済み候補を承認済みテンプレートと固定item revisionへ昇格するimport・レビュー処理を実装する。
 - [ ] 承認済みテンプレートを `template_id` とseedで決定的に再利用し、類似度・利用回数・生成来歴を検査する。
 - [ ] 正式語彙DBを接続し、類似回避・自然さ・多様性の検査範囲を広げる。
 
-完了成果物：`index.html`、`styles.css`、`src/`、`tests/`、生成問題サンプル
+完了成果物：`module.tsx`、`ui/`、`application/`、`domain/`、`infrastructure/`、`server/`、`styles.css`、`tests/`、生成問題サンプル
 
 参照：[algorithm-draft.md](algorithm-draft.md)、[item-blueprint.md](item-blueprint.md)
 
@@ -274,15 +279,15 @@ git diff --check
 
 2026年7月15日に、AIが漢字DB候補版からブラウザ表示までを接続し、自動検証した。
 
-- `src/generator.js`：本文構造モジュールを解決し、同一seedで再現できる問題セット、段落、表記、生成来歴、共通機械検査を構成
-- `src/blueprints/index.js`：登録済み本文構造モジュールの既定ID、列挙、未登録ID拒否を実装
-- `src/blueprints/story-standard-4q.js`：`story-retry-craft.v1` 固有の題名、scenario、本文役割列、標準4問、正答根拠、構造固有検査を実装
-- `src/blueprints/story-clue-discovery-4q.js`：失敗ではなく手がかりの発見、確かめ方、手がかりの一致、うなずく反応から成る `story-clue-discovery.v1` を実装
-- `src/blueprints/standard-four-question-checks.js`：2構造が共有する標準4問、根拠距離、一意解、選択肢、意味契約、採点要素の検査を実装
-- `src/kanji.js`、`src/generator.js`：漢字候補DBと限定語彙を使う学年別表記、1年生の全漢字を含む範囲別の初出ふりがな
-- `index.html`、`styles.css`、`src/app.js`：アルゴリズム／AI生成タブ、両方式に共通する生成条件、生成を開始しないランダムseed、問題用紙、解答、生成根拠、未校閲警告、A4横・縦書き固定印刷
+- `domain/generation/generate-worksheet.ts`：本文構造モジュールを解決し、同一seedで再現できる問題セット、段落、表記、生成来歴、共通機械検査を構成
+- `domain/blueprints/registry.ts`：登録済み本文構造モジュールの既定ID、列挙、未登録ID拒否を実装
+- `domain/blueprints/story-retry-craft/blueprint.ts`：`story-retry-craft.v1` 固有の題名、scenario、本文役割列、標準4問、正答根拠、構造固有検査を実装
+- `domain/blueprints/story-clue-discovery/blueprint.ts`：失敗ではなく手がかりの発見、確かめ方、手がかりの一致、うなずく反応から成る `story-clue-discovery.v1` を実装
+- `domain/blueprints/standard-four-question-checks.ts`：2構造が共有する標準4問、根拠距離、一意解、選択肢、意味契約、採点要素の検査を実装
+- `infrastructure/language/kanji-data.ts`、`prototype-language-data-provider.ts`、`domain/language/template-renderer.ts`：漢字候補DBと限定語彙を使う学年別表記、1年生の全漢字を含む範囲別の初出ふりがな
+- `module.tsx`、`ui/KokugoNoTanePage.tsx`、`styles.css`：アルゴリズム／AI生成タブ、両方式に共通する生成条件、生成を開始しないランダムseed、問題用紙、解答、生成根拠、未校閲警告、A4横・縦書き固定印刷
 - `tests/blueprint-registry.test.js`、`tests/generator.test.js`、`tests/corpus.mjs`、`tests/ui-structure.test.js`：2構造のレジストリ契約、未登録ID拒否、構造ID改ざん検知、AI設計図との非対応組合せ拒否、決定性、3学年×5プロファイル×3本文長、1,350件コーパスで両構造が生成されること、UI契約を検証
-- ルートの `index.html` と `README.md`：プロトタイプへの導線を追加
+- ルートの `index.html`、`src/app/`、`README.md`：Vite SPA、Hash Router、型付き教材registry、プロトタイプへの導線を追加
 - 実ブラウザ：`animal-demo` で再挑戦型「森でのやりなおし」、`clue-demo` で手がかり発見型「森のあしあとをたどって」がseedから自動選択され、生成来歴に各 `story_structure_id` が残ることを確認。発見型の画面表示、品質表示、コンソール警告・エラーなしを確認
 - A4横の縦書き印刷：手がかり発見型 `clue-demo` のChrome印刷PDFを2ページで画像化し、1ページ目の導入文・題名・本文、2ページ目だけの名前欄、外枠、ページ識別、右から左への4問、指定字数マス、丸数字付き選択肢、抜き出し欄、理由・気持ち別記述欄、ふりがな、全角空白に欠落・重なり・不自然な改ページがないことを確認。生成メタデータと重複する設問見出しは児童用紙面から除外
 
@@ -293,13 +298,13 @@ git diff --check
 2026年7月15日に、AIを物語設計図の候補供給者として使うローカルライブ経路を実装し、7月16日に評価用providerをCodexヘッドレス既定へ切り替えた。
 
 - Node.jsは公式最新リリース `26.5.0` をnodenvへ導入し、`.node-version`、`.nvmrc`、`package.json#engines` で固定した。
-- `server/ai-proxy.mjs`：loopback限定HTTP、CORS allowlist、入力上限、レート制限、タイムアウト、再試行、キャッシュ、安全なエラー写像を実装した。
-- `server/openai-story-plan.mjs`：Responses API、`store:false`、Structured Outputs、`reasoning.effort=high`、`story-plan-prompt.v2` を実装した。
-- `server/codex-story-plan.mjs`：`codex exec` の非対話・ephemeral・read-only実行、JSON Schema出力、一時ファイル削除を実装した。`KNT_AI_PROVIDER=codex|openai` でコード設定だけを切り替え、UIにはprovider選択を追加していない。
+- `server/ai-proxy.ts`：loopback限定HTTP、CORS allowlist、入力上限、レート制限、タイムアウト、再試行、キャッシュ、安全なエラー写像を実装した。
+- `server/openai-story-plan.ts`：Responses API、`store:false`、Structured Outputs、`reasoning.effort=high`、`story-plan-prompt.v2` を実装した。
+- `server/codex-story-plan.ts`：`codex exec` の非対話・ephemeral・read-only実行、JSON Schema出力、一時ファイル削除を実装した。`KNT_AI_PROVIDER=codex|openai` でコード設定だけを切り替え、UIにはprovider選択を追加していない。
 - 通常の起動・HTTP処理・エラーログは `.local/logs/ai-proxy.jsonl` へ保存する。`KNT_AI_LOG_IO=1` の評価実行では、providerへ渡した実リクエストと実レスポンスを、秘密情報と内部推論を除いて `.local/logs/ai-provider-io.jsonl` へ分離して記録する。
-- `server/story-plan-context.mjs`：学年までの配当漢字候補、教育基本語彙候補DBの版・件数・生成利用不可状態、限定語彙への監査投影だけが接続済みであること、参照アンカー12・18の抽象的読み支援を `story-plan-context.v1` として構成した。
+- `server/story-plan-context.ts`：学年までの配当漢字候補、教育基本語彙候補DBの版・件数・生成利用不可状態、限定語彙への監査投影だけが接続済みであること、参照アンカー12・18の抽象的読み支援を `story-plan-context.v1` として構成した。
 - プロンプトへ、目標・小さな失敗・自己決定・やり直しの因果、心情推論の根拠配置、反例、実在教材を転載しない独自合成例2件を追加した。
-- `src/ai-proxy-client.js` と画面：アルゴリズム／AI生成タブ、両方式へ適用する学年・プロファイル・本文長・題材・seed、loopback URL、無課金の接続確認、接続情報、AI成功時の設計図利用、失敗時のローカルフォールバックと来歴表示を実装した。APIキー入力欄は設けていない。AI生成のseedは候補識別・キャッシュ・来歴に使い、モデル出力の完全一致は保証しない。
+- `infrastructure/ai/ai-proxy-client.ts` とReact画面：アルゴリズム／AI生成タブ、両方式へ適用する学年・プロファイル・本文長・題材・seed、loopback URL、無課金の接続確認、接続情報、AI成功時の設計図利用、失敗時のローカルフォールバックと来歴表示を実装した。APIキー入力欄は設けていない。AI生成のseedは候補識別・キャッシュ・来歴に使い、モデル出力の完全一致は保証しない。
 - 実ブラウザで `gpt-5.6`・`story-plan-prompt.v2` の接続表示、切断時の明示、4問のローカルフォールバック、コンソール警告・エラーなしを確認した。A4横の縦書きPDFは2ページを全ページ画像確認し、AI接続UIが紙面へ混入せず、本文・4問・解答欄に欠落・重なりがないことを確認した。
 - `.local/model-candidates/raw/` と `validated/`：合格候補と来歴をGit管理外へ保存する。承認済みテンプレートへの昇格処理は未実装である。
 - モックを使うサーバー・クライアント・教材コンテキスト・作問統合テストとルートの `npm test` はNode.js 26.5.0で合格した。
@@ -307,7 +312,9 @@ git diff --check
 
 ## 現在の次アクション
 
-次は、動くプロトタイプを開発者本人とAIで見ながら、本文、設問、解答、ふりがな、操作画面の各構成要素を確認する。そこで採否と優先順位を決めたあと、必要に応じて次へ戻る。
+TypeScript化とSPA移行はruntime、UI、Nodeプロキシまで完了した。後続の `responseLayout` 導入、reducer分割、blueprint内のcontent pack物理分割は、作問アルゴリズム変更と混ぜず、必要性を確認して別作業で扱う。
+
+品質面では、動くプロトタイプを開発者本人とAIで見ながら、本文、設問、解答、ふりがな、操作画面の各構成要素を確認する。そこで採否と優先順位を決めたあと、必要に応じて次へ戻る。
 
 1. 本文・設問・正答根拠の問題はフェーズ3へ戻す。
 2. 語彙・読み・学年表記の問題はフェーズ1〜2へ戻し、正式DBの設計へ反映する。
@@ -326,6 +333,8 @@ git diff --check
 
 | 日付 | 変更 | 状態 |
 | --- | --- | --- |
+| 2026-07-18 | 作問domain、blueprint、language、AI client、Nodeプロキシをstrict TypeScriptへ移行。React UIをVite・Hash Routerのlazy moduleとしてルートSPAへ登録し、旧DOM runtimeを削除、旧URLを互換転送へ変更 | TypeScript/React SPA移行を完了。後続の構造最適化と人間レビューは別フェーズ |
+| 2026-07-18 | TypeScript `5.9.3` とstrict設定を追加し、最小ドメイン型、runtime入力parser、型付きapplication入口をブラウザUIへ接続。ローカル生成、AI設計図、フォールバックは旧JS入口との出力完全一致で保護 | TypeScript移行フェーズ1まで実装。domain本体・React・SPA・Nodeプロキシは未移行 |
 | 2026-07-15 | 失敗・やり直しを含まない手がかり発見型 `story-clue-discovery.v1` を独立モジュールで追加。アルゴリズム生成はseedから再挑戦型と発見型を決定的に選び、AIの `story-plan.v1` は対応済みの再挑戦型へ固定。両構造を同一の標準4問契約と構造別意味契約で検査 | フェーズ3の本文構造を2種類へ拡張・人間未確認 |
 | 2026-07-15 | 縦書き解答用紙の名前欄を、読む順序の先頭となる右端へ移動。ページ番号は本文ページと揃えて左下に維持 | フェーズ7の解答用紙の導線を調整 |
 | 2026-07-15 | 問2の各選択肢を囲んでいた長方形の枠線を削除。選択位置は丸数字、選択肢間の区別は余白で示す構成へ変更 | フェーズ7の選択式解答欄を簡素化 |

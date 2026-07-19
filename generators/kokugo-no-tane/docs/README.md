@@ -10,17 +10,17 @@
 
 | 文書 | 版 | 状態 | 正本とする領域 |
 | --- | --- | --- | --- |
-| [typescript-module-design.md](typescript-module-design.md) | `kokugo-no-tane-typescript-module.v0.1-draft` | 設計草案・未実装 | SPA教材モジュール境界、TypeScript型、domain・UI・AI・データの依存方向、移行と同値性検証 |
-| [implementation-progress.md](implementation-progress.md) | `implementation-progress.v0.9` | 教育基本語彙の低学年・高学年候補DBとCodexヘッドレス評価経路を実装 | 実装フェーズ、現在地点、完了ゲート、次アクション |
+| [typescript-module-design.md](typescript-module-design.md) | `kokugo-no-tane-typescript-module.v0.3-draft` | runtime TypeScript化、React UI、SPA登録、旧URL互換転送を実装 | SPA教材モジュール境界、TypeScript型、domain・UI・AI・データの依存方向、移行と同値性検証 |
+| [implementation-progress.md](implementation-progress.md) | `implementation-progress.v0.12` | 教育基本語彙候補DB、Codexヘッドレス評価経路、TypeScript/React SPAを実装 | 実装フェーズ、現在地点、完了ゲート、次アクション |
 | [item-blueprint.md](item-blueprint.md) | `item-blueprint.v0.3-draft` | 再挑戦型・手がかり発見型の契約を実装・未実証 | 測定能力、測定対象外、文章種別、標準4問、本文構造モジュール境界、許容される変形 |
 | [question-pattern-expansion.md](question-pattern-expansion.md) | `question-pattern-expansion.v0.1-draft` | 問題6・12・18の抽象分析に基づく設計案・問題6型のみ実装 | 設問パターン、設問セット、根拠グラフ、解答欄レイアウト、機械検査、段階的実装順 |
-| [algorithm-draft.md](algorithm-draft.md) | `algorithm-spec.v0.7-draft` | AI設計図アダプターと本文構造2種類を含む限定プロトタイプ実装・未校閲 | 物語・本文・設問・正答根拠の生成、本文構造モジュール、機械検査、学年別初出ふりがな、語句間隔、A4横の縦書き印刷 |
+| [algorithm-draft.md](algorithm-draft.md) | `algorithm-spec.v0.8-draft` | AI設計図アダプターと本文構造2種類を含む限定プロトタイプ実装・未校閲 | 物語・本文・設問・正答根拠の生成、本文構造モジュール、機械検査、学年別初出ふりがな、語句間隔、A4横の縦書き印刷 |
 | [model-api-integration.md](model-api-integration.md) | `model-api-integration.v0.5-draft` | Codexヘッドレス既定・API経路も選択可能・事前生成は未実装 | 文章生成モデルの責務、本文構造ごとの設計図契約、事前生成・ライブ生成、候補再利用、秘密情報、未成年者データ、検証ゲート |
 | [local-ai-proxy-spec.md](local-ai-proxy-spec.md) | `local-ai-proxy.v0.3` | Codexヘッドレス既定・API経路も選択可能 | Node.jsローカルプロキシの起動、provider切替、HTTP API、CORS、ブラウザUI、障害時動作、候補保存、テスト |
-| [database-spec.md](database-spec.md) | `database-spec.v0.3-draft` | 漢字候補版と教育基本語彙の低学年・高学年候補版を実装・人間未確認 | 漢字・語彙の根拠資料、権利、データモデル、配布DB |
+| [database-spec.md](database-spec.md) | `database-spec.v0.4-draft` | 漢字候補版と教育基本語彙の低学年・高学年候補版を実装・人間未確認 | 漢字・語彙の根拠資料、権利、データモデル、配布DB |
 | [item-review-and-release.md](item-review-and-release.md) | `item-review-release.v0.1-draft` | 検討中・未運用 | 個人開発での見直し、答えを隠した解き直し、修正時の再確認、公開状態 |
 | [calibration-and-fairness.md](calibration-and-fairness.md) | `calibration-fairness.v0.1-draft` | 検討中・未実施 | 児童試行、実測難易度、識別力、再採点一致、公平性、校正失効 |
-| [reference-anchor-registry.md](reference-anchor-registry.md) | `reference-anchors.v0.2-draft` | 検討中・分析専用 | 参照ID、出典位置、権利状態、抽出特徴、模倣禁止要素、解答用紙の抽象的紙面原則 |
+| [reference-anchor-registry.md](reference-anchor-registry.md) | `reference-anchors.v0.3-draft` | 検討中・分析専用 | 参照ID、出典位置、権利状態、抽出特徴、模倣禁止要素、解答用紙の抽象的紙面原則 |
 
 各文書の先頭で、版、個人開発であること、最終更新日、実装状態、実証または運用状態を管理する。文書は草案のままだが、コードとして実装された範囲は各文書の実装状態に明記する。
 

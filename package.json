@@ -6,15 +6,29 @@
     "node": ">=26.5.0 <27"
   },
   "scripts": {
-    "serve": "./scripts/server.sh",
-    "serve:ai": "node generators/kokugo-no-tane/server/ai-proxy.mjs",
+    "serve": "vite --host 127.0.0.1",
+    "serve:static": "./scripts/server.sh",
+    "build": "vite build",
+    "serve:ai": "node generators/kokugo-no-tane/server/ai-proxy.ts",
     "build:kokugo-no-tane:vocabulary-db": "node generators/kokugo-no-tane/scripts/import-vocabulary.mjs && node generators/kokugo-no-tane/scripts/build-vocabulary-db.mjs && node generators/kokugo-no-tane/scripts/validate-vocabulary-db.mjs && node generators/kokugo-no-tane/scripts/build-generator-vocabulary-projection.mjs",
+    "typecheck": "tsc -p tsconfig.app.json && npm run typecheck:kokugo-no-tane",
+    "typecheck:kokugo-no-tane": "tsc -p generators/kokugo-no-tane/tsconfig.json && tsc -p generators/kokugo-no-tane/tsconfig.server.json",
     "test": "for test_file in generators/*/tests/*.test.js; do node \"$test_file\" || exit 1; done",
     "test:kazu-sagashi:corpus": "node generators/kazu-sagashi/tests/corpus.mjs",
     "test:kokugo-no-tane:corpus": "node generators/kokugo-no-tane/tests/corpus.mjs",
     "test:kokugo-no-tane:ai:live": "node generators/kokugo-no-tane/tests/ai-proxy-live.mjs"
   },
   "dependencies": {
-    "openai": "^6.47.0"
+    "openai": "^6.47.0",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "react-router-dom": "7.18.1"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.1",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "typescript": "5.9.3",
+    "vite": "8.1.5"
   }
 }

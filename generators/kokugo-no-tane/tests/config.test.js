@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { loadAiProxyConfig } from "../server/config.mjs";
+import { loadAiProxyConfig } from "../server/config.ts";
 
 const defaults = loadAiProxyConfig({});
 assert.equal(defaults.provider, "codex");
@@ -12,7 +12,7 @@ assert.equal(defaults.timeoutMs, 120_000);
 assert.equal(defaults.logIo, false);
 assert.equal(defaults.host, "127.0.0.1");
 assert.equal(defaults.port, 8787);
-assert.deepEqual(defaults.allowedOrigins, ["http://127.0.0.1:8765"]);
+assert.deepEqual(defaults.allowedOrigins, ["http://127.0.0.1:5173", "http://127.0.0.1:8765"]);
 
 assert.throws(() => loadAiProxyConfig({ KNT_AI_PROVIDER: "openai" }), (error) => (
   error.code === "CONFIG_ERROR"

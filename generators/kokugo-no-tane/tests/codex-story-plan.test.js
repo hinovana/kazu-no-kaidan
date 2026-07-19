@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import { buildCodexExecArgs, requestCodexStoryPlan } from "../server/codex-story-plan.mjs";
-import { STORY_PLAN_JSON_SCHEMA } from "../src/story-plan-schema.js";
+import { buildCodexExecArgs, requestCodexStoryPlan } from "../server/codex-story-plan.ts";
+import { STORY_PLAN_JSON_SCHEMA } from "../domain/schemas/story-plan-v1.ts";
 import { createStoryPlanFixture } from "./fixtures/story-plan-fixture.js";
 
 const config = {

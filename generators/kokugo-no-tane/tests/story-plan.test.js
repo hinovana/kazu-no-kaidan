@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import { generateWorksheet } from "../src/generator.js";
+import { generateWorksheet } from "../domain/generation/generate-worksheet.ts";
 import {
   PROXY_PROTOCOL_VERSION,
   parseStoryPlan,
   validateStoryPlan,
   validateStoryPlanRequest,
-} from "../src/story-plan-schema.js";
+} from "../domain/schemas/story-plan-v1.ts";
 import { createStoryPlanFixture } from "./fixtures/story-plan-fixture.js";
 
 const plan = createStoryPlanFixture();

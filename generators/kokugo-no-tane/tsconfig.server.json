@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2023"],
+    "types": ["node"]
+  },
+  "include": [
+    "server/**/*.ts",
+    "domain/schemas/story-plan-v1.ts",
+    "domain/types/**/*.ts",
+    "infrastructure/language/**/*.ts",
+    "src/generated/prototype-vocabulary-evidence.ts"
+  ]
+}

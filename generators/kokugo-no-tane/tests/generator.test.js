@@ -1,19 +1,19 @@
 import assert from "node:assert/strict";
 import {
   LENGTH_SETTINGS,
-  PROTOTYPE_LEXICON,
   generateWorksheet,
   runMachineChecks,
-} from "../src/generator.js";
-import { getKnownKanjiSet } from "../src/kanji.js";
+} from "../domain/generation/generate-worksheet.ts";
+import { PROTOTYPE_LEXICON } from "../infrastructure/language/prototype-language-data-provider.ts";
+import { getKnownKanjiSet } from "../infrastructure/language/kanji-data.ts";
 import {
   STORY_CLUE_DISCOVERY_4Q_BLUEPRINT_ID,
   STORY_CLUE_DISCOVERY_STRUCTURE_ID,
-} from "../src/blueprints/story-clue-discovery-4q.js";
+} from "../domain/blueprints/story-clue-discovery/blueprint.ts";
 import {
   STORY_RETRY_CRAFT_STRUCTURE_ID,
   STORY_STANDARD_4Q_BLUEPRINT_ID,
-} from "../src/blueprints/story-standard-4q.js";
+} from "../domain/blueprints/story-retry-craft/blueprint.ts";
 
 const BLUEPRINT_STRUCTURES = new Map([
   [STORY_STANDARD_4Q_BLUEPRINT_ID, STORY_RETRY_CRAFT_STRUCTURE_ID],

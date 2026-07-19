@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import http from "node:http";
-import { createAiProxyServer } from "../server/ai-proxy.mjs";
-import { createMemoryCandidateStore } from "../server/candidate-store.mjs";
+import { createAiProxyServer } from "../server/ai-proxy.ts";
+import { createMemoryCandidateStore } from "../server/candidate-store.ts";
 import { createStoryPlanFixture } from "./fixtures/story-plan-fixture.js";
 
 const allowedOrigin = "http://127.0.0.1:8765";

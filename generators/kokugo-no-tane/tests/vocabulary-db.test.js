@@ -8,11 +8,11 @@ import { buildVocabularyDb } from "../scripts/build-vocabulary-db.mjs";
 import { buildGeneratorVocabularyProjection } from "../scripts/build-generator-vocabulary-projection.mjs";
 import { importVocabulary } from "../scripts/import-vocabulary.mjs";
 import { validateVocabularyDatabase } from "../scripts/validate-vocabulary-db.mjs";
-import { PROTOTYPE_LEXICON } from "../src/prototype-lexicon.js";
+import { PROTOTYPE_LEXICON } from "../infrastructure/language/prototype-language-data-provider.ts";
 import {
   PROTOTYPE_VOCABULARY_EVIDENCE,
   VOCABULARY_CANDIDATE_DATABASE_RELEASE,
-} from "../src/generated/prototype-vocabulary-evidence.js";
+} from "../src/generated/prototype-vocabulary-evidence.ts";
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const GENERATOR_DIR = resolve(TEST_DIR, "..");
@@ -111,7 +111,7 @@ assert.deepEqual(
 );
 assert.deepEqual(
   await readFile(projectionA),
-  await readFile(resolve(GENERATOR_DIR, "src/generated/prototype-vocabulary-evidence.js")),
+  await readFile(resolve(GENERATOR_DIR, "src/generated/prototype-vocabulary-evidence.ts")),
   "fresh generator projection must byte-match the checked-in artifact",
 );
 await assert.rejects(

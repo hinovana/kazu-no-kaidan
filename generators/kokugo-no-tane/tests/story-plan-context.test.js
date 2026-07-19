@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import { STORY_PLAN_INSTRUCTIONS } from "../server/openai-story-plan.mjs";
-import { buildStoryPlanContext } from "../server/story-plan-context.mjs";
+import { STORY_PLAN_INSTRUCTIONS } from "../server/openai-story-plan.ts";
+import { buildStoryPlanContext } from "../server/story-plan-context.ts";
 
 const grade1 = buildStoryPlanContext(1);
 const grade2 = buildStoryPlanContext(2);

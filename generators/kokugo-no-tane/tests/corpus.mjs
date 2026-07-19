@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import { LENGTH_SETTINGS, generateWorksheet } from "../src/generator.js";
+import { LENGTH_SETTINGS, generateWorksheet } from "../domain/generation/generate-worksheet.ts";
 import {
   STORY_CLUE_DISCOVERY_4Q_BLUEPRINT_ID,
-} from "../src/blueprints/story-clue-discovery-4q.js";
+} from "../domain/blueprints/story-clue-discovery/blueprint.ts";
 import {
   STORY_STANDARD_4Q_BLUEPRINT_ID,
-} from "../src/blueprints/story-standard-4q.js";
+} from "../domain/blueprints/story-retry-craft/blueprint.ts";
 
 let generated = 0;
 const failures = [];
