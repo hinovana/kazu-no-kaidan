@@ -1,0 +1,63 @@
+:root {
+  color-scheme: light;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #24303f;
+  background: #f4f7fa;
+}
+
+body { margin: 0; }
+
+.generator-index,
+.route-message {
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 64px max(20px, calc((100% - 920px) / 2));
+  box-sizing: border-box;
+  color: #24303f;
+  background: #f4f7fa;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.generator-index > h1,
+.route-message > h1 {
+  margin: 0;
+  font-size: clamp(2rem, 6vw, 3.5rem);
+}
+
+.generator-index-intro {
+  margin: 16px 0 40px;
+  color: #5b6878;
+}
+
+.generator-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.generator-card {
+  display: block;
+  padding: 28px;
+  border: 1px solid #dbe2ea;
+  border-radius: 16px;
+  color: inherit;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(36 48 63 / 8%);
+  text-decoration: none;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.generator-card:hover,
+.generator-card:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgb(36 48 63 / 14%);
+}
+
+.generator-card h2 {
+  margin: 0 0 8px;
+  font-family: inherit;
+  font-size: 1.5em;
+  line-height: 1.25;
+  letter-spacing: normal;
+}
+.generator-card p { margin: 0; color: #5b6878; }

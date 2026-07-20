@@ -1,0 +1,59 @@
+{
+  "schema_version": "vocabulary-db.manifest.v0.1",
+  "database_release": "vocabulary-db.v0.1-ninjal-2009b-candidate",
+  "release_status": "candidate_pending_normalization_and_manual_check",
+  "generated_at": null,
+  "generation_time_policy": "runtime timestamp omitted from reproducible artifacts",
+  "derivation_rule_version": "import-vocabulary.ninjal-2009b.v0.1",
+  "source_releases": [
+    {
+      "source_id": "ninjal_education_basic_vocabulary_2009b",
+      "title": "教育基本語彙データベース（2009年版B）",
+      "provider": "国立国語研究所",
+      "source_url": "https://mmsrv.ninjal.ac.jp/brfvep/kyoikukihongoi_2009B.csv",
+      "source_version": "2009年版B（ファイル名: kyoikukihongoi_2009B.csv）",
+      "retrieved_at": "2026-07-16",
+      "artifact_sha256": "e6936dd184ce3d0bc0b714a94d40a6863ce9bcb827ffd5288ed12457c58a98bd",
+      "license_name": "クリエイティブ・コモンズ 表示 4.0 国際",
+      "license_status": "open",
+      "required_attribution": "国立国語研究所『教育基本語彙の基本的研究―増補改訂版―』教育基本語彙データベース（2009年版B）を加工して作成（CC BY 4.0、2026年7月16日取得）"
+    }
+  ],
+  "contents": {
+    "scope": "ninjal-education-basic-vocabulary-2009b-elementary-bands",
+    "included_grade_bands": [
+      "lower_elementary_1_3",
+      "upper_elementary_4_6"
+    ],
+    "excluded_source_bands": [
+      {
+        "source_allocation_code": 3,
+        "grade_band": "secondary_school",
+        "record_count": 11749
+      }
+    ],
+    "total_record_count": 15485,
+    "files": [
+      {
+        "file": "vocabulary-lower-elementary.json",
+        "grade_band": "lower_elementary_1_3",
+        "source_allocation_code": 1,
+        "record_count": 6865,
+        "sha256": "83a21828ae710635c65b136fab161be1443778a0e967193f573410922c813072"
+      },
+      {
+        "file": "vocabulary-upper-elementary.json",
+        "grade_band": "upper_elementary_4_6",
+        "source_allocation_code": 2,
+        "record_count": 8620,
+        "sha256": "f3f45594c4608fa9f3a71a20faa7aa69c468af8ce79d77a21df919b14621018e"
+      }
+    ]
+  },
+  "manual_check": {
+    "status": "pending",
+    "pending_record_count": 15485,
+    "note": "国語研の配当区分を保持した候補版。個別語の現代性、意味、表記、児童向け使用可否は未確認。"
+  },
+  "generation_eligibility": "not_eligible_until_manual_review"
+}

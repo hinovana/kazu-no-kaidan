@@ -1,0 +1,1560 @@
+{
+  "schema_version": "language-db.kanji-grade.v0.1",
+  "database_release": "language-db.v0.1-kanji-candidate",
+  "release_status": "candidate_pending_manual_check",
+  "generated_at": null,
+  "generation_time_policy": "runtime timestamp omitted from reproducible artifacts",
+  "derivation_rule_version": "import-kanji.nfc-and-code-point.v0.1",
+  "source_releases": [
+    {
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "title": "小学校学習指導要領（平成29年告示）",
+      "provider": "文部科学省",
+      "source_url": "https://www.mext.go.jp/content/20230120-mxt_kyoiku02-100002604_01.pdf",
+      "source_version": "平成29年文部科学省告示第63号（PDF更新日: 2023-01-20、ファイル名: 20230120-mxt_kyoiku02-100002604_01.pdf）",
+      "retrieved_at": "2026-07-15",
+      "artifact_sha256": "6af90f134b243e44f9767c37ee3079fac092883fd6359b836a5733dd25b43902",
+      "pre_normalization_sha256": "1dd21c2142734112fa0121e9ec7c9796891e07a1d24c3486d7d8e1787fbcce2f",
+      "license_name": "文部科学省ウェブサイト利用規約（政府標準利用規約第2.0版準拠、CC BY 4.0互換）",
+      "license_status": "open",
+      "required_attribution": "文部科学省「小学校学習指導要領（平成29年告示）」を加工して作成（2026年7月15日取得）"
+    },
+    {
+      "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+      "title": "小学校学習指導要領（平成29年告示）解説 国語編",
+      "provider": "文部科学省",
+      "source_url": "https://www.mext.go.jp/content/20220606-mxt_kyoiku02-100002607_002.pdf",
+      "source_version": "平成29年7月（取得PDFのメタデータ更新日: 2026-01-28、URL上のファイル名: 20220606-mxt_kyoiku02-100002607_002.pdf）",
+      "retrieved_at": "2026-07-15",
+      "artifact_sha256": "4a18f8d0247415c9e27a86e2688b3759cdb0c032a8e07ab51690a13a5fc27c2e",
+      "pre_normalization_sha256": "bda3f345a3cf53e7c5a925437cc80b55225d937afd936c3ec7d379f3211af5f8",
+      "license_name": "文部科学省ウェブサイト利用規約（政府標準利用規約第2.0版準拠、CC BY 4.0互換）",
+      "license_status": "open",
+      "required_attribution": "文部科学省「小学校学習指導要領（平成29年告示）解説 国語編」を加工して作成（2026年7月15日取得）"
+    }
+  ],
+  "allocation_grade": 1,
+  "record_count": 80,
+  "records": [
+    {
+      "character": "一",
+      "code_point": "U+4E00",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "一",
+      "normalized_form": "一",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 1,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "一"
+        }
+      ]
+    },
+    {
+      "character": "右",
+      "code_point": "U+53F3",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "右",
+      "normalized_form": "右",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 2,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "右"
+        }
+      ]
+    },
+    {
+      "character": "雨",
+      "code_point": "U+96E8",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "雨",
+      "normalized_form": "雨",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 3,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "雨"
+        }
+      ]
+    },
+    {
+      "character": "円",
+      "code_point": "U+5186",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "円",
+      "normalized_form": "円",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 4,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "円"
+        }
+      ]
+    },
+    {
+      "character": "王",
+      "code_point": "U+738B",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "王",
+      "normalized_form": "王",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 5,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "王"
+        }
+      ]
+    },
+    {
+      "character": "音",
+      "code_point": "U+97F3",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "音",
+      "normalized_form": "音",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 6,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "音"
+        }
+      ]
+    },
+    {
+      "character": "下",
+      "code_point": "U+4E0B",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "下",
+      "normalized_form": "下",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 7,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "下"
+        }
+      ]
+    },
+    {
+      "character": "火",
+      "code_point": "U+706B",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "火",
+      "normalized_form": "火",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 8,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "火"
+        }
+      ]
+    },
+    {
+      "character": "花",
+      "code_point": "U+82B1",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "花",
+      "normalized_form": "花",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 9,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "花"
+        }
+      ]
+    },
+    {
+      "character": "貝",
+      "code_point": "U+8C9D",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "貝",
+      "normalized_form": "貝",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 10,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "貝"
+        }
+      ]
+    },
+    {
+      "character": "学",
+      "code_point": "U+5B66",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "学",
+      "normalized_form": "学",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 11,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "学"
+        }
+      ]
+    },
+    {
+      "character": "気",
+      "code_point": "U+6C17",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "気",
+      "normalized_form": "気",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 12,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "気"
+        }
+      ]
+    },
+    {
+      "character": "九",
+      "code_point": "U+4E5D",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "九",
+      "normalized_form": "九",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 13,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "九"
+        }
+      ]
+    },
+    {
+      "character": "休",
+      "code_point": "U+4F11",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "休",
+      "normalized_form": "休",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 14,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "休"
+        }
+      ]
+    },
+    {
+      "character": "玉",
+      "code_point": "U+7389",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "玉",
+      "normalized_form": "玉",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 15,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "玉"
+        }
+      ]
+    },
+    {
+      "character": "金",
+      "code_point": "U+91D1",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "金",
+      "normalized_form": "金",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 16,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "金"
+        }
+      ]
+    },
+    {
+      "character": "空",
+      "code_point": "U+7A7A",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "空",
+      "normalized_form": "空",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 17,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "空"
+        }
+      ]
+    },
+    {
+      "character": "月",
+      "code_point": "U+6708",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "月",
+      "normalized_form": "月",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 18,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "月"
+        }
+      ]
+    },
+    {
+      "character": "犬",
+      "code_point": "U+72AC",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "犬",
+      "normalized_form": "犬",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 19,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "犬"
+        }
+      ]
+    },
+    {
+      "character": "見",
+      "code_point": "U+898B",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "見",
+      "normalized_form": "見",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 20,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "見"
+        }
+      ]
+    },
+    {
+      "character": "五",
+      "code_point": "U+4E94",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "五",
+      "normalized_form": "五",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 21,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "五"
+        }
+      ]
+    },
+    {
+      "character": "口",
+      "code_point": "U+53E3",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "口",
+      "normalized_form": "口",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 22,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "口"
+        }
+      ]
+    },
+    {
+      "character": "校",
+      "code_point": "U+6821",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "校",
+      "normalized_form": "校",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 23,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "校"
+        }
+      ]
+    },
+    {
+      "character": "左",
+      "code_point": "U+5DE6",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "左",
+      "normalized_form": "左",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 24,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "左"
+        }
+      ]
+    },
+    {
+      "character": "三",
+      "code_point": "U+4E09",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "三",
+      "normalized_form": "三",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 25,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "三"
+        }
+      ]
+    },
+    {
+      "character": "山",
+      "code_point": "U+5C71",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "山",
+      "normalized_form": "山",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 26,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "山"
+        }
+      ]
+    },
+    {
+      "character": "子",
+      "code_point": "U+5B50",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "子",
+      "normalized_form": "子",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 27,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "子"
+        }
+      ]
+    },
+    {
+      "character": "四",
+      "code_point": "U+56DB",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "四",
+      "normalized_form": "四",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 28,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "四"
+        }
+      ]
+    },
+    {
+      "character": "糸",
+      "code_point": "U+7CF8",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "糸",
+      "normalized_form": "糸",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 29,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "糸"
+        }
+      ]
+    },
+    {
+      "character": "字",
+      "code_point": "U+5B57",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "字",
+      "normalized_form": "字",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 30,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "字"
+        }
+      ]
+    },
+    {
+      "character": "耳",
+      "code_point": "U+8033",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "耳",
+      "normalized_form": "耳",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 31,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "耳"
+        }
+      ]
+    },
+    {
+      "character": "七",
+      "code_point": "U+4E03",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "七",
+      "normalized_form": "七",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 32,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "七"
+        }
+      ]
+    },
+    {
+      "character": "車",
+      "code_point": "U+8ECA",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "車",
+      "normalized_form": "車",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 33,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "車"
+        }
+      ]
+    },
+    {
+      "character": "手",
+      "code_point": "U+624B",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "手",
+      "normalized_form": "手",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 34,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "手"
+        }
+      ]
+    },
+    {
+      "character": "十",
+      "code_point": "U+5341",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "十",
+      "normalized_form": "十",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 35,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "十"
+        }
+      ]
+    },
+    {
+      "character": "出",
+      "code_point": "U+51FA",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "出",
+      "normalized_form": "出",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 36,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "出"
+        }
+      ]
+    },
+    {
+      "character": "女",
+      "code_point": "U+5973",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "女",
+      "normalized_form": "女",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 37,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "女"
+        }
+      ]
+    },
+    {
+      "character": "小",
+      "code_point": "U+5C0F",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "小",
+      "normalized_form": "小",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 38,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "小"
+        }
+      ]
+    },
+    {
+      "character": "上",
+      "code_point": "U+4E0A",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "上",
+      "normalized_form": "上",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 39,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "上"
+        }
+      ]
+    },
+    {
+      "character": "森",
+      "code_point": "U+68EE",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "森",
+      "normalized_form": "森",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 40,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "森"
+        }
+      ]
+    },
+    {
+      "character": "人",
+      "code_point": "U+4EBA",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "人",
+      "normalized_form": "人",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 41,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "人"
+        }
+      ]
+    },
+    {
+      "character": "水",
+      "code_point": "U+6C34",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "水",
+      "normalized_form": "水",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 42,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "水"
+        }
+      ]
+    },
+    {
+      "character": "正",
+      "code_point": "U+6B63",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "正",
+      "normalized_form": "正",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 43,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "正"
+        }
+      ]
+    },
+    {
+      "character": "生",
+      "code_point": "U+751F",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "生",
+      "normalized_form": "生",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 44,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "生"
+        }
+      ]
+    },
+    {
+      "character": "青",
+      "code_point": "U+9752",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "青",
+      "normalized_form": "青",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 45,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "青"
+        }
+      ]
+    },
+    {
+      "character": "夕",
+      "code_point": "U+5915",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "夕",
+      "normalized_form": "夕",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 46,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "夕"
+        }
+      ]
+    },
+    {
+      "character": "石",
+      "code_point": "U+77F3",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "石",
+      "normalized_form": "石",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 47,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "石"
+        }
+      ]
+    },
+    {
+      "character": "赤",
+      "code_point": "U+8D64",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "赤",
+      "normalized_form": "赤",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 48,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "赤"
+        }
+      ]
+    },
+    {
+      "character": "千",
+      "code_point": "U+5343",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "千",
+      "normalized_form": "千",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 49,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "千"
+        }
+      ]
+    },
+    {
+      "character": "川",
+      "code_point": "U+5DDD",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "川",
+      "normalized_form": "川",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 50,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "川"
+        }
+      ]
+    },
+    {
+      "character": "先",
+      "code_point": "U+5148",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "先",
+      "normalized_form": "先",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 51,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "先"
+        }
+      ]
+    },
+    {
+      "character": "早",
+      "code_point": "U+65E9",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "早",
+      "normalized_form": "早",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 52,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "早"
+        }
+      ]
+    },
+    {
+      "character": "草",
+      "code_point": "U+8349",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "草",
+      "normalized_form": "草",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 53,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "草"
+        }
+      ]
+    },
+    {
+      "character": "足",
+      "code_point": "U+8DB3",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "足",
+      "normalized_form": "足",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 54,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "足"
+        }
+      ]
+    },
+    {
+      "character": "村",
+      "code_point": "U+6751",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "村",
+      "normalized_form": "村",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 55,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "村"
+        }
+      ]
+    },
+    {
+      "character": "大",
+      "code_point": "U+5927",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "大",
+      "normalized_form": "大",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 56,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "大"
+        }
+      ]
+    },
+    {
+      "character": "男",
+      "code_point": "U+7537",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "男",
+      "normalized_form": "男",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 57,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "男"
+        }
+      ]
+    },
+    {
+      "character": "竹",
+      "code_point": "U+7AF9",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "竹",
+      "normalized_form": "竹",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 58,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "竹"
+        }
+      ]
+    },
+    {
+      "character": "中",
+      "code_point": "U+4E2D",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "中",
+      "normalized_form": "中",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 59,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "中"
+        }
+      ]
+    },
+    {
+      "character": "虫",
+      "code_point": "U+866B",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "虫",
+      "normalized_form": "虫",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 60,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "虫"
+        }
+      ]
+    },
+    {
+      "character": "町",
+      "code_point": "U+753A",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "町",
+      "normalized_form": "町",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 61,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "町"
+        }
+      ]
+    },
+    {
+      "character": "天",
+      "code_point": "U+5929",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "天",
+      "normalized_form": "天",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 62,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "天"
+        }
+      ]
+    },
+    {
+      "character": "田",
+      "code_point": "U+7530",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "田",
+      "normalized_form": "田",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 63,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "田"
+        }
+      ]
+    },
+    {
+      "character": "土",
+      "code_point": "U+571F",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "土",
+      "normalized_form": "土",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 64,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "土"
+        }
+      ]
+    },
+    {
+      "character": "二",
+      "code_point": "U+4E8C",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "二",
+      "normalized_form": "二",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 65,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "二"
+        }
+      ]
+    },
+    {
+      "character": "日",
+      "code_point": "U+65E5",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "日",
+      "normalized_form": "日",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 66,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "日"
+        }
+      ]
+    },
+    {
+      "character": "入",
+      "code_point": "U+5165",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "入",
+      "normalized_form": "入",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 67,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "入"
+        }
+      ]
+    },
+    {
+      "character": "年",
+      "code_point": "U+5E74",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "年",
+      "normalized_form": "年",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 68,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "年"
+        }
+      ]
+    },
+    {
+      "character": "白",
+      "code_point": "U+767D",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "白",
+      "normalized_form": "白",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 69,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "白"
+        }
+      ]
+    },
+    {
+      "character": "八",
+      "code_point": "U+516B",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "八",
+      "normalized_form": "八",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 70,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "八"
+        }
+      ]
+    },
+    {
+      "character": "百",
+      "code_point": "U+767E",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "百",
+      "normalized_form": "百",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 71,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "百"
+        }
+      ]
+    },
+    {
+      "character": "文",
+      "code_point": "U+6587",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "文",
+      "normalized_form": "文",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 72,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "文"
+        }
+      ]
+    },
+    {
+      "character": "木",
+      "code_point": "U+6728",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "木",
+      "normalized_form": "木",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 73,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "木"
+        }
+      ]
+    },
+    {
+      "character": "本",
+      "code_point": "U+672C",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "本",
+      "normalized_form": "本",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 74,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "本"
+        }
+      ]
+    },
+    {
+      "character": "名",
+      "code_point": "U+540D",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "名",
+      "normalized_form": "名",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 75,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "名"
+        }
+      ]
+    },
+    {
+      "character": "目",
+      "code_point": "U+76EE",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "目",
+      "normalized_form": "目",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 76,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "目"
+        }
+      ]
+    },
+    {
+      "character": "立",
+      "code_point": "U+7ACB",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "立",
+      "normalized_form": "立",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 77,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "立"
+        }
+      ]
+    },
+    {
+      "character": "力",
+      "code_point": "U+529B",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "力",
+      "normalized_form": "力",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 78,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "力"
+        }
+      ]
+    },
+    {
+      "character": "林",
+      "code_point": "U+6797",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "林",
+      "normalized_form": "林",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 79,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "林"
+        }
+      ]
+    },
+    {
+      "character": "六",
+      "code_point": "U+516D",
+      "allocation_grade": 1,
+      "source_id": "mext_elementary_curriculum_h29_kanji",
+      "source_locator": "PDF 44頁（冊子42頁）、別表「学年別漢字配当表」第1学年",
+      "source_form": "六",
+      "normalized_form": "六",
+      "active": true,
+      "manual_check_status": "pending",
+      "source_order": 80,
+      "corroborating_sources": [
+        {
+          "source_id": "mext_elementary_japanese_explanation_h29_kanji",
+          "source_locator": "PDF 195頁（冊子192頁）、付録3 別表「学年別漢字配当表」第1学年",
+          "source_form": "六"
+        }
+      ]
+    }
+  ]
+}
