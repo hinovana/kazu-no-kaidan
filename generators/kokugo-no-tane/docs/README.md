@@ -13,6 +13,7 @@
 | [implementation-progress.md](implementation-progress.md) | `implementation-progress.v0.15` | 教育基本語彙候補DB、Codexヘッドレス評価経路、TypeScript/React SPA、本文構造3種類、設問セット3種類を実装 | 実装フェーズ、現在地点、完了ゲート、次アクション |
 | [item-blueprint.md](item-blueprint.md) | `item-blueprint.v0.5-draft` | 本文構造3種類・設問セット3種類の契約を実装・未実証 | 測定能力、測定対象外、文章種別、設問セット、本文構造モジュール境界、許容される変形 |
 | [question-pattern-expansion.md](question-pattern-expansion.md) | `question-pattern-expansion.v0.3-draft` | 設問・解答欄の分離と3セット、途中参加型との対応を実装。指示内容・複数空欄等は未実装 | 設問パターン、設問セット、根拠グラフ、解答欄レイアウト、機械検査、段階的実装順 |
+| [story-evidence-expansion-plan.md](story-evidence-expansion-plan.md) | `story-evidence-expansion-plan.v0.1-draft` | 実装前計画 | 問題6・12・18の分析から、物語状態・根拠グラフ、本文構造、設問、解答欄を追加する依存順と完了条件 |
 | [algorithm-draft.md](algorithm-draft.md) | `algorithm-spec.v0.10-draft` | AI設計図アダプター、本文構造3種類、設問セット3種類を含む限定プロトタイプ実装・未校閲 | 物語・本文・設問・正答根拠の生成、本文構造モジュール、機械検査、学年別初出ふりがな、語句間隔、A4横の縦書き印刷 |
 | [model-api-integration.md](model-api-integration.md) | `model-api-integration.v0.7-draft` | Codexヘッドレス既定・API経路も選択可能・途中参加型はローカル生成専用・事前生成は未実装 | 文章生成モデルの責務、本文構造ごとの設計図契約、事前生成・ライブ生成、候補再利用、秘密情報、未成年者データ、検証ゲート |
 | [local-ai-proxy-spec.md](local-ai-proxy-spec.md) | `local-ai-proxy.v0.4` | Codexヘッドレス既定・API経路も選択可能 | Node.jsローカルプロキシの起動、provider切替、HTTP API、CORS、ブラウザUI、障害時動作、候補保存、テスト |
@@ -42,13 +43,14 @@
 1. [implementation-progress.md](implementation-progress.md) で、現在地点と次の作業を確認する。
 2. [item-blueprint.md](item-blueprint.md) で、何を測り、何を測らないかを確認する。
 3. 標準4問以外の設問・解答欄を検討する場合は [question-pattern-expansion.md](question-pattern-expansion.md) を確認する。
-4. [algorithm-draft.md](algorithm-draft.md) で、出題設計から本文・設問を作る処理を確認する。
-5. 文章生成モデルを接続する場合は [model-api-integration.md](model-api-integration.md) で、モデルの責務と検証境界を確認する。
-6. ローカルライブ接続を実装する場合は [local-ai-proxy-spec.md](local-ai-proxy-spec.md) で、起動・HTTP・UI・保存・障害時契約を確認する。
-7. [database-spec.md](database-spec.md) で、語彙・漢字・ふりがなの根拠と配布方法を確認する。
-8. [item-review-and-release.md](item-review-and-release.md) で、自動生成後の見直しと利用状態を確認する。
-9. [calibration-and-fairness.md](calibration-and-fairness.md) で、児童試行と実測値の条件を確認する。
-10. 参照問題を根拠にする場合は [reference-anchor-registry.md](reference-anchor-registry.md) のアンカーIDを確認する。
+4. 問題6・12・18から導いた後続実装へ着手する場合は [story-evidence-expansion-plan.md](story-evidence-expansion-plan.md) で依存順と完了条件を確認する。
+5. [algorithm-draft.md](algorithm-draft.md) で、出題設計から本文・設問を作る処理を確認する。
+6. 文章生成モデルを接続する場合は [model-api-integration.md](model-api-integration.md) で、モデルの責務と検証境界を確認する。
+7. ローカルライブ接続を実装する場合は [local-ai-proxy-spec.md](local-ai-proxy-spec.md) で、起動・HTTP・UI・保存・障害時契約を確認する。
+8. [database-spec.md](database-spec.md) で、語彙・漢字・ふりがなの根拠と配布方法を確認する。
+9. [item-review-and-release.md](item-review-and-release.md) で、自動生成後の見直しと利用状態を確認する。
+10. [calibration-and-fairness.md](calibration-and-fairness.md) で、児童試行と実測値の条件を確認する。
+11. 参照問題を根拠にする場合は [reference-anchor-registry.md](reference-anchor-registry.md) のアンカーIDを確認する。
 
 目的別の入口は次のとおり。
 
@@ -58,6 +60,7 @@
 | 現在の進捗や次の作業を確認する | [implementation-progress.md](implementation-progress.md) |
 | 本文や設問の生成規則を変更する | [algorithm-draft.md](algorithm-draft.md) |
 | 標準4問以外の設問パターン、設問セット、解答欄を追加する | [question-pattern-expansion.md](question-pattern-expansion.md)、採用時は [item-blueprint.md](item-blueprint.md) と [algorithm-draft.md](algorithm-draft.md) |
+| 問題6・12・18を根拠に、物語状態・根拠グラフから段階実装する | [story-evidence-expansion-plan.md](story-evidence-expansion-plan.md)。確定仕様は [item-blueprint.md](item-blueprint.md)、[question-pattern-expansion.md](question-pattern-expansion.md)、[algorithm-draft.md](algorithm-draft.md) |
 | 文章生成モデル、API接続、事前生成・ライブ生成を変更する | [model-api-integration.md](model-api-integration.md) |
 | ローカルAIプロキシのURL、起動、HTTP API、CORS、接続UIを変更する | [local-ai-proxy-spec.md](local-ai-proxy-spec.md) |
 | 生成難度、採点、機械的品質検査を変更する | [algorithm-draft.md](algorithm-draft.md) |
