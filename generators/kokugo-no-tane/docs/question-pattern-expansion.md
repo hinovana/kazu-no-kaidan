@@ -3,10 +3,10 @@
 | 項目 | 値 |
 | --- | --- |
 | 文書状態 | 一部採用・継続設計 |
-| 文書版 | `question-pattern-expansion.v0.3-draft` |
-| 最終更新日 | 2026-07-19 |
+| 文書版 | `question-pattern-expansion.v0.4-draft` |
+| 最終更新日 | 2026-07-20 |
 | 対象 | 物語文の設問構成と解答用紙レイアウト |
-| 実装状態 | 設問・解答欄の分離、3つの設問セット、8つの設問パターン、4つの解答欄を実装。本文空所・複数空欄・全件列挙・指示内容・様子語は未実装 |
+| 実装状態 | 設問・解答欄の分離、3つの設問セット、8つの設問パターン、4つの解答欄を実装。二段階の根拠グラフ契約は設計済み・コード未実装。本文空所・複数空欄・全件列挙・指示内容・様子語は未実装 |
 | 実証状態 | 未実証・未校正 |
 | 参照アンカー | `ANCHOR-STORY-Q06`、`ANCHOR-QUESTION-FORM-Q12`、`ANCHOR-QUESTION-FORM-Q18` |
 | 正本との関係 | 基盤部分を採用済み。[item-blueprint.md](item-blueprint.md) と [algorithm-draft.md](algorithm-draft.md) に実装済み境界を反映する |
@@ -35,7 +35,7 @@
 設問固有検査と紙面検査を行う
 ```
 
-問題6から抽出した標準4問は基準セットとして残した。その上で、現行の2つの本文構造が正答根拠を安全に供給できる範囲から、因果・文脈・結果・行動根拠型心情のパターンを追加した。現在は次の3種類をseedから決定的に選ぶ。
+問題6から抽出した標準4問は基準セットとして残した。その上で、現行の3つの本文構造が正答根拠を安全に供給できる範囲から、因果・文脈・結果・行動根拠型心情のパターンを追加した。現在は次の3種類をseedから決定的に選ぶ。
 
 1. 問題6型：明示情報と心情推論を分ける標準4問
 2. 問題12型の一部：因果と出来事をたどる6問
@@ -313,49 +313,166 @@ context-and-inference-4q.v1
 
 ## 7. 本文側に必要な根拠グラフ
 
-新パターンは、完成した本文へ後付けしない。本文構造モジュールが、設問に利用可能な根拠を宣言する。
+新パターンは、完成した本文へ後付けしない。本文構造モジュールが、設問に利用可能な根拠、人物状態、関係状態、伏線回収を宣言する。根拠グラフ契約は採用済みだが、現在のコードは未実装である。
 
-```json
-{
-  "evidence_graph": {
-    "nodes": [
-      { "id": "cause_1", "role": "trigger", "sentence_ids": ["sentence_3"] },
-      { "id": "event_set_1", "role": "enumerable_events", "sentence_ids": ["sentence_6", "sentence_8"] },
-      { "id": "referent_1", "role": "abstract_reference_target", "sentence_ids": ["sentence_2", "sentence_3"] },
-      { "id": "reaction_1", "role": "inference_reaction", "sentence_ids": ["sentence_11"] }
-    ],
-    "edges": [
-      { "from": "cause_1", "to": "reaction_1", "type": "causes" }
-    ]
-  }
+### 7.1 二段階の解決
+
+本文構造モジュールが作る時点では確定した `SentenceId` がないため、次の二段階に分ける。
+
+| 段階 | 型 | 文への参照 | 作成責務 |
+| --- | --- | --- | --- |
+| 本文構造内 | `EvidenceGraphDraft` | `sentence_roles` | blueprintがscenario、trait、本文役割列と一緒に作る |
+| 本文組立て後 | `EvidenceGraph` | `sentence_ids` | 生成エンジンが文役割を確定IDへ解決して作る |
+
+`EvidenceGraphDraft` のノードは、文役割の解決件数を `sentence_cardinality` として `one` または `one-or-more` で宣言する。単一文を要求するノードが0件または複数件へ解決された場合は生成を拒否する。`EvidenceGraph` へ解決した後は、設問が意味ノードから実際の本文箇所まで追跡できなければならない。
+
+### 7.2 ノードと辺
+
+ノードの最小契約は次とする。
+
+```ts
+type EvidenceNodeKind =
+  | "event"
+  | "emotion"
+  | "knowledge"
+  | "intention"
+  | "evaluation"
+  | "reaction"
+  | "utterance"
+  | "reference-expression"
+  | "referent-target"
+  | "relationship-state";
+
+interface EvidenceNodeDraft {
+  readonly id: string;
+  readonly kind: EvidenceNodeKind;
+  readonly sentence_roles: readonly string[];
+  readonly sentence_cardinality: "one" | "one-or-more";
+  readonly character_ids: readonly string[];
+  readonly phase_id: string;
+  readonly explicitness: "explicit" | "inferred";
 }
 ```
 
-本文構造ごとの初期対応案：
+辺は次の6種類に限定する。
 
-| 本文構造 | 相性のよい追加パターン | 本文側の追加要件 |
+| 辺 | 意味 |
+| --- | --- |
+| `precedes` | `from` の出来事・状態が `to` より意味上先にある |
+| `causes` | `from` が `to` の発生理由として本文で支えられる |
+| `refers-to` | `reference-expression` ノードが具体的な `referent-target` または出来事ノードを指す |
+| `changes-emotion` | 出来事・発話・反応が人物の感情状態を変える |
+| `changes-relationship` | 相互作用が二人以上の関係状態を変える |
+| `resolves` | `from` の序盤設定・未完了情報を、`to` の終盤ノードが回収する |
+
+`precedes` は本文上の出現順と矛盾してはならず、循環を許可しない。`causes` は単なる時間順序の別名にせず、本文から因果を説明できる場合だけ使う。`relationship-state` ノードは異なる `character_id` を2件以上持つ。
+
+### 7.3 人物状態、集合、伏線回収
+
+ノードと辺だけでは表しにくい要件を、次の補助契約で保持する。
+
+| 契約 | 必須情報 | 用途 |
 | --- | --- | --- |
-| `story-retry-craft.v1` | 因果空欄、指示内容、文脈挿入、原因結果 | 失敗の原因、主人公の受け止め、転換点を別ノードにする |
-| `story-clue-discovery.v1` | 全件列挙、指示内容、様子語、原因結果 | 複数の手がかり、観察動作、発見理由を明示する |
-| `story-late-arrival.v1` | 原因結果、文脈挿入、明示事実、場面心情 | 第三人物の初出、介入、介入後の主人公の決定、三人での結果を別ノードにする |
+| `StoryPhase` | `phase_id`、順序、その段階に属する文役割 | 人物状態の前後、伏線回収距離、場面違いの誤答を決定する |
+| `ParticipantState` | `character_id`、`phase_id`、登場有無、知識・感情・意図・他者評価のノードID | 同じ人物の変化前後、人物違いの誤答を区別する |
+| `InterventionEffect` | 介入者、`phase_id`、意図ノード、実際の効果ノード | 善意と結果、支援と社会的圧力などを分離する |
+| `EvidenceCollection` | 集合ID、要素ノードID、本文順、完全性条件、部分点方針 | 「すべて」を問う設問で正答集合を固定する |
+| `StoryCallback` | callback ID、設定ノードID、回収ノードID、間に必要な最小意味段階数 | 離れた場面の期待・約束・助言等と終盤の行動変化を結ぶ |
 
-必要な根拠がない場合、そのパターンを無理に出題しない。別の対応パターンへ切り替えるか、本文を再生成する。
+人物状態の各値は自由な説明文字列だけで保持せず、根拠ノードIDへ接続する。関係状態は `relationship-state` ノードとして保持し、初期状態、変化を起こす出来事、相手の応答、変化後の状態を `changes-relationship` で結ぶ。
+
+`StoryCallback` は `resolves` 辺と対応し、設定と回収の間に一つ以上の意味段階を要求する。隣接する一段階因果を伏線回収として数えない。
+
+### 7.4 下書き例
+
+次はフィールド関係を示す最小例であり、現在の出力形式ではない。
+
+```json
+{
+  "version": "evidence-graph.v1",
+  "phases": [
+    { "id": "setup", "order": 1, "sentence_roles": ["expectation"] },
+    { "id": "middle", "order": 2, "sentence_roles": ["problem"] },
+    { "id": "payoff", "order": 3, "sentence_roles": ["fact"] }
+  ],
+  "nodes": [
+    {
+      "id": "setup_expectation",
+      "kind": "emotion",
+      "sentence_roles": ["expectation"],
+      "sentence_cardinality": "one",
+      "character_ids": ["protagonist"],
+      "phase_id": "setup",
+      "explicitness": "explicit"
+    },
+    {
+      "id": "later_action",
+      "kind": "event",
+      "sentence_roles": ["fact"],
+      "sentence_cardinality": "one",
+      "character_ids": ["protagonist"],
+      "phase_id": "payoff",
+      "explicitness": "explicit"
+    }
+  ],
+  "edges": [
+    { "id": "edge_setup_payoff", "from": "setup_expectation", "to": "later_action", "type": "resolves" }
+  ],
+  "callbacks": [
+    {
+      "id": "callback_1",
+      "setup_node_id": "setup_expectation",
+      "payoff_node_id": "later_action",
+      "minimum_intervening_phases": 1
+    }
+  ]
+}
+```
+
+### 7.5 共通検査
+
+- ノードID、辺ID、集合ID、callback IDがそれぞれ重複しない。
+- `StoryPhase` のIDと順序が一意で、ノードが参照するphaseと本文役割が対応する。
+- すべての文役割、ノード参照、人物参照、phase参照が存在する。
+- `sentence_cardinality` と実際の解決件数が一致する。
+- `precedes` と `resolves` が本文順に反しない。
+- `precedes` に循環がなく、すべての辺で `from !== to` である。
+- `causes`、`changes-emotion`、`changes-relationship` の接続先kindが契約と合う。
+- `EvidenceCollection` の要素が重複せず、本文順と `order_policy` が一致する。
+- `StoryCallback` の設定・回収ノードと対応する `resolves` 辺が存在し、最小意味段階数を満たす。
+- 設問が要求する人物、場面、辺、集合、callbackをグラフが供給できない場合、その設問セットを選ばない。
+
+本文構造ごとの段階1対応は次とする。
+
+| 本文構造 | 段階1で下書き化する既存根拠 | 後続段階で追加する状態 |
+| --- | --- | --- |
+| `story-retry-craft.v1` | 期待、失敗、確認方法、反応、修正結果 | 人物状態、指示対象候補 |
+| `story-clue-discovery.v1` | 注意、手がかり、確認方法、反応、発見理由 | 集合、観察時の人物状態 |
+| `story-late-arrival.v1` | 問題、第三人物の初出、介入、主人公の決定、結果 | 介入の意図と実際の効果 |
+
+段階1では現行根拠をグラフへ写し、本文構造や設問を変更しない。新しい人物状態、関係状態、伏線回収を必須にするのは、新しい `story_structure_id` を追加する後続段階とする。
 
 ## 8. 設問セット生成アルゴリズム
 
+次は根拠グラフを実装した段階1以降の目標順であり、現在は手順4〜8が未実装である。
+
 ```text
 1. 学年、本文長、本文構造、seedを確定する
-2. 設問セット設計候補を列挙する
-3. 本文構造が供給できる根拠役割と照合する
-4. seedから対応済み設問セットを決定的に選ぶ
-5. 各設問パターンへ重複しない根拠ノードを割り当てる
-6. 正答、許容解、誤答分類、採点要素を先に作る
-7. 正答契約を満たす本文役割列を生成する
-8. 補助文挿入後に根拠集合と一意性を再検査する
-9. 設問文と選択肢を生成する
-10. 回答形式から解答欄を割り当てる
-11. 合計筆記量と紙面幅を検査する
-12. 設問固有検査、セット検査、印刷検査を行う
+2. 本文構造モジュールからscenario、trait、本文役割列を生成する
+3. 同じモジュールからEvidenceGraphDraftを生成する
+4. 下書き内の文役割、ノード、辺、人物、phase、集合、callback参照を検査する
+5. 本文役割列を文章化し、各文へSentenceIdを割り当てる
+6. sentence_rolesをsentence_idsへ解決してEvidenceGraphを作る
+7. 解決件数、本文順、循環、集合、伏線回収を共通検査する
+8. EvidenceGraphが供給できる設問セット設計候補を列挙する
+9. seedから対応済み設問セットを決定的に選ぶ
+10. 各設問パターンへ重複しない根拠ノードを割り当てる
+11. 正答、許容解、誤答分類、採点要素を先に作る
+12. 補助文挿入後に根拠グラフ、正答集合、一意性を再検査する
+13. 設問文と選択肢を生成する
+14. 回答形式から解答欄を割り当てる
+15. 合計筆記量と紙面幅を検査する
+16. 設問固有検査、セット検査、印刷検査を行う
 ```
 
 設問セットIDは実装都合の値なので、初期UIでは利用者へ選ばせない。アルゴリズム生成ではseedから決定的に選び、生成根拠画面へ記録する。
@@ -412,7 +529,11 @@ minimum_question_width
 
 ## 10. 機械検査
 
-### 10.1 設問パターン固有検査
+### 10.1 根拠グラフ共通検査
+
+段階1では、設問パターン固有検査より先に7.5の参照整合、解決件数、順序、循環、集合、伏線回収を検査する。失敗した場合は互換アダプターへ黙って戻さず、生成を失敗させる。グラフを利用する新設問では、設問が参照したノード、辺、集合、callbackから `SentenceId` まで到達できることも必須とする。
+
+### 10.2 設問パターン固有検査
 
 | パターン | 必須検査 |
 | --- | --- |
@@ -424,7 +545,7 @@ minimum_question_width
 | 指示内容 | 指示対象が一意、必要要素が本文に存在、許容解が要素採点可能 |
 | 様子語空所 | 品詞一致、修飾対象一致、文脈上の正答1件 |
 
-### 10.2 セット全体検査
+### 10.3 セット全体検査
 
 - 同じ一文だけで3問以上が解けない。
 - 同じ正答語句を複数問で使い回さない。
@@ -433,8 +554,11 @@ minimum_question_width
 - 1年生の長い自由記述を連続させすぎない。
 - 合計筆記量が本文長設定と独立して暴走しない。
 - `question_set_blueprint_id`、各 `question_pattern_id`、`answer_layout_id` を生成来歴へ残す。
+- 人物状態の変化を問う設問は、同じ人物の異なるphaseを参照する。
+- 関係状態の変化を問う設問は、初期状態、相互作用、相手の応答、変化後の状態を参照する。
+- 伏線回収を問う設問は、設定・回収の両ノードと `StoryCallback` を参照する。
 
-### 10.3 紙面検査
+### 10.4 紙面検査
 
 - 設問番号と設問本文が重ならない。
 - ふりがなと罫線が重ならない。
@@ -456,6 +580,10 @@ minimum_question_width
 | 空欄数 | 1、2、3 |
 | 列挙数 | 2、3、4 |
 | 誤答の近さ | 明白な矛盾、別場面、部分的整合 |
+| 人物状態遷移数 | 0、1、2、3以上 |
+| 関係状態遷移数 | 0、1、2以上 |
+| 視点人物数 | 1人、2人、3人以上 |
+| 伏線回収距離 | 間にある意味段階数、段落数 |
 
 現行の生成条件プロファイル1〜5は、各実装済みセットに1問ずつ含まれる `QP_EMOTION_OPEN` の根拠距離だけを表す。新しい設問セット全体の難度へ流用せず、設問パターン別の生成パラメータとして再設計する。
 
@@ -476,38 +604,18 @@ AI設計図に必要な根拠がない場合は、対応する設問パターン
 
 ## 13. 実装順
 
-### 段階A：設問と解答欄を分離する
+設問と解答欄の分離、3設問セット、seedによる決定的選択、4問・6問の縦書き印刷確認までは完了している。後続の依存順と段階ごとの完了条件は [story-evidence-expansion-plan.md](story-evidence-expansion-plan.md) を作業計画の正本とする。
 
-- [x] `question_pattern_id` と `answer_layout_id` をデータへ追加する。
-- [x] 現行4問を新レジストリへ移し、明示ID指定時の契約を回帰テストする。
-- [ ] 現行4問の印刷スナップショットを回帰基準にする。
+- [x] 段階0：人物状態・関係状態・伏線回収の測定境界、二段階根拠グラフ、生成順、互換・版方針を正本仕様へ同期する。
+- [ ] 段階1：現行3本文構造を `EvidenceGraphDraft` と `EvidenceGraph` へ写し、現行出力を回帰保護する。
+- [ ] 段階2：`story-relationship-repair.v1`、`QP_REFERENT_EXPLANATION`、`AL_SHORT_OPEN` を縦切り実装する。
+- [ ] 段階3：`story-delayed-callback.v1`、`StoryCallback`、`QP_CONTEXT_INSERTION_CHOICE`、`AL_CONTEXT_INSERTION` を実装する。
+- [ ] 段階4：`QP_CAUSE_FRAME_MULTI_EXTRACT`、`QP_ENUMERATE_ALL_EVENTS` と対応解答欄を実装する。
+- [ ] 段階5：`story-social-feedback.v1`、`InterventionEffect`、`QP_MANNER_CLOZE_CHOICE` を実装する。
+- [ ] 段階6：新設問セット、UI、縦書き印刷を実装・確認する。
+- [ ] 段階7：固定seedコーパス、設問間の答え漏れ検査、解き直しを完了する。
 
-### 段階B：読解パターンを3種類追加する
-
-当初候補のうち、現行本文が一意な正答を供給できるものから実装する。
-
-1. [ ] `QP_REFERENT_EXPLANATION`
-2. [ ] `QP_CAUSE_FRAME_MULTI_EXTRACT`
-3. [ ] `QP_CONTEXT_INSERTION_CHOICE`
-
-現行本文で先に安全に実装できたものとして、本文空所を作らない `QP_EVENT_SEQUENCE_CHOICE` を追加済みである。これは文脈挿入問題の実装済み扱いにはしない。
-
-この3つは、現在と異なる認知操作と解答欄を作りやすく、問題12・18の特徴を偏りなく導入できる。
-
-### 段階C：セット単位のバリエーションを追加する
-
-- [x] `causal-trace-6q.v1`
-- [x] `context-and-inference-4q.v1`
-- [ ] `reference-and-language-4q.v1`
-- [x] seedによる決定的選択
-- [x] セット別コーパス
-- [x] 4問、6問それぞれの縦書き印刷画像検査（4問は1設問ページ、6問は3問ずつ2設問ページ）
-
-### 段階D：残りの読解パターンを追加する
-
-- [ ] 全件列挙
-- [x] 原因結果の選択
-- [ ] 様子語の空所補充
+現行本文で先に実装済みの `QP_EVENT_SEQUENCE_CHOICE` は、本文空所を使う `QP_CONTEXT_INSERTION_CHOICE` の実装済み扱いにはしない。実装済みの `QP_CAUSE_RESULT_CHOICE` も、複数欄へ因果要素を配置する `QP_CAUSE_FRAME_MULTI_EXTRACT` の代用にはしない。
 
 ## 14. 完了条件
 
@@ -532,4 +640,4 @@ AI設計図に必要な根拠がない場合は、対応する設問パターン
 問題12・18型の一部: 文脈と気持ちを考える4問
 ```
 
-次の優先事項は、3セットを大人が実際に解く人間レビューである。指示内容・様子語・複数空欄・全件列挙は、対応する本文根拠契約を先に設計してから追加する。
+3セットを大人が実際に解く人間レビューは継続する。次のコーディング対象は、指示内容・様子語・複数空欄・全件列挙を個別追加することではなく、現行3本文構造を二段階の根拠グラフへ写す段階1である。段階1では児童向け出力を変えず、参照整合と現行seedの回帰を先に確立する。
