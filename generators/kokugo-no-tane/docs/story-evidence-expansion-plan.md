@@ -2,11 +2,11 @@
 
 | 項目 | 値 |
 | --- | --- |
-| 文書状態 | 実装前計画 |
-| 文書版 | `story-evidence-expansion-plan.v0.1-draft` |
+| 文書状態 | 実装中（段階0完了・段階1未着手） |
+| 文書版 | `story-evidence-expansion-plan.v0.2-draft` |
 | 開発形態 | 個人開発 |
 | 最終更新日 | 2026-07-20 |
-| 実装状態 | 未着手。現行の本文構造3種類、設問セット3種類、設問パターン8種類、解答欄4種類を基準とする |
+| 実装状態 | 段階0の正本仕様同期を完了。根拠グラフのコードは未実装。現行の本文構造3種類、設問セット3種類、設問パターン8種類、解答欄4種類を基準とする |
 | 実証状態 | 未実証・未校正 |
 | 参照アンカー | `ANCHOR-STORY-Q06`、`ANCHOR-QUESTION-FORM-Q12`、`ANCHOR-QUESTION-FORM-Q18` |
 
@@ -78,8 +78,12 @@ blueprintが本文を作る段階では、まだ確定した `SentenceId` がな
 type EvidenceNodeKind =
   | "event"
   | "emotion"
+  | "knowledge"
+  | "intention"
+  | "evaluation"
   | "reaction"
   | "utterance"
+  | "reference-expression"
   | "referent-target"
   | "relationship-state";
 
@@ -93,6 +97,7 @@ interface EvidenceNodeDraft {
 }
 
 interface EvidenceEdge {
+  readonly id: string;
   readonly from: string;
   readonly to: string;
   readonly type:
@@ -107,6 +112,7 @@ interface EvidenceEdge {
 
 さらに、単一ノードでは表せない問いのため、次を別契約として持つ。
 
+- `StoryPhase`：意味段階のID、順序、その段階に属する文役割
 - `EvidenceCollection`：全件列挙の対象、順序、部分点、完全性条件
 - `StoryCallback`：序盤の設定ノード、終盤の回収ノード、両者の関係
 - `ParticipantState`：場面ごとの参加人物、知識、意図、他者への評価
@@ -120,6 +126,22 @@ interface EvidenceEdge {
 - 新しい設問だけが複数ノード、辺、集合、伏線回収を要求する。
 - 現行seedで、題名、本文、設問順、正答が意図せず変わっていないことを回帰検査する。
 - 生成来歴へグラフ版を追加し、将来の互換性判断に利用する。
+
+### 4.3 段階0で確定した版と互換境界
+
+| 対象 | 決定 |
+| --- | --- |
+| 現行コード | `kokugo-no-tane.prototype.v0.10` のまま。段階0は文書だけを変更する |
+| 段階1のgenerator版 | `kokugo-no-tane.prototype.v0.11` |
+| 根拠グラフ版 | `evidence-graph.v1` |
+| 正本仕様版 | `item-blueprint.v0.6-draft`、`question-pattern-expansion.v0.4-draft`、`algorithm-spec.v0.11-draft` |
+| 現行ID | 既存の `blueprint_id`、`story_structure_id`、`question_pattern_id`、`question_set_blueprint_id` を維持する |
+| 児童向け出力 | 現行seedの題名、本文、設問文、選択肢順、正答、解答欄、印刷ページを維持する |
+| 意図する差分 | 生成来歴、開発者向け診断、根拠グラフ、機械検査を追加する |
+| 旧生成物 | グラフがない `v0.10` を正当な旧形式として区別し、同じitem revisionへ後付けしない |
+| AI設計図 | `story-plan.v1` を変更せず、検証済みscenarioからローカルでグラフ下書きを決定的に作る |
+
+人物状態の並び、関係状態の遷移、伏線回収を本文の必須構造として追加する場合は、新しい `story_structure_id` と `blueprint_id` を付与する。新しい設問パターンと設問セットは段階2以降で別IDとして追加する。
 
 ## 5. 追加する本文構造
 
@@ -216,12 +238,14 @@ interface EvidenceEdge {
 
 ### 段階0：正本仕様の同期
 
-- [ ] `item-blueprint.md` に、人物状態、関係状態、伏線回収を測定対象として採用する範囲を追記する。
-- [ ] `question-pattern-expansion.md` の根拠グラフを、二段階解決、人物状態、集合、伏線回収を含む契約へ更新する。
-- [ ] `algorithm-draft.md` に、グラフ生成・解決・検査の処理順を追加する。
-- [ ] 新旧出力の互換範囲と、版を上げる対象を決める。
+- [x] `item-blueprint.md` に、人物状態、関係状態、伏線回収を測定対象として採用する範囲を追記する。
+- [x] `question-pattern-expansion.md` の根拠グラフを、二段階解決、人物状態、集合、伏線回収を含む契約へ更新する。
+- [x] `algorithm-draft.md` に、グラフ生成・解決・検査の処理順を追加する。
+- [x] 新旧出力の互換範囲と、版を上げる対象を決める。
 
 完了条件：同じ概念を文書ごとに異なる名称で定義しておらず、実装対象と未実装対象を識別できる。
+
+完了記録：2026-07-20に上記3正本候補を同期し、本書4.3で版と互換境界を固定した。現在の次工程は段階1であり、根拠グラフを実装済みとは扱わない。
 
 ### 段階1：根拠グラフの基盤
 
