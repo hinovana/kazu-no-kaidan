@@ -1,4 +1,8 @@
 import { runQuestionSetChecks } from "../standard-four-question-checks.ts";
+import {
+  selectStoryExpansions,
+  type StoryExpansionPack,
+} from "../story-expansions.ts";
 import type {
   Blueprint,
   BlueprintTrait,
@@ -43,8 +47,6 @@ interface LateArrivalTrait extends BlueprintTrait {
   readonly sentence: string;
   readonly expectation: (name: string) => string;
 }
-
-type DetailStage = "before" | "working" | "after" | "resolution";
 
 const SCENARIOS = Object.freeze([
   {
@@ -145,58 +147,10 @@ const TRAITS = Object.freeze([
   },
 ]);
 
-const DETAILS = Object.freeze({
-  before: [
-    "あたりには、|やわらかいひかりが|さしていました。",
-    "ふたりは、|つかうものを|ならべました。",
-    "はじめに、|することを|いっしょに|たしかめました。",
-    "まだ|じかんは|じゅうぶんに|ありました。",
-    "ふたりのあいだに、|たのしそうなこえが|ひろがりました。",
-    "しゅじんこうは、|できあがったところを|そうぞうしました。",
-  ],
-  working: [
-    "しゅじんこうは、|てを|ゆっくり|うごかしました。",
-    "ともだちは、|つぎにすることを|こえにだしました。",
-    "ふたりは、|ならべたものを|なんども|みくらべました。",
-    "しゅじんこうは、|だいじなところを|ゆびで|たどりました。",
-    "ともだちは、|そばで|しずかに|みていました。",
-    "ふたりは、|とちゅうで|いちど|てをとめました。",
-  ],
-  after: [
-    "しゅじんこうは、|ことばを|おもいだしました。",
-    "ともだちは、|そばで|うなずきました。",
-    "あとからきたひとは、|だいじょうぶと|いいました。",
-    "しゅじんこうは、|やりかたを|みなおしました。",
-    "さんにんは、|つかえるものを|わけました。",
-    "あたりは、|しずかに|なりました。",
-  ],
-  resolution: [
-    "さんにんは、|こんどのじゅんばんを|こえにだしました。",
-    "しゅじんこうのては、|さっきより|おちついて|うごきました。",
-    "ともだちは、|すすんだところを|みて|うなずきました。",
-    "あとからきたひとは、|できたところを|そっと|しめしました。",
-    "さんにんは、|さいごまで|いっしょに|たしかめました。",
-    "しゅじんこうは、|あたらしいやりかたを|ていねいに|つづけました。",
-  ],
-});
-
 function pick<T>(random: () => number, values: readonly T[]): T {
   const selected = values[Math.floor(random() * values.length)];
   if (selected === undefined) throw new RangeError("cannot pick from an empty content pack");
   return selected;
-}
-
-function shuffled<T>(random: () => number, values: readonly T[]): T[] {
-  const result = [...values];
-  for (let index = result.length - 1; index > 0; index -= 1) {
-    const other = Math.floor(random() * (index + 1));
-    const currentValue = result[index];
-    const otherValue = result[other];
-    if (currentValue === undefined || otherValue === undefined) continue;
-    result[index] = otherValue;
-    result[other] = currentValue;
-  }
-  return result;
 }
 
 function removePhraseMarkers(text: unknown): string {
@@ -205,13 +159,6 @@ function removePhraseMarkers(text: unknown): string {
 
 function explicitlyNamesCharacter(text: string, name: string): boolean {
   return new RegExp(`(?:^|[\\s　、。])${name}(?:は|が|と|も|を|に|へ|で|、|。|$)`, "u").test(text);
-}
-
-function substitute(template: string, scenario: LateArrivalScenario): string {
-  return template
-    .replaceAll("しゅじんこう", scenario.protagonist)
-    .replaceAll("ともだち", scenario.friend)
-    .replaceAll("あとからきたひと", scenario.lateEntrant);
 }
 
 function chooseScenario(random: () => number, topic: string | undefined): LateArrivalScenario {
@@ -233,6 +180,160 @@ function chooseScenario(random: () => number, topic: string | undefined): LateAr
   return pick(random, SCENARIOS);
 }
 
+function buildExpansionPack(scenario: LateArrivalScenario): StoryExpansionPack {
+  const protagonist = scenario.protagonist;
+  const friend = scenario.friend;
+  const lateEntrant = scenario.lateEntrant;
+  return {
+    before: [
+      {
+        id: "arrange_task_materials",
+        text: "ふたりは、|つかうものを|しごとのじゅんに|ならべました。",
+        narrativeFunction: "attempt",
+        referenceTargetRole: "opening",
+      },
+      {
+        id: "confirm_task_goal",
+        text: "ふたりは、|どんなかたちに|しあげるかを|たしかめました。",
+        narrativeFunction: "decide",
+        referenceTargetRole: "opening",
+      },
+      {
+        id: "divide_task_roles",
+        text: `${protagonist}と|${friend}は、|それぞれが|することを|きめました。`,
+        narrativeFunction: "decide",
+      },
+      {
+        id: "protagonist_checks_first_item",
+        text: `${protagonist}は、|はじめのひとつを|てにとって|よくみました。`,
+        narrativeFunction: "observe",
+        referenceTargetRole: "opening",
+      },
+      {
+        id: "friend_explains_order",
+        text: `${friend}は、|どのじゅんで|すすめるかを|こえにだしました。`,
+        narrativeFunction: "decide",
+      },
+      {
+        id: "leave_comparison_space",
+        text: "ふたりは、|できたものを|くらべられるように、|よこを|あけました。",
+        narrativeFunction: "attempt",
+      },
+    ],
+    working: [
+      {
+        id: "protagonist_checks_each_step",
+        text: `${protagonist}は、|ひとつできるたびに|かたちを|たしかめました。`,
+        narrativeFunction: "attempt",
+        referenceTargetRole: "expectation",
+      },
+      {
+        id: "friend_says_next_step",
+        text: `${friend}は、|つぎにすることを|こえにだして|つたえました。`,
+        narrativeFunction: "intervene",
+      },
+      {
+        id: "compare_finished_items",
+        text: "ふたりは、|できたものを|となりどうしに|ならべて|くらべました。",
+        narrativeFunction: "compare",
+        referenceTargetRole: "opening",
+      },
+      {
+        id: "protagonist_marks_key_place",
+        text: `${protagonist}は、|だいじなところを|ゆびで|たどりました。`,
+        narrativeFunction: "attempt",
+      },
+      {
+        id: "friend_checks_progress",
+        text: `${friend}は、|さいしょに|きめたとおりか、|できたところを|みました。`,
+        narrativeFunction: "compare",
+        referenceTargetRole: "opening",
+      },
+      {
+        id: "both_pause_to_compare",
+        text: "ふたりは、|とちゅうで|いちど|てをとめ、|できたところを|みなおしました。",
+        narrativeFunction: "compare",
+      },
+    ],
+    between_evidence: [
+      {
+        id: "late_entrant_explains_help",
+        text: `${lateEntrant}は、|どうして|そのやりかたなら|たしかめられるのかを|はなしました。`,
+        narrativeFunction: "intervene",
+        referenceTargetRole: "intervention",
+      },
+      {
+        id: "friend_notices_effect",
+        text: `${friend}は、|さっきより|わかりやすくなったと|いいました。`,
+        narrativeFunction: "understand",
+        referenceTargetRole: "intervention",
+      },
+      {
+        id: "protagonist_compares_before_after",
+        text: `${protagonist}は、|こまっていたときと|いまのやりかたを|くらべました。`,
+        narrativeFunction: "compare",
+        referenceTargetRole: "problem",
+      },
+      {
+        id: "late_entrant_waits",
+        text: `${lateEntrant}は、|${protagonist}が|じぶんで|たしかめるのを|そばで|まちました。`,
+        narrativeFunction: "react",
+        referenceTargetRole: "fact",
+      },
+      {
+        id: "three_check_method",
+        text: "さんにんは、|あたらしいやりかたで|すすめられるかを|いっしょに|たしかめました。",
+        narrativeFunction: "attempt",
+        referenceTargetRole: "fact",
+      },
+      {
+        id: "protagonist_sees_shared_solution",
+        text: `${protagonist}は、|ふたりのことばが|じぶんのこたえに|つながったと|わかりました。`,
+        narrativeFunction: "understand",
+        referenceTargetRole: "inference_situation",
+      },
+    ],
+    resolution: [
+      {
+        id: "three_repeat_method",
+        text: "さんにんは、|こんどのじゅんばんを|こえにだして|たしかめました。",
+        narrativeFunction: "aftermath",
+        referenceTargetRole: "fact",
+      },
+      {
+        id: "protagonist_works_calmly",
+        text: `${protagonist}のては、|さっきより|おちついて|うごきました。`,
+        narrativeFunction: "aftermath",
+        referenceTargetRole: "fact",
+      },
+      {
+        id: "friend_points_progress",
+        text: `${friend}は、|うまくできたところを|${lateEntrant}に|しめしました。`,
+        narrativeFunction: "aftermath",
+        referenceTargetRole: "resolution",
+      },
+      {
+        id: "late_entrant_confirms_result",
+        text: `${lateEntrant}は、|できあがったところを|みて|おおきく|うなずきました。`,
+        narrativeFunction: "aftermath",
+        referenceTargetRole: "resolution",
+      },
+      {
+        id: "three_compare_result",
+        text: "さんにんは、|さいしょに|めざしたかたちと|できあがりを|くらべました。",
+        narrativeFunction: "compare",
+        referenceTargetRole: "resolution",
+      },
+      {
+        id: "protagonist_thanks_helpers",
+        text: `${protagonist}は、|ふたりが|いっしょに|かんがえてくれたことへ|おれいを|いいました。`,
+        narrativeFunction: "aftermath",
+        referenceTargetRole: "inference_situation",
+      },
+    ],
+  };
+}
+
 function buildStorySentences({
   scenario,
   trait,
@@ -249,55 +350,109 @@ function buildStorySentences({
   const protagonistIntro = scenario.protagonistLabel ?? scenario.protagonist;
   const friendIntro = scenario.friendLabel ?? scenario.friend;
   const lateEntrantIntro = scenario.lateEntrantLabel ?? scenario.lateEntrant;
-  const core = [
-    { stage: "opening", text: `{{${scenario.location}}}で、|${protagonistIntro}と|${friendIntro}は、|${scenario.task}。` },
-    { stage: "trait", text: `${scenario.protagonist}は、|${trait.sentence}。` },
-    { stage: "expectation", text: trait.expectation(scenario.protagonist) },
-    { stage: "explicit_emotion", text: "ふたりで|できそうで、|うれしくなりました。" },
-    { stage: "problem", text: `ところが、|${scenario.problem}。` },
-    { stage: "late_arrival", text: `そこへ、|${lateEntrantIntro}が|あとから|やってきました。` },
-    { stage: "intervention", text: `${scenario.lateEntrant}は、|${scenario.intervention}。` },
-    { stage: "fact", text: `${scenario.protagonist}は、|${scenario.decision}に|しました。` },
-    { stage: "inference_situation", text: `${scenario.protagonist}は、|${scenario.lateEntrant}が|いっしょに|かんがえてくれたことに|きがつきました。` },
-    { stage: "inference_reaction", text: `${scenario.protagonist}は、|にこりとして、|かおを|あげました。` },
-    { stage: "resolution", text: `${scenario.resolution}。` },
-    { stage: "closing", text: `${scenario.protagonist}と|${scenario.friend}と|${scenario.lateEntrant}は、|さんにんで|わらいました。` },
-  ];
-
-  const requiredAfterCount = [0, 0, 1, 2, 4][profile - 1] ?? 0;
-  const extraCount = Math.max(lengthSetting.extra_count, requiredAfterCount);
-  const remainingCount = extraCount - requiredAfterCount;
-  const stageCounts: Record<DetailStage, number> = {
-    before: Math.ceil(remainingCount / 3),
-    working: Math.ceil((remainingCount - Math.ceil(remainingCount / 3)) / 2),
-    after: requiredAfterCount,
-    resolution: 0,
-  };
-  stageCounts.resolution = extraCount - stageCounts.before - stageCounts.working - stageCounts.after;
-  const details = {} as Record<DetailStage, StorySentenceDraft[]>;
-  for (const stage of Object.keys(DETAILS) as DetailStage[]) {
-    details[stage] = shuffled(random, DETAILS[stage])
-      .slice(0, Math.max(0, stageCounts[stage]))
-      .map((text) => ({ stage: `detail_${stage}`, text: substitute(text, scenario) }));
-  }
+  const expansions = selectStoryExpansions({
+    pack: buildExpansionPack(scenario),
+    profile,
+    lengthSetting,
+    random,
+  });
+  const core = {
+    opening: {
+      stage: "opening",
+      text: `{{${scenario.location}}}で、|${protagonistIntro}と|${friendIntro}は、|{{two_people}}で|${scenario.task}。`,
+      narrativeFunction: "set_scene",
+    },
+    contextSetup: {
+      stage: "context_setup",
+      text: "{{two_people}}は、|つかう|{{place}}に|どうぐを|ならべました。",
+      narrativeFunction: "attempt",
+      referenceTargetRole: "opening",
+    },
+    trait: {
+      stage: "trait",
+      text: `${scenario.protagonist}は、|${trait.sentence}。`,
+      narrativeFunction: "characterize",
+    },
+    expectation: {
+      stage: "expectation",
+      text: trait.expectation(scenario.protagonist),
+      narrativeFunction: "attempt",
+      referenceTargetRole: "opening",
+    },
+    explicitEmotion: {
+      stage: "explicit_emotion",
+      text: "ふたりで|できそうで、|うれしくなりました。",
+      narrativeFunction: "react",
+      referenceTargetRole: "expectation",
+    },
+    problem: {
+      stage: "problem",
+      text: `ところが、|${scenario.problem}。`,
+      narrativeFunction: "encounter_problem",
+      referenceTargetRole: "opening",
+    },
+    lateArrival: {
+      stage: "late_arrival",
+      text: `そこへ、|${lateEntrantIntro}が|あとから|やってきました。`,
+      narrativeFunction: "set_scene",
+      referenceTargetRole: "problem",
+    },
+    intervention: {
+      stage: "intervention",
+      text: `${scenario.lateEntrant}は、|${scenario.intervention}。`,
+      narrativeFunction: "intervene",
+      referenceTargetRole: "problem",
+    },
+    fact: {
+      stage: "fact",
+      text: `${scenario.protagonist}は、|${scenario.decision}に|しました。`,
+      narrativeFunction: "decide",
+      referenceTargetRole: "intervention",
+    },
+    inferenceSituation: {
+      stage: "inference_situation",
+      text: `${scenario.protagonist}は、|${scenario.lateEntrant}が|いっしょに|かんがえてくれたことに|きがつきました。`,
+      narrativeFunction: "understand",
+      referenceTargetRole: "intervention",
+    },
+    inferenceReaction: {
+      stage: "inference_reaction",
+      text: `${scenario.protagonist}は、|にこりとして、|かおを|あげました。`,
+      narrativeFunction: "react",
+      referenceTargetRole: "inference_situation",
+    },
+    resolution: {
+      stage: "resolution",
+      text: `${scenario.resolution}。`,
+      narrativeFunction: "resolve",
+      referenceTargetRole: "fact",
+    },
+    closing: {
+      stage: "closing",
+      text: `つかった|{{place}}を|かたづけ、|{{${scenario.location}}}で、|${scenario.protagonist}と|${scenario.friend}と|${scenario.lateEntrant}は、|さんにんで|わらいました。`,
+      narrativeFunction: "aftermath",
+      referenceTargetRole: "resolution",
+    },
+  } satisfies Record<string, StorySentenceDraft>;
 
   return [
-    core[0]!,
-    ...details.before,
-    core[1]!,
-    core[2]!,
-    ...details.working,
-    core[3]!,
-    core[4]!,
-    core[5]!,
-    core[6]!,
-    core[7]!,
-    core[8]!,
-    ...details.after,
-    core[9]!,
-    ...details.resolution,
-    core[10]!,
-    core[11]!,
+    core.opening,
+    core.contextSetup,
+    ...expansions.before,
+    core.trait,
+    core.expectation,
+    ...expansions.working,
+    core.explicitEmotion,
+    core.problem,
+    core.lateArrival,
+    core.intervention,
+    core.fact,
+    core.inferenceSituation,
+    ...expansions.between_evidence,
+    core.inferenceReaction,
+    core.resolution,
+    ...expansions.resolution,
+    core.closing,
   ];
 }
 
@@ -355,7 +510,20 @@ function buildQuestionContent({ scenario, trait }: {
       evidenceRole: "inference_situation",
       evidenceRoles: ["inference_situation", "inference_reaction"],
       evidenceFragments: [`${scenario.lateEntrant}がいっしょにかんがえてくれた`, "にこりとして"],
-      answerFragmentsAny: ["ほっと", "うれしい", "あんしん"],
+      answerSupports: [
+        {
+          scoringElementId: "situation",
+          evidenceRole: "inference_situation",
+          evidenceFragment: `${scenario.lateEntrant}がいっしょにかんがえてくれた`,
+          answerFragmentsAny: ["いっしょにかんがえてくれて", "たすけてもらって"],
+        },
+        {
+          scoringElementId: "emotion",
+          evidenceRole: "inference_reaction",
+          evidenceFragment: "にこりとして",
+          answerFragmentsAny: ["ほっと", "うれしい", "あんしん"],
+        },
+      ],
       scoringElements: [
         { element_id: "situation", points: 1, description: `${scenario.lateEntrant}が一緒に考えた状況を捉える` },
         { element_id: "emotion", points: 1, description: "困っていた気持ちが軽くなったことに合う心情を示す" },
@@ -534,7 +702,7 @@ export const storyLateArrival4qBlueprint = Object.freeze({
     };
   },
   templateVersion(_input: { readonly storyPlan: StoryPlanV1 | null }) {
-    return "deterministic-late-arrival-template.v0.1";
+    return "deterministic-late-arrival-template.v0.4";
   },
   runMachineChecks: runLateArrivalChecks,
 } satisfies Blueprint<LateArrivalScenario, LateArrivalTrait>);

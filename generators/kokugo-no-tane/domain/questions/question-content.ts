@@ -34,6 +34,13 @@ export interface ChoicePatternContent {
 export interface EmotionOpenPatternContent extends ExtractPatternContent {
   readonly evidenceRoles: readonly string[];
   readonly evidenceFragments: readonly string[];
+  readonly answerSupports: readonly OpenResponseAnswerSupportContent[];
+}
+
+export interface OpenResponseAnswerSupportContent {
+  readonly scoringElementId: string;
+  readonly evidenceRole: string;
+  readonly evidenceFragment: string;
   readonly answerFragmentsAny: readonly string[];
 }
 

@@ -102,7 +102,12 @@ export interface InferEmotionQuestion extends QuestionBase {
   readonly validation_contract: {
     readonly evidence_roles: readonly string[];
     readonly evidence_fragments: readonly string[];
-    readonly answer_fragments_any: readonly string[];
+    readonly answer_supports: readonly {
+      readonly scoring_element_id: string;
+      readonly evidence_role: string;
+      readonly evidence_fragment: string;
+      readonly answer_fragments_any: readonly string[];
+    }[];
   };
 }
 

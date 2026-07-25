@@ -10,14 +10,16 @@
 
 | 文書 | 版 | 状態 | 正本とする領域 |
 | --- | --- | --- | --- |
-| [implementation-progress.md](implementation-progress.md) | `implementation-progress.v0.16` | 教育基本語彙候補DB、Codexヘッドレス評価経路、TypeScript/React SPA、本文構造3種類、設問セット3種類を実装。根拠グラフ拡張の段階0を完了 | 実装フェーズ、現在地点、完了ゲート、次アクション |
-| [item-blueprint.md](item-blueprint.md) | `item-blueprint.v0.6-draft` | 本文構造3種類・設問セット3種類を実装。人物状態・関係状態・伏線回収の測定契約は採用済み・未実装 | 測定能力、測定対象外、文章種別、設問セット、本文構造モジュール境界、許容される変形 |
-| [question-pattern-expansion.md](question-pattern-expansion.md) | `question-pattern-expansion.v0.4-draft` | 設問・解答欄の分離と3セットを実装。二段階の根拠グラフは設計済み・未実装 | 設問パターン、設問セット、根拠グラフ、解答欄レイアウト、機械検査、段階的実装順 |
-| [story-evidence-expansion-plan.md](story-evidence-expansion-plan.md) | `story-evidence-expansion-plan.v0.2-draft` | 段階0完了・段階1未着手 | 問題6・12・18の分析から、物語状態・根拠グラフ、本文構造、設問、解答欄を追加する依存順と完了条件 |
-| [algorithm-draft.md](algorithm-draft.md) | `algorithm-spec.v0.11-draft` | 現行プロトタイプを実装。根拠グラフの生成・解決・検査順は設計済み・コード未実装 | 物語・本文・設問・正答根拠の生成、本文構造モジュール、機械検査、学年別初出ふりがな、語句間隔、A4横の縦書き印刷 |
+| [implementation-progress.md](implementation-progress.md) | `implementation-progress.v0.20` | 漢字5種類以上・再出5種類以上・小学1〜3年配当範囲を実装。対象fixtureの再確認と残り8件の人間レビュー待ち | 実装フェーズ、現在地点、完了ゲート、次アクション |
+| [item-blueprint.md](item-blueprint.md) | `item-blueprint.v0.8-draft` | 本文構造3種類・設問セット3種類、意味役割・先行参照・採点要素別根拠、漢字利用契約を実装。根拠グラフは未実装 | 測定能力、測定対象外、文章種別、設問セット、本文構造モジュール境界、許容される変形 |
+| [question-pattern-expansion.md](question-pattern-expansion.md) | `question-pattern-expansion.v0.5-draft` | 設問・解答欄の分離、3セット、心情記述の採点要素別根拠を実装。二段階の根拠グラフは未実装 | 設問パターン、設問セット、根拠グラフ、解答欄レイアウト、機械検査、段階的実装順 |
+| [passage-quality-remediation-plan.md](passage-quality-remediation-plan.md) | `passage-quality-remediation-plan.v0.3-draft` | 段階A〜Eと漢字利用契約の自動検査を完了。段階Fの答えを隠した人間レビューと印刷確認待ち | 本文品質と正答可能性を根拠グラフ導入前に修正する実装順、負例、完了条件 |
+| [passage-quality-human-review.md](passage-quality-human-review.md) | `passage-quality-human-review.v0.4` | 漢字利用修正を反映・再確認待ち。残り8件は未実施 | 解答を隠した解き直し、別解、読み止まり、不要文、表記、A4横・縦書き印刷の記録票 |
+| [story-evidence-expansion-plan.md](story-evidence-expansion-plan.md) | `story-evidence-expansion-plan.v0.4-draft` | 本文品質の人間レビュー待ち・段階1未着手 | 問題6・12・18の分析から、物語状態・根拠グラフ、本文構造、設問、解答欄を追加する依存順と完了条件 |
+| [algorithm-draft.md](algorithm-draft.md) | `algorithm-spec.v0.13-draft` | 意味役割付き本文展開、先行参照、採点要素別根拠、漢字種類・再出・配当範囲検査を実装。根拠グラフは設計済み・コード未実装 | 物語・本文・設問・正答根拠の生成、本文構造モジュール、機械検査、学年別初出ふりがな、語句間隔、A4横の縦書き印刷 |
 | [model-api-integration.md](model-api-integration.md) | `model-api-integration.v0.7-draft` | Codexヘッドレス既定・API経路も選択可能・途中参加型はローカル生成専用・事前生成は未実装 | 文章生成モデルの責務、本文構造ごとの設計図契約、事前生成・ライブ生成、候補再利用、秘密情報、未成年者データ、検証ゲート |
 | [local-ai-proxy-spec.md](local-ai-proxy-spec.md) | `local-ai-proxy.v0.4` | Codexヘッドレス既定・API経路も選択可能 | Node.jsローカルプロキシの起動、provider切替、HTTP API、CORS、ブラウザUI、障害時動作、候補保存、テスト |
-| [database-spec.md](database-spec.md) | `database-spec.v0.4-draft` | 漢字候補版と教育基本語彙の低学年・高学年候補版を実装・人間未確認 | 漢字・語彙の根拠資料、権利、データモデル、配布DB |
+| [database-spec.md](database-spec.md) | `database-spec.v0.6-draft` | 漢字候補版、教育基本語彙候補版、限定16語の監査投影と本文漢字検査を実装・人間未確認 | 漢字・語彙の根拠資料、権利、データモデル、配布DB |
 | [item-review-and-release.md](item-review-and-release.md) | `item-review-release.v0.1-draft` | 検討中・未運用 | 個人開発での見直し、答えを隠した解き直し、修正時の再確認、公開状態 |
 | [calibration-and-fairness.md](calibration-and-fairness.md) | `calibration-fairness.v0.1-draft` | 検討中・未実施 | 児童試行、実測難易度、識別力、再採点一致、公平性、校正失効 |
 | [reference-anchor-registry.md](reference-anchor-registry.md) | `reference-anchors.v0.3-draft` | 検討中・分析専用 | 参照ID、出典位置、権利状態、抽出特徴、模倣禁止要素、解答用紙の抽象的紙面原則 |
@@ -41,16 +43,17 @@
 全体像を把握するときは、次の順に読む。
 
 1. [implementation-progress.md](implementation-progress.md) で、現在地点と次の作業を確認する。
-2. [item-blueprint.md](item-blueprint.md) で、何を測り、何を測らないかを確認する。
-3. 標準4問以外の設問・解答欄を検討する場合は [question-pattern-expansion.md](question-pattern-expansion.md) を確認する。
-4. 問題6・12・18から導いた後続実装へ着手する場合は [story-evidence-expansion-plan.md](story-evidence-expansion-plan.md) で依存順と完了条件を確認する。
-5. [algorithm-draft.md](algorithm-draft.md) で、出題設計から本文・設問を作る処理を確認する。
-6. 文章生成モデルを接続する場合は [model-api-integration.md](model-api-integration.md) で、モデルの責務と検証境界を確認する。
-7. ローカルライブ接続を実装する場合は [local-ai-proxy-spec.md](local-ai-proxy-spec.md) で、起動・HTTP・UI・保存・障害時契約を確認する。
-8. [database-spec.md](database-spec.md) で、語彙・漢字・ふりがなの根拠と配布方法を確認する。
-9. [item-review-and-release.md](item-review-and-release.md) で、自動生成後の見直しと利用状態を確認する。
-10. [calibration-and-fairness.md](calibration-and-fairness.md) で、児童試行と実測値の条件を確認する。
-11. 参照問題を根拠にする場合は [reference-anchor-registry.md](reference-anchor-registry.md) のアンカーIDを確認する。
+2. 現行本文の修正または確認へ着手する場合は [passage-quality-remediation-plan.md](passage-quality-remediation-plan.md) で現在段階を確認し、人間レビューは [passage-quality-human-review.md](passage-quality-human-review.md) へ記録する。
+3. [item-blueprint.md](item-blueprint.md) で、何を測り、何を測らないかを確認する。
+4. 標準4問以外の設問・解答欄を検討する場合は [question-pattern-expansion.md](question-pattern-expansion.md) を確認する。
+5. 問題6・12・18から導いた後続実装へ着手する場合は、本文品質修正後に [story-evidence-expansion-plan.md](story-evidence-expansion-plan.md) で依存順と完了条件を確認する。
+6. [algorithm-draft.md](algorithm-draft.md) で、出題設計から本文・設問を作る処理を確認する。
+7. 文章生成モデルを接続する場合は [model-api-integration.md](model-api-integration.md) で、モデルの責務と検証境界を確認する。
+8. ローカルライブ接続を実装する場合は [local-ai-proxy-spec.md](local-ai-proxy-spec.md) で、起動・HTTP・UI・保存・障害時契約を確認する。
+9. [database-spec.md](database-spec.md) で、語彙・漢字・ふりがなの根拠と配布方法を確認する。
+10. [item-review-and-release.md](item-review-and-release.md) で、自動生成後の見直しと利用状態を確認する。
+11. [calibration-and-fairness.md](calibration-and-fairness.md) で、児童試行と実測値の条件を確認する。
+12. 参照問題を根拠にする場合は [reference-anchor-registry.md](reference-anchor-registry.md) のアンカーIDを確認する。
 
 目的別の入口は次のとおり。
 
@@ -58,9 +61,10 @@
 | --- | --- |
 | SPAホストや後続教材の移行を変更する | [SPAフレームワーク設計書](../../../docs/spa-framework-design.md)。完了した国語移行の経緯は [アーカイブ](archive/typescript-module-design.md) |
 | 現在の進捗や次の作業を確認する | [implementation-progress.md](implementation-progress.md) |
+| 本文の不自然な飛躍、未解決参照、正答不能、意味の薄い補助文を修正・確認する | 実装順は [passage-quality-remediation-plan.md](passage-quality-remediation-plan.md)、人間レビューは [passage-quality-human-review.md](passage-quality-human-review.md)。測定契約は [item-blueprint.md](item-blueprint.md)、生成仕様は [algorithm-draft.md](algorithm-draft.md) |
 | 本文や設問の生成規則を変更する | [algorithm-draft.md](algorithm-draft.md) |
 | 標準4問以外の設問パターン、設問セット、解答欄を追加する | [question-pattern-expansion.md](question-pattern-expansion.md)、採用時は [item-blueprint.md](item-blueprint.md) と [algorithm-draft.md](algorithm-draft.md) |
-| 問題6・12・18を根拠に、物語状態・根拠グラフから段階実装する | [story-evidence-expansion-plan.md](story-evidence-expansion-plan.md)。確定仕様は [item-blueprint.md](item-blueprint.md)、[question-pattern-expansion.md](question-pattern-expansion.md)、[algorithm-draft.md](algorithm-draft.md) |
+| 問題6・12・18を根拠に、物語状態・根拠グラフから段階実装する | 先に [passage-quality-remediation-plan.md](passage-quality-remediation-plan.md) を完了し、その後 [story-evidence-expansion-plan.md](story-evidence-expansion-plan.md) に従う。確定仕様は [item-blueprint.md](item-blueprint.md)、[question-pattern-expansion.md](question-pattern-expansion.md)、[algorithm-draft.md](algorithm-draft.md) |
 | 文章生成モデル、API接続、事前生成・ライブ生成を変更する | [model-api-integration.md](model-api-integration.md) |
 | ローカルAIプロキシのURL、起動、HTTP API、CORS、接続UIを変更する | [local-ai-proxy-spec.md](local-ai-proxy-spec.md) |
 | 生成難度、採点、機械的品質検査を変更する | [algorithm-draft.md](algorithm-draft.md) |

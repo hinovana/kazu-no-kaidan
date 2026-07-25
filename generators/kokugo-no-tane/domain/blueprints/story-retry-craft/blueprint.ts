@@ -3,6 +3,10 @@ import {
   parseStoryPlan,
 } from "../../schemas/story-plan-v1.ts";
 import { runQuestionSetChecks } from "../standard-four-question-checks.ts";
+import {
+  selectStoryExpansions,
+  type StoryExpansionPack,
+} from "../story-expansions.ts";
 import type {
   Blueprint,
   BlueprintTrait,
@@ -44,8 +48,6 @@ interface RetryTrait extends BlueprintTrait {
   readonly sentence: string;
   readonly expectation: (name: string, action: string) => string;
 }
-
-type DetailStage = "before" | "working" | "after" | "resolution";
 
 const SCENARIOS = Object.freeze([
   {
@@ -140,11 +142,11 @@ const SCENARIOS = Object.freeze([
     protagonistLabel: "こりすの|リリ",
     friend: "モモ",
     friendLabel: "うさぎの|モモ",
-    object: "きのみを|かざる|かご",
-    action: "きのみを|ならべよう",
-    problem: "あかいきのみを|ちがうだんに|おいてしまいました",
+    object: "{{tree_nut}}を|かざる|かご",
+    action: "{{tree_nut}}を|ならべよう",
+    problem: "{{red}}|{{tree_nut}}を|ちがうだんに|おいてしまいました",
     decision: "かごのしたから|じゅんに|たしかめること",
-    resolution: "こんどは、|きのみが|きれいなしまもように|なりました",
+    resolution: "こんどは、|{{tree_nut}}が|きれいなしまもように|なりました",
   },
 ]);
 
@@ -166,71 +168,18 @@ const TRAITS = Object.freeze([
   },
 ]);
 
-const DETAILS = Object.freeze({
-  before: [
-    "あたりは、|やわらかいひかりに|つつまれていました。",
-    "つかうどうぐが、|きれいに|ならんでいました。",
-    "まわりから、|たのしそうなこえが|きこえてきました。",
-    "ふたりは、|はじめにすることを|いっしょに|たしかめました。",
-    "{{preparation}}のじかんは、|まだ|じゅうぶんに|のこっていました。",
-    "となりでは、|べつのふたりも|しずかに|てを|うごかしていました。",
-  ],
-  working: [
-    "しゅじんこうは、|どうぐを|てばやく|ならべました。",
-    "ともだちは、|ゆっくりでいいよと|こえを|かけました。",
-    "しゅじんこうは、|うなずきながらも|てを|いそがせました。",
-    "できあがったところを|そうぞうして、|にこりと|しました。",
-    "とちゅうで|いちど、|じゅんばんを|みなおすじかんも|ありました。",
-    "ふたりのあいだに、|ちいさなわらいごえが|ひろがりました。",
-  ],
-  after: [
-    "しゅじんこうは、|さっきのてじゅんを|あたまのなかで|たどりました。",
-    "ともだちは、|まちがえたところを|ゆびで|そっと|しめしました。",
-    "まだつかえるものは、|よこに|わけておきました。",
-    "まわりのこえが、|さっきより|とおくに|きこえました。",
-    "しゅじんこうは、|ひとついきをして、|だまっていました。",
-    "ともだちは、|なおせるところから|やろうと|はなしました。",
-  ],
-  resolution: [
-    "ふたりは、|こんどのじゅんばんを|こえにだして|たしかめました。",
-    "しゅじんこうのては、|さっきより|ゆっくりと|うごきました。",
-    "ともだちは、|すすんだところを|みて|おおきく|うなずきました。",
-    "しゅじんこうは、|あたらしいやりかたを|ていねいに|つづけました。",
-    "ふたりは、|さいごまで|しずかに|てを|うごかしました。",
-    "ふたりで、|さいごまで|いっしょに|たしかめました。",
-  ],
-});
-
 function pick<T>(random: () => number, values: readonly T[]): T {
   const selected = values[Math.floor(random() * values.length)];
   if (selected === undefined) throw new RangeError("cannot pick from an empty content pack");
   return selected;
 }
 
-function shuffled<T>(random: () => number, values: readonly T[]): T[] {
-  const result = [...values];
-  for (let index = result.length - 1; index > 0; index -= 1) {
-    const other = Math.floor(random() * (index + 1));
-    const currentValue = result[index];
-    const otherValue = result[other];
-    if (currentValue === undefined || otherValue === undefined) continue;
-    result[index] = otherValue;
-    result[other] = currentValue;
-  }
-  return result;
-}
-
 function removePhraseMarkers(text: unknown): string {
-  return String(text).replaceAll("|", "");
-}
-
-function substitute(
-  template: string,
-  values: { readonly protagonist: string; readonly friend: string },
-): string {
-  return template
-    .replaceAll("しゅじんこう", values.protagonist)
-    .replaceAll("ともだち", values.friend);
+  return String(text)
+    .replaceAll("|", "")
+    .replaceAll("{{tree_nut}}", "木の実")
+    .replaceAll("{{make}}", "作る")
+    .replaceAll("{{red}}", "赤い");
 }
 
 function chooseScenario(random: () => number, topic: string | undefined): RetryScenario {
@@ -282,6 +231,160 @@ function scenarioFromStoryPlan(storyPlan: unknown, topic: string | undefined): R
   };
 }
 
+function buildExpansionPack(scenario: RetryScenario): StoryExpansionPack {
+  const protagonist = scenario.protagonist;
+  const friend = scenario.friend;
+  return {
+    before: [
+      {
+        id: "inspect_materials",
+        text: `ふたりは、|${scenario.object}に|つかうものを|ひとつずつ|たしかめました。`,
+        narrativeFunction: "attempt",
+        referenceTargetRole: "opening",
+      },
+      {
+        id: "agree_first_step",
+        text: `ふたりは、|まず|なにをするかを|いっしょに|きめました。`,
+        narrativeFunction: "decide",
+      },
+      {
+        id: "arrange_tools",
+        text: `${protagonist}は、|つかうどうぐを|てのとどくところに|ならべました。`,
+        narrativeFunction: "attempt",
+      },
+      {
+        id: "friend_checks_goal",
+        text: `${friend}は、|できあがりのかたちを|もういちど|たしかめました。`,
+        narrativeFunction: "observe",
+        referenceTargetRole: "opening",
+      },
+      {
+        id: "divide_work",
+        text: "{{two_people}}は、|それぞれが|することを|きめました。",
+        narrativeFunction: "decide",
+      },
+      {
+        id: "make_work_space",
+        text: "ふたりは、|つくりかけのものを|ならべられるように|ばしょを|あけました。",
+        narrativeFunction: "attempt",
+      },
+    ],
+    working: [
+      {
+        id: "protagonist_hurries",
+        text: `${protagonist}は、|どうぐを|つぎつぎに|てにとりました。`,
+        narrativeFunction: "attempt",
+        referenceTargetRole: "expectation",
+      },
+      {
+        id: "friend_advises_slowly",
+        text: `${friend}は、|ゆっくりで|いいよと|こえを|かけました。`,
+        narrativeFunction: "intervene",
+        referenceTargetRole: "expectation",
+      },
+      {
+        id: "protagonist_keeps_hurrying",
+        text: `${protagonist}は、|うなずきながらも、|てを|いそがせました。`,
+        narrativeFunction: "attempt",
+        referenceTargetRole: "expectation",
+      },
+      {
+        id: "imagine_finished_object",
+        text: `${protagonist}は、|${scenario.object}が|できあがったところを|そうぞうしました。`,
+        narrativeFunction: "react",
+        referenceTargetRole: "opening",
+      },
+      {
+        id: "friend_compares_parts",
+        text: `${friend}は、|できたところと|まだのところを|みくらべました。`,
+        narrativeFunction: "compare",
+      },
+      {
+        id: "protagonist_skips_check",
+        text: `${protagonist}は、|はやく|すすめたくて、|とちゅうのたしかめを|あとにしました。`,
+        narrativeFunction: "attempt",
+        referenceTargetRole: "expectation",
+      },
+    ],
+    between_evidence: [
+      {
+        id: "friend_points_to_mistake",
+        text: `${friend}は、|まちがえたところを|ゆびで|そっと|しめしました。`,
+        narrativeFunction: "intervene",
+        referenceTargetRole: "problem",
+      },
+      {
+        id: "protagonist_recalls_steps",
+        text: `${protagonist}は、|どこで|まちがえたのか、|さっきのてじゅんを|おもいだしました。`,
+        narrativeFunction: "understand",
+        referenceTargetRole: "problem",
+      },
+      {
+        id: "protagonist_stops_hands",
+        text: `${protagonist}のてが、|ぴたりと|とまりました。`,
+        narrativeFunction: "react",
+        referenceTargetRole: "inference_situation",
+      },
+      {
+        id: "friend_waits_quietly",
+        text: `${friend}は、|せめることばを|いわずに|まちました。`,
+        narrativeFunction: "react",
+        referenceTargetRole: "inference_situation",
+      },
+      {
+        id: "compare_intended_shape",
+        text: `${protagonist}は、|つくりたかったかたちと|まちがえたところを|みくらべました。`,
+        narrativeFunction: "compare",
+        referenceTargetRole: "problem",
+      },
+      {
+        id: "friend_moves_tools_aside",
+        text: `${friend}は、|なおすのに|つかうどうぐを|そばへ|よせました。`,
+        narrativeFunction: "intervene",
+        referenceTargetRole: "problem",
+      },
+    ],
+    resolution: [
+      {
+        id: "repeat_decision_aloud",
+        text: "ふたりは、|こんどのじゅんばんを|こえにだして|たしかめました。",
+        narrativeFunction: "aftermath",
+        referenceTargetRole: "fact",
+      },
+      {
+        id: "move_more_slowly",
+        text: `${protagonist}のては、|さっきより|ゆっくりと|うごきました。`,
+        narrativeFunction: "aftermath",
+        referenceTargetRole: "fact",
+      },
+      {
+        id: "friend_checks_progress",
+        text: `${friend}は、|なおったところを|みて|おおきく|うなずきました。`,
+        narrativeFunction: "aftermath",
+        referenceTargetRole: "resolution",
+      },
+      {
+        id: "explain_new_method",
+        text: `${protagonist}は、|つぎは|どうたしかめるかを|${friend}に|はなしました。`,
+        narrativeFunction: "aftermath",
+        referenceTargetRole: "fact",
+      },
+      {
+        id: "compare_before_after",
+        text: "ふたりは、|なおすまえと|なおしたあとを|みくらべました。",
+        narrativeFunction: "compare",
+        referenceTargetRole: "resolution",
+      },
+      {
+        id: "put_tools_away",
+        text: "ふたりは、|つかったどうぐを|ひとつずつ|かたづけました。",
+        narrativeFunction: "aftermath",
+        referenceTargetRole: "resolution",
+      },
+    ],
+  };
+}
+
 function buildStorySentences({
   scenario,
   trait,
@@ -295,54 +398,97 @@ function buildStorySentences({
   readonly lengthSetting: LengthSetting;
   readonly random: () => number;
 }): StorySentenceDraft[] {
-  const values = { protagonist: scenario.protagonist, friend: scenario.friend };
   const protagonistIntro = scenario.protagonistLabel ?? scenario.protagonist;
   const friendIntro = scenario.friendLabel ?? scenario.friend;
-  const core = [
-    { stage: "opening", text: `{{${scenario.location}}}で、|${protagonistIntro}と|${friendIntro}は、|${scenario.object}を|つくることになりました。` },
-    { stage: "trait", text: `${scenario.protagonist}は、|${trait.sentence}。` },
-    { stage: "expectation", text: trait.expectation(scenario.protagonist, scenario.action) },
-    { stage: "explicit_emotion", text: "じょうずに|できそうだと|おもい、|うれしくなりました。" },
-    { stage: "problem", text: `ところが、|そのまま|いそいだため、|${scenario.problem}。` },
-    { stage: "fact", text: `${scenario.protagonist}は、|${scenario.decision}に|しました。` },
-    { stage: "inference_situation", text: `${scenario.protagonist}は、|まちがえたところを|${scenario.friend}に|みられました。` },
-    { stage: "inference_reaction", text: "みられたくなくて、|したを|みました。" },
-    { stage: "resolution", text: scenario.resolution + "。" },
-    { stage: "closing", text: `{{${scenario.location}}}で、|ふたりは|わらいました。` },
-  ];
-
-  const requiredAfterCount = [0, 0, 1, 2, 4][profile - 1] ?? 0;
-  const extraCount = Math.max(lengthSetting.extra_count, requiredAfterCount);
-  const remainingCount = extraCount - requiredAfterCount;
-  const stageCounts: Record<DetailStage, number> = {
-    before: Math.ceil(remainingCount / 3),
-    working: Math.ceil((remainingCount - Math.ceil(remainingCount / 3)) / 2),
-    after: requiredAfterCount,
-    resolution: 0,
-  };
-  stageCounts.resolution = extraCount - stageCounts.before - stageCounts.working - stageCounts.after;
-  const details = {} as Record<DetailStage, StorySentenceDraft[]>;
-  for (const stage of Object.keys(DETAILS) as DetailStage[]) {
-    details[stage] = shuffled(random, DETAILS[stage])
-      .slice(0, Math.max(0, stageCounts[stage]))
-      .map((text) => ({ stage: `detail_${stage}`, text: substitute(text, values) }));
-  }
+  const expansions = selectStoryExpansions({
+    pack: buildExpansionPack(scenario),
+    profile,
+    lengthSetting,
+    random,
+  });
+  const core = {
+    opening: {
+      stage: "opening",
+      text: `{{${scenario.location}}}で、|${protagonistIntro}と|${friendIntro}は、|{{two_people}}で|${scenario.object}を|{{make}}ことになりました。`,
+      narrativeFunction: "set_scene",
+    },
+    contextSetup: {
+      stage: "context_setup",
+      text: "{{two_people}}は、|つかう|{{place}}に|どうぐを|ならべました。",
+      narrativeFunction: "attempt",
+      referenceTargetRole: "opening",
+    },
+    trait: {
+      stage: "trait",
+      text: `${scenario.protagonist}は、|${trait.sentence}。`,
+      narrativeFunction: "characterize",
+    },
+    expectation: {
+      stage: "expectation",
+      text: trait.expectation(scenario.protagonist, scenario.action),
+      narrativeFunction: "attempt",
+      referenceTargetRole: "opening",
+    },
+    explicitEmotion: {
+      stage: "explicit_emotion",
+      text: "じょうずに|できそうだと|おもい、|うれしくなりました。",
+      narrativeFunction: "react",
+      referenceTargetRole: "expectation",
+    },
+    problem: {
+      stage: "problem",
+      text: `ところが、|そのまま|いそいだため、|${scenario.problem}。`,
+      narrativeFunction: "encounter_problem",
+      referenceTargetRole: "expectation",
+    },
+    inferenceSituation: {
+      stage: "inference_situation",
+      text: `${scenario.protagonist}は、|まちがえたところを|${scenario.friend}に|みられました。`,
+      narrativeFunction: "observe",
+      referenceTargetRole: "problem",
+    },
+    inferenceReaction: {
+      stage: "inference_reaction",
+      text: "みられたくなくて、|したを|みました。",
+      narrativeFunction: "react",
+      referenceTargetRole: "inference_situation",
+    },
+    fact: {
+      stage: "fact",
+      text: `${scenario.protagonist}は、|${scenario.decision}に|しました。`,
+      narrativeFunction: "decide",
+      referenceTargetRole: "problem",
+    },
+    resolution: {
+      stage: "resolution",
+      text: scenario.resolution + "。",
+      narrativeFunction: "resolve",
+      referenceTargetRole: "fact",
+    },
+    closing: {
+      stage: "closing",
+      text: `つかった|{{place}}を|かたづけ、|{{${scenario.location}}}で、|{{two_people}}は|わらいました。`,
+      narrativeFunction: "aftermath",
+      referenceTargetRole: "resolution",
+    },
+  } satisfies Record<string, StorySentenceDraft>;
 
   return [
-    core[0]!,
-    ...details.before,
-    core[1]!,
-    core[2]!,
-    ...details.working,
-    core[3]!,
-    core[4]!,
-    core[5]!,
-    core[6]!,
-    ...details.after,
-    core[7]!,
-    ...details.resolution,
-    core[8]!,
-    core[9]!,
+    core.opening,
+    core.contextSetup,
+    ...expansions.before,
+    core.trait,
+    core.expectation,
+    ...expansions.working,
+    core.explicitEmotion,
+    core.problem,
+    core.inferenceSituation,
+    ...expansions.between_evidence,
+    core.inferenceReaction,
+    core.fact,
+    core.resolution,
+    ...expansions.resolution,
+    core.closing,
   ];
 }
 
@@ -396,7 +542,20 @@ function buildQuestionContent({ scenario, trait }: {
       evidenceRole: "inference_situation",
       evidenceRoles: ["inference_situation", "inference_reaction"],
       evidenceFragments: ["まちがえたところ", "みられたくなくて"],
-      answerFragmentsAny: ["はずかしい", "きまずい", "こまった"],
+      answerSupports: [
+        {
+          scoringElementId: "situation",
+          evidenceRole: "inference_situation",
+          evidenceFragment: "まちがえたところ",
+          answerFragmentsAny: ["みられて", "まちがいをみられ", "しっぱいをみられ"],
+        },
+        {
+          scoringElementId: "emotion",
+          evidenceRole: "inference_reaction",
+          evidenceFragment: "みられたくなくて",
+          answerFragmentsAny: ["はずかしい", "きまずい", "こまった"],
+        },
+      ],
       scoringElements: [
         { element_id: "situation", points: 1, description: "まちがいを友だちに見られた状況を捉える" },
         { element_id: "emotion", points: 1, description: "見られたくない気持ちと合う、はずかしい・きまずい・困ったなどの心情を示す" },
@@ -452,7 +611,7 @@ function buildQuestionContent({ scenario, trait }: {
         { text: "つくるのが|いやで、|おこっている。", correct: false },
       ],
       evidenceRoles: ["resolution", "closing"],
-      evidenceFragments: [removePhraseMarkers(scenario.resolution), "ふたりはわらいました"],
+      evidenceFragments: [removePhraseMarkers(scenario.resolution), "二人はわらいました"],
       correctChoiceText: "うまくできて、うれしい。",
       primaryConstruct: "C3_INFER_EMOTION",
       secondaryDemands: ["結果と反応からの心情推論", "選択肢比較"],
@@ -530,7 +689,7 @@ export const storyStandard4qBlueprint = Object.freeze({
     };
   },
   templateVersion({ storyPlan }: { readonly storyPlan: StoryPlanV1 | null }) {
-    return storyPlan ? "ai-story-plan-adapter.v0.1" : "deterministic-story-template.v0.3";
+    return storyPlan ? "ai-story-plan-adapter.v0.4" : "deterministic-story-template.v0.6";
   },
   runMachineChecks: runQuestionSetChecks,
 } satisfies Blueprint<RetryScenario, RetryTrait>);

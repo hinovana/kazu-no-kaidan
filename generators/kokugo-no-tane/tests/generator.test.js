@@ -23,6 +23,10 @@ import {
   CONTEXT_AND_INFERENCE_4Q_ID,
   STANDARD_READING_4Q_ID,
 } from "../domain/questions/question-set-registry.ts";
+import {
+  PASSAGE_QUALITY_NEGATIVE_FIXTURES,
+  PASSAGE_QUALITY_REVIEW_CASES,
+} from "./fixtures/passage-quality-review-cases.js";
 
 const BLUEPRINT_STRUCTURES = new Map([
   [STORY_STANDARD_4Q_BLUEPRINT_ID, STORY_RETRY_CRAFT_STRUCTURE_ID],
@@ -31,6 +35,15 @@ const BLUEPRINT_STRUCTURES = new Map([
 ]);
 
 const countOccurrences = (text, target) => text.split(target).length - 1;
+
+function countPassageKanji(text) {
+  const counts = new Map();
+  for (const character of text) {
+    if (!/\p{Script=Han}/u.test(character)) continue;
+    counts.set(character, (counts.get(character) ?? 0) + 1);
+  }
+  return counts;
+}
 
 const QUESTION_SET_TYPES = new Map([
   [STANDARD_READING_4Q_ID, ["extract_explicit_trait_term", "emotion_choice", "extract_fact", "infer_emotion"]],
@@ -52,7 +65,37 @@ function assertWorksheet(worksheet) {
   assert.equal(worksheet.questions.length, QUESTION_SET_TYPES.get(worksheet.question_set_blueprint_id).length);
   assert.equal(worksheet.total_points, worksheet.questions.reduce((sum, question) => sum + question.points, 0));
 
+  const passageKanjiCounts = countPassageKanji(worksheet.passage.plainText);
+  const repeatedPassageKanji = [...passageKanjiCounts.values()].filter((count) => count >= 2).length;
+  const grade3Kanji = getKnownKanjiSet(3);
+  assert.ok(passageKanjiCounts.size >= 5, "passage must contain at least five distinct kanji");
+  assert.ok(repeatedPassageKanji >= 5, "passage must repeat at least five distinct kanji");
+  assert.ok(
+    [...passageKanjiCounts.keys()].every((character) => grade3Kanji.has(character)),
+    "passage kanji must stay within the grade 1-3 allocation",
+  );
+  for (const checkId of [
+    "passage_kanji_variety",
+    "passage_kanji_recurrence",
+    "passage_kanji_grade_range",
+  ]) {
+    assert.equal(
+      worksheet.machine_checks.checks.find((check) => check.check_id === checkId)?.passed,
+      true,
+      `${checkId} must pass`,
+    );
+  }
+
   const sentenceIds = new Set(worksheet.passage.sentences.map((sentence) => sentence.sentence_id));
+  const sentenceRoles = new Map(worksheet.passage.sentences.map((sentence, index) => [sentence.role, index]));
+  assert.equal(sentenceRoles.size, worksheet.passage.sentences.length, "sentence roles must be unique");
+  for (const [index, sentence] of worksheet.passage.sentences.entries()) {
+    assert.ok(sentence.narrative_function, `${sentence.role} must declare a narrative function`);
+    if (sentence.reference_target_role !== null) {
+      assert.ok(sentenceRoles.has(sentence.reference_target_role), `${sentence.role} reference target must exist`);
+      assert.ok(sentenceRoles.get(sentence.reference_target_role) < index, `${sentence.role} reference target must precede it`);
+    }
+  }
   for (const question of worksheet.questions) {
     assert.ok(question.evidence_ids.length > 0);
     question.evidence_ids.forEach((id) => assert.ok(sentenceIds.has(id), `missing evidence ${id}`));
@@ -70,6 +113,10 @@ function assertWorksheet(worksheet) {
         question.correct_choice_id,
         question.choices.find((choice) => choice.is_correct).choice_id,
       );
+    }
+    if (question.type === "infer_emotion") {
+      const supportIds = question.validation_contract.answer_supports.map((support) => support.scoring_element_id);
+      assert.deepEqual(new Set(supportIds), new Set(question.scoring_elements.map((element) => element.element_id)));
     }
   }
   assert.equal(worksheet.machine_checks.all_passed, true);
@@ -205,6 +252,88 @@ for (const blueprintId of BLUEPRINT_STRUCTURES.keys()) {
   assert.equal(generateWorksheet({ grade: 1, profile: 3, seed: "default-length" }).story_length, "standard");
 }
 
+for (const reviewCase of PASSAGE_QUALITY_REVIEW_CASES) {
+  const worksheet = generateWorksheet(reviewCase.options);
+  assert.equal(worksheet.blueprint_id, reviewCase.expectedBlueprintId, `${reviewCase.id} must remain reproducible`);
+  assert.equal(worksheet.story_length, reviewCase.options.length);
+  assert.equal(worksheet.machine_checks.checks.find((check) => check.check_id === "narrative_semantics").passed, true);
+  const contextSentences = worksheet.passage.sentences.filter((sentence) => sentence.role.startsWith("context_"));
+  assert.equal(
+    contextSentences.length,
+    LENGTH_SETTINGS[reviewCase.options.length].expansion_count + 1,
+    "the fixed setup context must be counted in addition to length-based expansions",
+  );
+  const evidenceIds = new Set(worksheet.questions.flatMap((question) => question.evidence_ids));
+  assert.ok(contextSentences.every((sentence) => !evidenceIds.has(sentence.sentence_id)));
+  const compactPassage = worksheet.passage.plainText.replace(/[\s　]/gu, "");
+  for (const retiredFragment of PASSAGE_QUALITY_NEGATIVE_FIXTURES.retiredPassageFragments) {
+    assert.ok(!compactPassage.includes(retiredFragment), `${reviewCase.id} must not recreate ${retiredFragment}`);
+  }
+}
+
+{
+  const reviewCase = PASSAGE_QUALITY_REVIEW_CASES.find((candidate) =>
+    candidate.id === "retry-craft-short");
+  assert.ok(reviewCase);
+  const worksheet = generateWorksheet(reviewCase.options);
+  const compactPassage = worksheet.passage.plainText.replace(/[\s　]/gu, "");
+  assert.match(compactPassage, /二人は、つかう場所にどうぐをならべました/);
+  assert.doesNotMatch(compactPassage, /じぶんがするところ/);
+  const passageKanjiLexemeIds = new Set(worksheet.ruby_plan
+    .filter((occurrence) => occurrence.scope === "passage" && /\p{Script=Han}/u.test(occurrence.surface))
+    .map((occurrence) => occurrence.lexeme_id));
+  for (const lexemeId of ["forest", "tree_nut", "make", "red"]) {
+    assert.ok(passageKanjiLexemeIds.has(lexemeId), `${lexemeId} must appear in retry-craft-short`);
+  }
+  for (const lexemeId of ["two_people", "place"]) {
+    const occurrences = worksheet.ruby_plan.filter((occurrence) =>
+      occurrence.scope === "passage" && occurrence.lexeme_id === lexemeId);
+    assert.ok(occurrences.length >= 2, `${lexemeId} must recur in retry-craft-short`);
+    assert.equal(occurrences[0].render_ruby, true);
+    assert.ok(occurrences.slice(1).every((occurrence) => occurrence.render_ruby === false));
+  }
+}
+
+{
+  const worksheet = generateWorksheet({
+    grade: 1,
+    profile: 3,
+    length: "short",
+    seed: "reject-kanji-policy-violation",
+    topic: "home",
+    blueprintId: STORY_STANDARD_4Q_BLUEPRINT_ID,
+  });
+  const withoutKanji = {
+    ...worksheet,
+    passage: {
+      ...worksheet.passage,
+      plainText: worksheet.passage.plainText.replace(/\p{Script=Han}/gu, ""),
+    },
+  };
+  const missingKanjiChecks = runMachineChecks(withoutKanji);
+  assert.equal(
+    missingKanjiChecks.checks.find((check) => check.check_id === "passage_kanji_variety").passed,
+    false,
+  );
+  assert.equal(
+    missingKanjiChecks.checks.find((check) => check.check_id === "passage_kanji_recurrence").passed,
+    false,
+  );
+
+  const outsideGradeRange = {
+    ...worksheet,
+    passage: {
+      ...worksheet.passage,
+      plainText: `${worksheet.passage.plainText}　鬱鬱`,
+    },
+  };
+  assert.equal(
+    runMachineChecks(outsideGradeRange).checks
+      .find((check) => check.check_id === "passage_kanji_grade_range").passed,
+    false,
+  );
+}
+
 {
   const worksheet = generateWorksheet({ grade: 1, profile: 3, length: "standard", seed: "animal-story", topic: "animal", blueprintId: STORY_STANDARD_4Q_BLUEPRINT_ID });
   assert.equal(worksheet.story.category, "動物");
@@ -263,10 +392,31 @@ for (const blueprintId of BLUEPRINT_STRUCTURES.keys()) {
 }
 
 {
+  const worksheet = generateWorksheet({
+    grade: 2,
+    profile: 3,
+    seed: "grade2-grade3-kanji-ruby",
+    topic: "home",
+    blueprintId: STORY_STANDARD_4Q_BLUEPRINT_ID,
+  });
+  const place = worksheet.ruby_plan.filter((entry) =>
+    entry.lexeme_id === "place" && entry.scope === "passage");
+  assert.ok(place.length >= 2);
+  assert.equal(place[0].surface, "場所");
+  assert.equal(place[0].reason, "first_occurrence");
+  assert.equal(place[0].render_ruby, true, "grade 3 kanji must receive ruby in a grade 2 passage");
+  assert.equal(place[1].reason, "repeat_occurrence");
+  assert.equal(place[1].render_ruby, false);
+}
+
+{
   const worksheet = generateWorksheet({ grade: 3, profile: 3, seed: "known-kanji", topic: "nature", blueprintId: STORY_STANDARD_4Q_BLUEPRINT_ID });
   const park = worksheet.ruby_plan.filter((entry) => entry.lexeme_id === "park");
   assert.ok(park.length >= 4);
   assert.ok(park.every((entry) => entry.reason === "grade_known" && !entry.render_ruby));
+  const place = worksheet.ruby_plan.filter((entry) => entry.lexeme_id === "place");
+  assert.ok(place.length >= 2);
+  assert.ok(place.every((entry) => entry.reason === "grade_known" && !entry.render_ruby));
 }
 
 {
@@ -385,6 +535,23 @@ for (const blueprintId of BLUEPRINT_STRUCTURES.keys()) {
   assert.equal(checks.checks.find((check) => check.check_id === "template_answer_evidence_contract").passed, false);
 }
 
+{
+  const worksheet = generateWorksheet({
+    grade: 1,
+    profile: 3,
+    length: "standard",
+    seed: "reject-context-answer-leak",
+    topic: "animal",
+    blueprintId: STORY_STANDARD_4Q_BLUEPRINT_ID,
+    questionSetBlueprintId: STANDARD_READING_4Q_ID,
+  });
+  const contextSentence = worksheet.passage.sentences.find((sentence) => sentence.role.startsWith("context_"));
+  contextSentence.plainText += worksheet.questions[2].answer.plainText;
+  const checks = runMachineChecks(worksheet);
+  assert.equal(checks.all_passed, false, "an expansion sentence must not reveal an answer elsewhere");
+  assert.equal(checks.checks.find((check) => check.check_id === "narrative_semantics").passed, false);
+}
+
 for (const questionSetBlueprintId of [CAUSAL_TRACE_6Q_ID, CONTEXT_AND_INFERENCE_4Q_ID]) {
   const worksheet = generateWorksheet({
     grade: 1,
@@ -405,11 +572,43 @@ for (const questionSetBlueprintId of [CAUSAL_TRACE_6Q_ID, CONTEXT_AND_INFERENCE_
 {
   const worksheet = generateWorksheet({ grade: 1, profile: 3, seed: "reject-wrong-response", topic: "home", blueprintId: STORY_STANDARD_4Q_BLUEPRINT_ID, questionSetBlueprintId: STANDARD_READING_4Q_ID });
   worksheet.questions[3].answer = {
-    plainText: "うれしい気持ち。",
-    segments: [{ type: "text", text: "うれしい気持ち。" }],
+    plainText: PASSAGE_QUALITY_NEGATIVE_FIXTURES.unsupportedModelAnswer,
+    segments: [{ type: "text", text: PASSAGE_QUALITY_NEGATIVE_FIXTURES.unsupportedModelAnswer }],
   };
   const checks = runMachineChecks(worksheet);
   assert.equal(checks.all_passed, false, "a model response opposed to the evidence must fail");
+  assert.equal(checks.checks.find((check) => check.check_id === "template_answer_evidence_contract").passed, false);
+}
+
+{
+  const worksheet = generateWorksheet({
+    grade: 1,
+    profile: 3,
+    length: "standard",
+    seed: "reject-dangling-story-reference",
+    topic: "animal",
+    blueprintId: STORY_CLUE_DISCOVERY_4Q_BLUEPRINT_ID,
+    questionSetBlueprintId: STANDARD_READING_4Q_ID,
+  });
+  const reaction = worksheet.passage.sentences.find((sentence) => sentence.role === "inference_reaction");
+  reaction.reference_target_role = PASSAGE_QUALITY_NEGATIVE_FIXTURES.danglingReferenceTarget;
+  const checks = runMachineChecks(worksheet);
+  assert.equal(checks.all_passed, false, "a dangling reference such as an undefined initial hypothesis must fail");
+  assert.equal(checks.checks.find((check) => check.check_id === "narrative_semantics").passed, false);
+}
+
+{
+  const worksheet = generateWorksheet({
+    grade: 1,
+    profile: 3,
+    seed: "reject-missing-q4-scoring-support",
+    topic: "animal",
+    blueprintId: STORY_CLUE_DISCOVERY_4Q_BLUEPRINT_ID,
+    questionSetBlueprintId: STANDARD_READING_4Q_ID,
+  });
+  worksheet.questions[3].validation_contract.answer_supports.pop();
+  const checks = runMachineChecks(worksheet);
+  assert.equal(checks.all_passed, false, "every q4 scoring element must have passage and answer support");
   assert.equal(checks.checks.find((check) => check.check_id === "template_answer_evidence_contract").passed, false);
 }
 

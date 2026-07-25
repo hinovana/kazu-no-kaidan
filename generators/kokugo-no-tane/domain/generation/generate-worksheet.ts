@@ -1,6 +1,7 @@
 import {
   KANJI_DATABASE_RELEASE,
   PROTOTYPE_LANGUAGE_DATA_PROVIDER,
+  getKnownKanjiSet,
   isKnownOrthography,
 } from "../../infrastructure/language/prototype-language-data-provider.ts";
 import { createRandomFunction, hash32 } from "./random.ts";
@@ -54,11 +55,11 @@ import type {
   WorksheetCheckInput,
 } from "../types/worksheet.js";
 
-const GENERATOR_VERSION = "kokugo-no-tane.prototype.v0.10";
+const GENERATOR_VERSION = "kokugo-no-tane.prototype.v0.12";
 export const LENGTH_SETTINGS = Object.freeze({
-  short: { extra_count: 2, character_band: [250, 370], label: "短め" },
-  standard: { extra_count: 8, character_band: [370, 570], label: "ふつう" },
-  long: { extra_count: 15, character_band: [500, 750], label: "長め" },
+  short: { expansion_count: 2, character_band: [250, 550], label: "短め" },
+  standard: { expansion_count: 8, character_band: [370, 690], label: "ふつう" },
+  long: { expansion_count: 15, character_band: [560, 880], label: "長め" },
 } as const satisfies Readonly<Record<StoryLength, LengthSetting>>);
 
 export interface LegacySourceMetadata {
@@ -187,6 +188,88 @@ function validateRubyPlan(worksheet: WorksheetCheckInput): string[] {
   return issues;
 }
 
+function validateNarrativeSemantics(worksheet: WorksheetCheckInput): {
+  readonly issues: readonly string[];
+  readonly contextSentenceCount: number;
+  readonly directEvidenceSentenceCount: number;
+} {
+  const issues: string[] = [];
+  const rolePositions = new Map<string, number[]>();
+  worksheet.passage.sentences.forEach((sentence, index) => {
+    const positions = rolePositions.get(sentence.role) ?? [];
+    positions.push(index);
+    rolePositions.set(sentence.role, positions);
+    if (!sentence.narrative_function) issues.push(`${sentence.sentence_id}: narrative function is missing`);
+  });
+
+  for (const [role, positions] of rolePositions) {
+    if (positions.length > 1) issues.push(`${role}: sentence role is duplicated`);
+  }
+
+  worksheet.passage.sentences.forEach((sentence, index) => {
+    if (sentence.reference_target_role === null) return;
+    const targetPositions = rolePositions.get(sentence.reference_target_role) ?? [];
+    if (targetPositions.length !== 1) {
+      issues.push(`${sentence.sentence_id}: reference target must resolve once`);
+      return;
+    }
+    if ((targetPositions[0] ?? Number.POSITIVE_INFINITY) >= index) {
+      issues.push(`${sentence.sentence_id}: reference target must precede expression`);
+    }
+  });
+
+  const directEvidenceIds = new Set(
+    worksheet.questions.flatMap((question) => question.evidence_ids),
+  );
+  const answerSurfaces = new Set(worksheet.questions.flatMap((question) => [
+    question.answer.plainText,
+    ...question.acceptable_answers,
+  ]).map(compactText).filter((answer) => Array.from(answer).length >= 8));
+  for (const sentence of worksheet.passage.sentences) {
+    if (!sentence.role.startsWith("context_")) continue;
+    const contextText = compactText(sentence.plainText);
+    for (const answer of answerSurfaces) {
+      if (contextText.includes(answer)) {
+        issues.push(`${sentence.sentence_id}: context sentence leaks an answer`);
+        break;
+      }
+    }
+  }
+  const directEvidenceSentenceCount = worksheet.passage.sentences.filter((sentence) =>
+    directEvidenceIds.has(sentence.sentence_id)).length;
+  const contextSentenceCount = worksheet.passage.sentences.filter((sentence) =>
+    sentence.role.startsWith("context_") && !directEvidenceIds.has(sentence.sentence_id)).length;
+  const minimumContextSentences = { short: 1, standard: 2, long: 3 }[worksheet.story_length];
+  if (contextSentenceCount < minimumContextSentences) {
+    issues.push(`meaningful context sentences must be at least ${minimumContextSentences}`);
+  }
+
+  return { issues, contextSentenceCount, directEvidenceSentenceCount };
+}
+
+function summarizePassageKanji(text: string): {
+  readonly counts: Readonly<Record<string, number>>;
+  readonly distinct: readonly string[];
+  readonly repeated: readonly string[];
+  readonly outOfRange: readonly string[];
+  readonly eligibleCount: number;
+} {
+  const counts = new Map<string, number>();
+  for (const character of text) {
+    if (!/\p{Script=Han}/u.test(character)) continue;
+    counts.set(character, (counts.get(character) ?? 0) + 1);
+  }
+  const grade3Kanji = getKnownKanjiSet(3);
+  const distinct = [...counts.keys()];
+  return {
+    counts: Object.fromEntries(counts),
+    distinct,
+    repeated: distinct.filter((character) => (counts.get(character) ?? 0) >= 2),
+    outOfRange: distinct.filter((character) => !grade3Kanji.has(character)),
+    eligibleCount: grade3Kanji.size,
+  };
+}
+
 export function runMachineChecks(worksheet: WorksheetCheckInput): MachineCheckReport {
   const blueprint = getBlueprint(worksheet.blueprint_id);
   const [minimum, maximum] = LENGTH_SETTINGS[worksheet.story_length].character_band;
@@ -207,6 +290,8 @@ export function runMachineChecks(worksheet: WorksheetCheckInput): MachineCheckRe
   const segmentIssues = validateSegments(worksheet);
   const rubyPlanIssues = validateRubyPlan(worksheet);
   const vocabularyAuditIssues = validateVocabularyAudit(worksheet);
+  const narrativeSemantics = validateNarrativeSemantics(worksheet);
+  const passageKanji = summarizePassageKanji(worksheet.passage.plainText);
   const checks: MachineCheck[] = [
     {
       check_id: "story_plan_contract",
@@ -241,6 +326,16 @@ export function runMachineChecks(worksheet: WorksheetCheckInput): MachineCheckRe
       passed: evidenceMissing.length === 0 && worksheet.questions.every((question) => question.evidence_ids.length > 0),
       details: { missing: evidenceMissing },
     },
+    {
+      check_id: "narrative_semantics",
+      passed: narrativeSemantics.issues.length === 0,
+      details: {
+        issues: narrativeSemantics.issues,
+        context_sentence_count: narrativeSemantics.contextSentenceCount,
+        direct_evidence_sentence_count: narrativeSemantics.directEvidenceSentenceCount,
+        total_sentence_count: worksheet.passage.sentences.length,
+      },
+    },
     ...blueprint.runMachineChecks(worksheet),
     {
       check_id: "phrase_spacing",
@@ -248,6 +343,35 @@ export function runMachineChecks(worksheet: WorksheetCheckInput): MachineCheckRe
         && worksheet.passage.plainText.includes("　")
         && !worksheet.passage.plainText.includes("  "),
       details: { mode: worksheet.orthography.phrase_spacing },
+    },
+    {
+      check_id: "passage_kanji_variety",
+      passed: passageKanji.distinct.length >= 5,
+      details: {
+        required_distinct_count: 5,
+        actual_distinct_count: passageKanji.distinct.length,
+        distinct_kanji: passageKanji.distinct,
+        occurrence_counts: passageKanji.counts,
+      },
+    },
+    {
+      check_id: "passage_kanji_recurrence",
+      passed: passageKanji.repeated.length >= 5,
+      details: {
+        required_repeated_distinct_count: 5,
+        actual_repeated_distinct_count: passageKanji.repeated.length,
+        repeated_kanji: passageKanji.repeated,
+        occurrence_counts: passageKanji.counts,
+      },
+    },
+    {
+      check_id: "passage_kanji_grade_range",
+      passed: passageKanji.outOfRange.length === 0,
+      details: {
+        allowed_allocation_grades: [1, 2, 3],
+        eligible_kanji_count: passageKanji.eligibleCount,
+        out_of_range_kanji: passageKanji.outOfRange,
+      },
     },
     {
       check_id: "prototype_orthography",
@@ -356,6 +480,8 @@ export function generateWorksheet(
     return {
       sentence_id: sentenceId,
       role: sentence.stage,
+      narrative_function: sentence.narrativeFunction,
+      reference_target_role: sentence.referenceTargetRole ?? null,
       ...render(sentence.text, "passage", sentenceId),
     };
   });
@@ -422,8 +548,8 @@ export function generateWorksheet(
     vocabulary_audit: buildVocabularyAudit(rubyPlan),
     generation_provenance: {
       generator_version: GENERATOR_VERSION,
-      algorithm_spec_version: "algorithm-spec.v0.10-draft",
-      blueprint_version: "item-blueprint.v0.5-draft",
+      algorithm_spec_version: "algorithm-spec.v0.13-draft",
+      blueprint_version: "item-blueprint.v0.8-draft",
       blueprint_id: blueprint.id,
       question_set_blueprint_id: resolvedQuestionSetBlueprintId,
       database_release: KANJI_DATABASE_RELEASE,

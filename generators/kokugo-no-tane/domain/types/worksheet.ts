@@ -9,11 +9,14 @@ import type {
 } from "./ids.js";
 import type { Question } from "./questions.js";
 import type { StoryPlanV1 } from "./story-plan.js";
+import type { NarrativeFunction } from "./story.js";
 import type { RichText, RichTextSegment } from "./text.js";
 
 export interface StorySentence extends RichText {
   readonly sentence_id: SentenceId;
   readonly role: string;
+  readonly narrative_function: NarrativeFunction;
+  readonly reference_target_role: string | null;
 }
 
 export interface StoryParagraph extends RichText {

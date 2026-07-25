@@ -223,9 +223,39 @@ function validateOpenResponseMeaning(worksheet: WorksheetCheckInput): string[] {
     !compactText(sentence?.plainText).includes(compactText(q4Contract.evidence_fragments[index])))) {
     issues.push("q4 evidence meaning mismatch");
   }
-  if (!q4Contract?.answer_fragments_any.some((fragment) =>
-    compactText(q4.answer.plainText).includes(compactText(fragment)))) {
-    issues.push("q4 model answer meaning mismatch");
+  const situationEvidence = q4Evidence[0];
+  const reactionEvidence = q4Evidence[1];
+  if (!situationEvidence
+    || !["observe", "compare", "understand"].includes(situationEvidence.narrative_function)) {
+    issues.push("q4 situation evidence must describe observation, comparison, or understanding");
+  }
+  if (!reactionEvidence || reactionEvidence.narrative_function !== "react") {
+    issues.push("q4 reaction evidence must describe a reaction");
+  }
+  if (reactionEvidence?.reference_target_role !== situationEvidence?.role) {
+    issues.push("q4 reaction must refer to the situation evidence");
+  }
+  const scoringElementIds = new Set(q4.scoring_elements.map((element) => element.element_id));
+  const answerSupportIds = q4Contract?.answer_supports.map((support) => support.scoring_element_id) ?? [];
+  if (!q4Contract
+    || answerSupportIds.length !== scoringElementIds.size
+    || new Set(answerSupportIds).size !== answerSupportIds.length
+    || answerSupportIds.some((id) => !scoringElementIds.has(id))) {
+    issues.push("q4 answer support coverage mismatch");
+  }
+  for (const support of q4Contract?.answer_supports ?? []) {
+    const evidenceIndex = q4Contract?.evidence_roles.indexOf(support.evidence_role) ?? -1;
+    const evidenceSentence = evidenceIndex < 0 ? undefined : q4Evidence[evidenceIndex];
+    if (evidenceIndex < 0
+      || evidenceSentence?.role !== support.evidence_role
+      || !compactText(evidenceSentence.plainText).includes(compactText(support.evidence_fragment))) {
+      issues.push(`q4 ${support.scoring_element_id} evidence support mismatch`);
+    }
+    if (support.answer_fragments_any.length === 0
+      || !support.answer_fragments_any.some((fragment) =>
+        compactText(q4.answer.plainText).includes(compactText(fragment)))) {
+      issues.push(`q4 ${support.scoring_element_id} model answer support mismatch`);
+    }
   }
   return issues;
 }

@@ -299,7 +299,7 @@ export function KokugoNoTanePage({ onRequestPrint }: GeneratorModuleProps) {
               <SelectField
                 label="学年"
                 value={String(form.grade)}
-                help="漢字・ふりがなの暫定基準。語彙・文法の学年適合性は未検証です。"
+                help="本文の漢字は小学1〜3年配当の管理語彙から選び、選択学年で読み支援が必要な語の初出にふりがなを付けます。語彙・文法の学年適合性は未検証です。"
                 disabled={isGenerating}
                 onChange={(value) => setForm({ ...form, grade: toGrade(value) })}
                 options={[["1", "小学1年生"], ["2", "小学2年生"], ["3", "小学3年生"]]}
@@ -632,12 +632,19 @@ function AnswersPanel({ questions }: { readonly questions: readonly Question[] }
 
 function EvidencePanel({ worksheet }: { readonly worksheet: Worksheet }) {
   const provenance = worksheet.generation_provenance;
+  const kanjiVariety = worksheet.machine_checks.checks
+    .find((check) => check.check_id === "passage_kanji_variety");
+  const kanjiRecurrence = worksheet.machine_checks.checks
+    .find((check) => check.check_id === "passage_kanji_recurrence");
+  const distinctKanjiCount = Number(kanjiVariety?.details.actual_distinct_count ?? 0);
+  const repeatedKanjiCount = Number(kanjiRecurrence?.details.actual_repeated_distinct_count ?? 0);
   const metadata: readonly (readonly [string, unknown])[] = [
     ["item ID", worksheet.item_id],
     ["seed", provenance.seed],
     ["DB release", provenance.database_release],
     ["lifecycle", worksheet.lifecycle_status],
-    ["漢字・ふりがな基準", `小学${worksheet.grade}年暫定（語彙学年は未検証）`],
+    ["漢字・ふりがな基準", `小学1〜3年配当候補／小学${worksheet.grade}年の初出ふりがな基準`],
+    ["本文の漢字", `${distinctKanjiCount}種類（2回以上 ${repeatedKanjiCount}種類）`],
     ["生成条件", `profile ${worksheet.generation_profile}（実測難易度ではない）`],
     ["物語の長さ", `${lengthLabel(worksheet.story_length)}（${worksheet.passage.character_count}字）`],
     ["題材", worksheet.requested_topic ?? "auto"],

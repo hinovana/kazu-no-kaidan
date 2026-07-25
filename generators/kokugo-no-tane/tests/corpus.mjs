@@ -21,8 +21,32 @@ const QUESTION_COUNTS = new Map([
   [CONTEXT_AND_INFERENCE_4Q_ID, 4],
 ]);
 
+function countPassageKanji(text) {
+  const counts = new Map();
+  for (const character of text) {
+    if (!/\p{Script=Han}/u.test(character)) continue;
+    counts.set(character, (counts.get(character) ?? 0) + 1);
+  }
+  return counts;
+}
+
 let generated = 0;
 const failures = [];
+const qualityMetrics = new Map(Object.keys(LENGTH_SETTINGS).map((length) => [length, {
+  worksheets: 0,
+  characters: 0,
+  sentences: 0,
+  narrativeFunctions: 0,
+  directEvidenceSentences: 0,
+  unusedMeaningfulSentences: 0,
+  references: 0,
+  resolvedReferences: 0,
+  unresolvedReferences: 0,
+  distinctKanji: 0,
+  repeatedDistinctKanji: 0,
+  minimumDistinctKanji: Number.POSITIVE_INFINITY,
+  minimumRepeatedDistinctKanji: Number.POSITIVE_INFINITY,
+}]));
 
 for (let grade = 1; grade <= 3; grade += 1) {
   for (let profile = 1; profile <= 5; profile += 1) {
@@ -60,6 +84,7 @@ for (let grade = 1; grade <= 3; grade += 1) {
           assert.ok(worksheet.passage.plainText.includes("　"));
           assert.equal(worksheet.questions.length, QUESTION_COUNTS.get(worksheet.question_set_blueprint_id));
           const sentenceIds = new Set(worksheet.passage.sentences.map((sentence) => sentence.sentence_id));
+          const sentenceRoles = new Map(worksheet.passage.sentences.map((sentence, position) => [sentence.role, position]));
           const sentencePosition = (id) => worksheet.passage.sentences.findIndex((sentence) => sentence.sentence_id === id);
           firstEvidencePositions.add(sentencePosition(worksheet.questions[0].evidence_ids[0]));
           assert.ok(worksheet.questions.every((question) => {
@@ -76,6 +101,52 @@ for (let grade = 1; grade <= 3; grade += 1) {
           const emotionPositions = emotionQuestion.evidence_ids.map((id) =>
             worksheet.passage.sentences.findIndex((sentence) => sentence.sentence_id === id));
           assert.equal(emotionPositions[1] - emotionPositions[0], [1, 1, 2, 3, 5][profile - 1]);
+
+          const directEvidenceIds = new Set(worksheet.questions.flatMap((question) => question.evidence_ids));
+          const referencedSentences = worksheet.passage.sentences.filter((sentence) => sentence.reference_target_role !== null);
+          const resolvedReferences = referencedSentences.filter((sentence) =>
+            sentenceRoles.has(sentence.reference_target_role)
+              && sentenceRoles.get(sentence.reference_target_role) < sentenceRoles.get(sentence.role));
+          const metric = qualityMetrics.get(length);
+          metric.worksheets += 1;
+          metric.characters += worksheet.passage.character_count;
+          metric.sentences += worksheet.passage.sentences.length;
+          metric.narrativeFunctions += new Set(
+            worksheet.passage.sentences.map((sentence) => sentence.narrative_function),
+          ).size;
+          metric.directEvidenceSentences += directEvidenceIds.size;
+          metric.unusedMeaningfulSentences += worksheet.passage.sentences.filter((sentence) =>
+            sentence.narrative_function && !directEvidenceIds.has(sentence.sentence_id)).length;
+          metric.references += referencedSentences.length;
+          metric.resolvedReferences += resolvedReferences.length;
+          metric.unresolvedReferences += referencedSentences.length - resolvedReferences.length;
+          assert.equal(referencedSentences.length, resolvedReferences.length);
+          assert.equal(
+            worksheet.machine_checks.checks.find((check) => check.check_id === "narrative_semantics").passed,
+            true,
+          );
+          const passageKanjiCounts = countPassageKanji(worksheet.passage.plainText);
+          const repeatedDistinctKanji = [...passageKanjiCounts.values()]
+            .filter((count) => count >= 2).length;
+          metric.distinctKanji += passageKanjiCounts.size;
+          metric.repeatedDistinctKanji += repeatedDistinctKanji;
+          metric.minimumDistinctKanji = Math.min(metric.minimumDistinctKanji, passageKanjiCounts.size);
+          metric.minimumRepeatedDistinctKanji = Math.min(
+            metric.minimumRepeatedDistinctKanji,
+            repeatedDistinctKanji,
+          );
+          assert.ok(passageKanjiCounts.size >= 5);
+          assert.ok(repeatedDistinctKanji >= 5);
+          for (const checkId of [
+            "passage_kanji_variety",
+            "passage_kanji_recurrence",
+            "passage_kanji_grade_range",
+          ]) {
+            assert.equal(
+              worksheet.machine_checks.checks.find((check) => check.check_id === checkId).passed,
+              true,
+            );
+          }
         } catch (error) {
           failures.push({ grade, profile, length, index, message: error.message });
         }
@@ -97,3 +168,17 @@ for (let grade = 1; grade <= 3; grade += 1) {
 assert.deepEqual(failures, []);
 assert.equal(generated, 3 * 5 * 3 * 30);
 console.log(`kokugo-no-tane corpus passed: ${generated} worksheets`);
+for (const [length, metric] of qualityMetrics) {
+  const average = (value) => Math.round((value / metric.worksheets) * 10) / 10;
+  const directEvidenceRate = Math.round(
+    (metric.directEvidenceSentences / metric.sentences) * 1_000,
+  ) / 10;
+  console.log(
+    `${length}: characters=${average(metric.characters)}, sentences=${average(metric.sentences)}, `
+      + `narrative_functions=${average(metric.narrativeFunctions)}, direct_evidence_rate=${directEvidenceRate}%, `
+      + `unused_meaningful=${average(metric.unusedMeaningfulSentences)}, `
+      + `references=${metric.resolvedReferences}/${metric.references}, unresolved=${metric.unresolvedReferences}, `
+      + `kanji_distinct=${average(metric.distinctKanji)}(min ${metric.minimumDistinctKanji}), `
+      + `kanji_repeated=${average(metric.repeatedDistinctKanji)}(min ${metric.minimumRepeatedDistinctKanji})`,
+  );
+}

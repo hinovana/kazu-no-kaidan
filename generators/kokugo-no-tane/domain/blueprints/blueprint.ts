@@ -6,6 +6,7 @@ import type {
 } from "../types/ids.js";
 import type { QuestionContent } from "../questions/question-content.js";
 import type { StoryPlanV1 } from "../types/story-plan.js";
+import type { NarrativeFunction } from "../types/story.js";
 import type {
   MachineCheck,
   Worksheet,
@@ -16,8 +17,8 @@ import type {
  * 本文長の選択値を、blueprintが本文を構築するときに使う具体的な制約へ変換した値。
  */
 export interface LengthSetting {
-  /** 本文構造の必須文に追加する補助文数の基準値。 */
-  readonly extra_count: number;
+  /** 本文構造の必須文に追加する、意味役割を持つ展開文数の基準値。 */
+  readonly expansion_count: number;
   /** 機械検査で許容する本文文字数の下限と上限。両端を含む。 */
   readonly character_band: readonly [number, number];
   /** 画面や診断情報へ表示する本文長の名称。 */
@@ -35,6 +36,10 @@ export interface StorySentenceDraft {
   readonly stage: string;
   /** テンプレート記法を含み得る、描画前の本文。 */
   readonly text: string;
+  /** この文が物語理解へ果たす役割。 */
+  readonly narrativeFunction: NarrativeFunction;
+  /** 指示内容や既出の予想などを参照する場合の、先行文の `stage`。 */
+  readonly referenceTargetRole?: string;
 }
 
 /**

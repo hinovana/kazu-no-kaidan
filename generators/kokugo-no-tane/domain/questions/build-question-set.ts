@@ -155,7 +155,12 @@ function rawQuestionForSlot(
         validation_contract: {
           evidence_roles: content.emotionOpen.evidenceRoles,
           evidence_fragments: content.emotionOpen.evidenceFragments,
-          answer_fragments_any: content.emotionOpen.answerFragmentsAny,
+          answer_supports: content.emotionOpen.answerSupports.map((support) => ({
+            scoring_element_id: support.scoringElementId,
+            evidence_role: support.evidenceRole,
+            evidence_fragment: support.evidenceFragment,
+            answer_fragments_any: support.answerFragmentsAny,
+          })),
         },
       };
     case "causeResult":

@@ -1,4 +1,8 @@
 import { runQuestionSetChecks } from "../standard-four-question-checks.ts";
+import {
+  selectStoryExpansions,
+  type StoryExpansionPack,
+} from "../story-expansions.ts";
 import type {
   Blueprint,
   BlueprintTrait,
@@ -29,9 +33,12 @@ interface ClueScenario {
   readonly friendLabel?: string;
   readonly title: string;
   readonly subject: string;
+  readonly observation: string;
+  readonly hypothesis: string;
   readonly clue: string;
   readonly decision: string;
-  readonly match: string;
+  readonly comparisonTarget: string;
+  readonly comparisonResult: string;
   readonly matchFragment: string;
   readonly discovery: string;
 }
@@ -40,8 +47,6 @@ interface ClueTrait extends BlueprintTrait {
   readonly sentence: string;
   readonly attention: (name: string) => string;
 }
-
-type DetailStage = "before" | "working" | "after" | "resolution";
 
 const SCENARIOS = Object.freeze([
   {
@@ -52,10 +57,13 @@ const SCENARIOS = Object.freeze([
     friend: "たいち",
     title: "{{home}}のひかりのしるし",
     subject: "まどべに|うつる|ひかりのうごき",
+    observation: "ひかりのかたちが、|まどのかざりに|にている",
+    hypothesis: "ひかりは、|まどのかざりを|とおっているのかもしれない",
     clue: "まるいひかりが、|かべのうえを|すこしずつ|うごきました",
     decision: "ひかりのばしょを|じゅんに|しるしにすること",
-    match: "ならべたしるしが、|まどのかざりと|おなじかたちに|なりました",
-    matchFragment: "まどのかざりとおなじかたち",
+    comparisonTarget: "ならべたしるしと|まどのかざり",
+    comparisonResult: "おなじかたちだと|わかり",
+    matchFragment: "ならべたしるしとまどのかざりをみくらべたけっか、おなじかたちだとわかり",
     discovery: "ひかりは、|まどのかざりを|とおって|できていました",
   },
   {
@@ -66,10 +74,13 @@ const SCENARIOS = Object.freeze([
     friend: "みお",
     title: "{{classroom}}のおとのひみつ",
     subject: "つくえを|たたいたときの|おとのちがい",
+    observation: "ひくいおとがするばしょには、|つくえのしたに|ものがある",
+    hypothesis: "つくえのしたのものが、|おとのちがいを|つくっているのかもしれない",
     clue: "おなじつくえでも、|ばしょによって|おとが|かわりました",
     decision: "たたくばしょを|ひとつずつ|かえて|くらべること",
-    match: "ひくいおとのばしょには、|つくえのしたに|ものが|はいっていました",
-    matchFragment: "ひくいおとのばしょ",
+    comparisonTarget: "おとのちがいと|つくえのした",
+    comparisonResult: "ひくいおとのばしょにだけ|ものが|はいっていると|わかり",
+    matchFragment: "おとのちがいとつくえのしたをみくらべたけっか、ひくいおとのばしょにだけものがはいっているとわかり",
     discovery: "つくえのしたのものが、|おとのちがいを|つくっていました",
   },
   {
@@ -80,10 +91,13 @@ const SCENARIOS = Object.freeze([
     friend: "なお",
     title: "{{park}}のはっぱのならび",
     subject: "おちばの|いろと|かたち",
+    observation: "にたはっぱが、|おなじむきに|ならんでいる",
+    hypothesis: "おなじきのはっぱが、|かぜで|はこばれたのかもしれない",
     clue: "にたはっぱが、|みちのはしに|つづいていました",
     decision: "はっぱを|おちているじゅんに|ならべて|くらべること",
-    match: "ならべたはっぱは、|おなじきのしたへ|つづいていました",
-    matchFragment: "おなじきのしたへつづいていました",
+    comparisonTarget: "ならべたはっぱと|みちのはしのはっぱ",
+    comparisonResult: "おなじきのしたへ|つづいていると|わかり",
+    matchFragment: "ならべたはっぱとみちのはしのはっぱをみくらべたけっか、おなじきのしたへつづいているとわかり",
     discovery: "かぜが、|おなじきのはっぱを|みちまで|はこんでいました",
   },
   {
@@ -94,10 +108,13 @@ const SCENARIOS = Object.freeze([
     friend: "けん",
     title: "{{square}}のしるしをたどって",
     subject: "じめんの|ちいさなしるし",
+    observation: "しるしのむきが、|ひろばのあんないへ|むいている",
+    hypothesis: "しるしは、|あんないのばしょを|おしえているのかもしれない",
     clue: "おなじかたちのしるしが、|すこしずつ|はなれて|つづいていました",
     decision: "しるしのむきを|ひとつずつ|たどること",
-    match: "さいごのしるしは、|ひろばのあんないのえと|おなじかたちでした",
-    matchFragment: "あんないのえとおなじかたち",
+    comparisonTarget: "さいごのしるしと|ひろばのあんないのえ",
+    comparisonResult: "おなじかたちだと|わかり",
+    matchFragment: "さいごのしるしとひろばのあんないのえをみくらべたけっか、おなじかたちだとわかり",
     discovery: "しるしは、|あんないのばしょを|おしえていました",
   },
   {
@@ -110,10 +127,13 @@ const SCENARIOS = Object.freeze([
     friendLabel: "うさぎの|モモ",
     title: "{{forest}}のあしあとをたどって",
     subject: "じめんに|のこった|ちいさなあしあと",
+    observation: "まるいあとが、|おなじむきに|つづいている",
+    hypothesis: "ことりが|あるいたあとかもしれない",
     clue: "まるいあとが、|きのみのそばまで|つづいていました",
     decision: "あしあとを|はなれたところから|めで|たどること",
-    match: "あしあとのさきで、|ことりが|きのみを|ついばんでいました",
-    matchFragment: "あしあとのさき",
+    comparisonTarget: "あしあとと|ことりのあし",
+    comparisonResult: "おなじかたちだと|わかり",
+    matchFragment: "あしあととことりのあしをみくらべたけっか、おなじかたちだとわかり",
     discovery: "あしあとは、|ことりが|あるいたときに|できていました",
   },
 ]);
@@ -136,71 +156,14 @@ const TRAITS = Object.freeze([
   },
 ]);
 
-const DETAILS = Object.freeze({
-  before: [
-    "あたりには、|やわらかいひかりが|ひろがっていました。",
-    "ふたりは、|みつけたものを|かくじゅんばんを|きめました。",
-    "まわりから、|ちいさなおとが|きこえてきました。",
-    "しらべるじかんは、|まだ|じゅうぶんに|ありました。",
-    "ふたりは、|ならんで|あたりを|みまわしました。",
-    "ともだちは、|みつけたことを|ゆっくり|はなしました。",
-  ],
-  working: [
-    "しゅじんこうは、|ちかくからも|とおくからも|みました。",
-    "ともだちは、|ちがうところを|ゆびで|しめしました。",
-    "ふたりは、|にているところを|こえにだして|たしかめました。",
-    "しゅじんこうは、|みつけたじゅんばんを|おぼえておきました。",
-    "ともだちは、|もうひとつないか|あたりを|みました。",
-    "ふたりは、|いそがずに|ひとつずつ|しらべました。",
-  ],
-  after: [
-    "ふたりは、|ならんだしるしを|もういちど|みました。",
-    "しゅじんこうは、|はじめのしるしを|あたまのなかで|おもいだしました。",
-    "ともだちは、|さいごのしるしを|そっと|ゆびさしました。",
-    "ふたりは、|にているところを|ひとつずつ|たしかめました。",
-    "しゅじんこうは、|ふたつのしるしを|みくらべました。",
-    "ともだちは、|こたえをいわずに|しずかに|まっていました。",
-  ],
-  resolution: [
-    "ふたりは、|わかったことを|じゅんばんに|はなしました。",
-    "しゅじんこうは、|みつけたしるしを|ていねいに|かきました。",
-    "ともだちは、|しらべたところを|もういちど|みなおしました。",
-    "ふたりは、|はじめのよそうと|くらべました。",
-    "しゅじんこうは、|つながったじゅんばんを|ゆっくり|たどりました。",
-    "ふたりのあいだに、|ちいさなわらいごえが|ひろがりました。",
-  ],
-});
-
 function pick<T>(random: () => number, values: readonly T[]): T {
   const selected = values[Math.floor(random() * values.length)];
   if (selected === undefined) throw new RangeError("cannot pick from an empty content pack");
   return selected;
 }
 
-function shuffled<T>(random: () => number, values: readonly T[]): T[] {
-  const result = [...values];
-  for (let index = result.length - 1; index > 0; index -= 1) {
-    const other = Math.floor(random() * (index + 1));
-    const currentValue = result[index];
-    const otherValue = result[other];
-    if (currentValue === undefined || otherValue === undefined) continue;
-    result[index] = otherValue;
-    result[other] = currentValue;
-  }
-  return result;
-}
-
 function removePhraseMarkers(text: unknown): string {
   return String(text).replaceAll("|", "");
-}
-
-function substitute(
-  template: string,
-  values: { readonly protagonist: string; readonly friend: string },
-): string {
-  return template
-    .replaceAll("しゅじんこう", values.protagonist)
-    .replaceAll("ともだち", values.friend);
 }
 
 function chooseScenario(random: () => number, topic: string | undefined): ClueScenario {
@@ -222,6 +185,155 @@ function chooseScenario(random: () => number, topic: string | undefined): ClueSc
   return pick(random, SCENARIOS);
 }
 
+function buildExpansionPack(scenario: ClueScenario): StoryExpansionPack {
+  const protagonist = scenario.protagonist;
+  const friend = scenario.friend;
+  return {
+    before: [
+      {
+        id: "plan_order",
+        text: "ふたりは、|どこから|たしかめるか、|じゅんばんを|きめました。",
+        narrativeFunction: "decide",
+      },
+      {
+        id: "inspect_subject_again",
+        text: `${protagonist}は、|${scenario.subject}を|もういちど|みました。`,
+        narrativeFunction: "observe",
+      },
+      {
+        id: "plan_hypothesis_test",
+        text: `${friend}は、|よそうを|たしかめるには、|くらべると|よいと|いいました。`,
+        narrativeFunction: "decide",
+        referenceTargetRole: "hypothesis",
+      },
+      {
+        id: "divide_search_area",
+        text: "ふたりは、|みるばしょを|わけて、|しらべることに|しました。",
+        narrativeFunction: "decide",
+      },
+      {
+        id: "watch_small_differences",
+        text: `${protagonist}は、|ちいさなちがいも|のこさず|みようと|しました。`,
+        narrativeFunction: "attempt",
+      },
+      {
+        id: "point_first_observation",
+        text: `${friend}は、|はじめに|きがついたところを|ゆびで|しめしました。`,
+        narrativeFunction: "observe",
+        referenceTargetRole: "observation",
+      },
+    ],
+    working: [
+      {
+        id: "inspect_near_and_far",
+        text: `${protagonist}は、|${scenario.subject}を|ちかくからも|とおくからも|みました。`,
+        narrativeFunction: "observe",
+      },
+      {
+        id: "mark_observed_place",
+        text: `${friend}は、|きがついたばしょに|ちいさなしるしを|つけました。`,
+        narrativeFunction: "observe",
+        referenceTargetRole: "observation",
+      },
+      {
+        id: "compare_two_places",
+        text: "ふたりは、|ちがうばしょを|ふたつえらび、|かわるところを|くらべました。",
+        narrativeFunction: "compare",
+      },
+      {
+        id: "record_order",
+        text: `${protagonist}は、|みつけたじゅんばんを|わすれないように|おぼえました。`,
+        narrativeFunction: "attempt",
+      },
+      {
+        id: "seek_same_feature",
+        text: `${friend}は、|おなじとくちょうが|ほかにも|ないか|さがしました。`,
+        narrativeFunction: "attempt",
+      },
+      {
+        id: "return_to_hypothesis",
+        text: `${protagonist}は、|よそうと|ちがうところが|ないかも|たしかめました。`,
+        narrativeFunction: "compare",
+        referenceTargetRole: "hypothesis",
+      },
+    ],
+    between_evidence: [
+      {
+        id: "recall_hypothesis",
+        text: `${protagonist}は、|はじめのよそうを|おもいだしました。`,
+        narrativeFunction: "understand",
+        referenceTargetRole: "hypothesis",
+      },
+      {
+        id: "trace_clue_again",
+        text: `${friend}は、|みつけたてがかりを|もういちど|じゅんに|たどりました。`,
+        narrativeFunction: "compare",
+        referenceTargetRole: "clue",
+      },
+      {
+        id: "compare_result_again",
+        text: "ふたりは、|くらべたけっかを|もういちど|たしかめました。",
+        narrativeFunction: "compare",
+        referenceTargetRole: "inference_situation",
+      },
+      {
+        id: "friend_waits_for_answer",
+        text: `${friend}は、|${protagonist}が|こたえを|みつけるのを|だまって|まちました。`,
+        narrativeFunction: "react",
+      },
+      {
+        id: "check_observation_alignment",
+        text: `${protagonist}は、|はじめに|きがついたことと、|いまのけっかが|あうか|かんがえました。`,
+        narrativeFunction: "compare",
+        referenceTargetRole: "observation",
+      },
+      {
+        id: "point_same_answer",
+        text: "ふたりのゆびは、|おなじばしょを|さしていました。",
+        narrativeFunction: "understand",
+        referenceTargetRole: "inference_situation",
+      },
+    ],
+    resolution: [
+      {
+        id: "explain_discovery",
+        text: `${protagonist}は、|わかったことを|${friend}に|じゅんに|せつめいしました。`,
+        narrativeFunction: "aftermath",
+        referenceTargetRole: "resolution",
+      },
+      {
+        id: "review_search_path",
+        text: `${friend}は、|どのてがかりから|わかったのかを|たしかめました。`,
+        narrativeFunction: "aftermath",
+        referenceTargetRole: "resolution",
+      },
+      {
+        id: "record_discovery",
+        text: "ふたりは、|わかったことを|わすれないように|きろくしました。",
+        narrativeFunction: "aftermath",
+        referenceTargetRole: "resolution",
+      },
+      {
+        id: "compare_hypothesis_and_discovery",
+        text: "ふたりは、|はじめのよそうと|わかったことを|くらべました。",
+        narrativeFunction: "compare",
+        referenceTargetRole: "hypothesis",
+      },
+      {
+        id: "retrace_method",
+        text: `${protagonist}は、|しらべたじゅんばんを|さいしょから|ふりかえりました。`,
+        narrativeFunction: "aftermath",
+        referenceTargetRole: "resolution",
+      },
+      {
+        id: "share_next_method",
+        text: `${friend}は、|つぎも|くらべながら|たしかめようと|いいました。`,
+        narrativeFunction: "aftermath",
+      },
+    ],
+  };
+}
+
 function buildStorySentences({
   scenario,
   trait,
@@ -235,54 +347,107 @@ function buildStorySentences({
   readonly lengthSetting: LengthSetting;
   readonly random: () => number;
 }): StorySentenceDraft[] {
-  const values = { protagonist: scenario.protagonist, friend: scenario.friend };
   const protagonistIntro = scenario.protagonistLabel ?? scenario.protagonist;
   const friendIntro = scenario.friendLabel ?? scenario.friend;
-  const core = [
-    { stage: "opening", text: `{{${scenario.location}}}で、|${protagonistIntro}と|${friendIntro}は、|${scenario.subject}を|しらべていました。` },
-    { stage: "trait", text: `${scenario.protagonist}は、|${trait.sentence}。` },
-    { stage: "attention", text: trait.attention(scenario.protagonist) },
-    { stage: "explicit_emotion", text: "なにが|わかるのか|たのしみで、|わくわくしました。" },
-    { stage: "clue", text: `すると、|${scenario.clue}。` },
-    { stage: "fact", text: `${scenario.protagonist}は、|${scenario.decision}に|しました。` },
-    { stage: "inference_situation", text: `${scenario.match}。` },
-    { stage: "inference_reaction", text: `${scenario.protagonist}は、|かおを|あげて、|${scenario.friend}に|ちいさく|うなずきました。` },
-    { stage: "resolution", text: scenario.discovery + "。" },
-    { stage: "closing", text: `{{${scenario.location}}}で、|ふたりは|わらいました。` },
-  ];
-
-  const requiredAfterCount = [0, 0, 1, 2, 4][profile - 1] ?? 0;
-  const extraCount = Math.max(lengthSetting.extra_count, requiredAfterCount);
-  const remainingCount = extraCount - requiredAfterCount;
-  const stageCounts: Record<DetailStage, number> = {
-    before: Math.ceil(remainingCount / 3),
-    working: Math.ceil((remainingCount - Math.ceil(remainingCount / 3)) / 2),
-    after: requiredAfterCount,
-    resolution: 0,
-  };
-  stageCounts.resolution = extraCount - stageCounts.before - stageCounts.working - stageCounts.after;
-  const details = {} as Record<DetailStage, StorySentenceDraft[]>;
-  for (const stage of Object.keys(DETAILS) as DetailStage[]) {
-    details[stage] = shuffled(random, DETAILS[stage])
-      .slice(0, Math.max(0, stageCounts[stage]))
-      .map((text) => ({ stage: `detail_${stage}`, text: substitute(text, values) }));
-  }
+  const expansions = selectStoryExpansions({
+    pack: buildExpansionPack(scenario),
+    profile,
+    lengthSetting,
+    random,
+  });
+  const core = {
+    opening: {
+      stage: "opening",
+      text: `{{${scenario.location}}}で、|${protagonistIntro}と|${friendIntro}は、|{{two_people}}で|${scenario.subject}を|しらべていました。`,
+      narrativeFunction: "set_scene",
+    },
+    contextSetup: {
+      stage: "context_setup",
+      text: "{{two_people}}は、|しらべる|{{place}}を|きめました。",
+      narrativeFunction: "decide",
+      referenceTargetRole: "opening",
+    },
+    observation: {
+      stage: "observation",
+      text: `${scenario.friend}は、|${scenario.observation}と|いいました。`,
+      narrativeFunction: "observe",
+    },
+    hypothesis: {
+      stage: "hypothesis",
+      text: `${scenario.hypothesis}と、|{{two_people}}は|よそうしました。`,
+      narrativeFunction: "hypothesize",
+      referenceTargetRole: "observation",
+    },
+    trait: {
+      stage: "trait",
+      text: `${scenario.protagonist}は、|${trait.sentence}。`,
+      narrativeFunction: "characterize",
+    },
+    attention: {
+      stage: "attention",
+      text: trait.attention(scenario.protagonist),
+      narrativeFunction: "characterize",
+    },
+    explicitEmotion: {
+      stage: "explicit_emotion",
+      text: `{{${scenario.location}}}で、|なにが|わかるのか|たのしみで、|わくわくしました。`,
+      narrativeFunction: "react",
+    },
+    clue: {
+      stage: "clue",
+      text: `すると、|${scenario.clue}。`,
+      narrativeFunction: "observe",
+    },
+    fact: {
+      stage: "fact",
+      text: `${scenario.protagonist}は、|${scenario.decision}に|しました。`,
+      narrativeFunction: "decide",
+      referenceTargetRole: "clue",
+    },
+    inferenceSituation: {
+      stage: "inference_situation",
+      text: `{{two_people}}が|${scenario.comparisonTarget}を|みくらべたけっか、|${scenario.comparisonResult}、|${scenario.protagonist}は、|はじめのよそうと|あっていることに|きがつきました。`,
+      narrativeFunction: "understand",
+      referenceTargetRole: "hypothesis",
+    },
+    inferenceReaction: {
+      stage: "inference_reaction",
+      text: `${scenario.protagonist}は、|めを|かがやかせて、|${scenario.friend}に|ちいさく|うなずきました。`,
+      narrativeFunction: "react",
+      referenceTargetRole: "inference_situation",
+    },
+    resolution: {
+      stage: "resolution",
+      text: scenario.discovery + "。",
+      narrativeFunction: "resolve",
+      referenceTargetRole: "inference_situation",
+    },
+    closing: {
+      stage: "closing",
+      text: "その|{{place}}で、|{{two_people}}は|わらいました。",
+      narrativeFunction: "aftermath",
+      referenceTargetRole: "resolution",
+    },
+  } satisfies Record<string, StorySentenceDraft>;
 
   return [
-    core[0]!,
-    ...details.before,
-    core[1]!,
-    core[2]!,
-    ...details.working,
-    core[3]!,
-    core[4]!,
-    core[5]!,
-    core[6]!,
-    ...details.after,
-    core[7]!,
-    ...details.resolution,
-    core[8]!,
-    core[9]!,
+    core.opening,
+    core.contextSetup,
+    core.observation,
+    core.hypothesis,
+    ...expansions.before,
+    core.trait,
+    core.attention,
+    ...expansions.working,
+    core.explicitEmotion,
+    core.clue,
+    core.fact,
+    core.inferenceSituation,
+    ...expansions.between_evidence,
+    core.inferenceReaction,
+    core.resolution,
+    ...expansions.resolution,
+    core.closing,
   ];
 }
 
@@ -331,15 +496,28 @@ function buildQuestionContent({ scenario, trait }: {
     },
     emotionOpen: {
       prompt: `${scenario.friend}に|ちいさく|うなずいたとき、|${scenario.protagonist}は|どのような|{{feeling}}でしたか。|りゆうと|いっしょに|かきましょう。`,
-      answer: "しるしの|ひみつが|わかって、|うれしい|{{feeling}}。",
-      acceptableAnswers: ["しるしがつながってうれしい", "ひみつがわかってよろこんでいる"],
+      answer: "はじめの|よそうどおりだと|わかって、|うれしい|{{feeling}}。",
+      acceptableAnswers: ["予想が当たってうれしい", "正体がわかってよろこんでいる"],
       evidenceRole: "inference_situation",
       evidenceRoles: ["inference_situation", "inference_reaction"],
-      evidenceFragments: [scenario.matchFragment, "ちいさくうなずきました"],
-      answerFragmentsAny: ["うれしい", "わくわく", "よろこん"],
+      evidenceFragments: [scenario.matchFragment, "めをかがやかせて"],
+      answerSupports: [
+        {
+          scoringElementId: "situation",
+          evidenceRole: "inference_situation",
+          evidenceFragment: scenario.matchFragment,
+          answerFragmentsAny: ["よそうどおり", "よそうがあたって", "わかって"],
+        },
+        {
+          scoringElementId: "emotion",
+          evidenceRole: "inference_reaction",
+          evidenceFragment: "めをかがやかせて",
+          answerFragmentsAny: ["うれしい", "よろこん"],
+        },
+      ],
       scoringElements: [
-        { element_id: "situation", points: 1, description: "手がかりがつながって、ひみつがわかった状況を捉える" },
-        { element_id: "emotion", points: 1, description: "うなずく反応と合う、うれしい・わくわくした・喜んだなどの心情を示す" },
+        { element_id: "situation", points: 1, description: "手がかりを比べ、はじめの予想どおりだと分かった状況を捉える" },
+        { element_id: "emotion", points: 1, description: "目を輝かせてうなずく反応に合う、うれしい・喜んだなどの心情を示す" },
       ],
       disqualifyingAnswers: ["かなしいなど根拠と反対の心情だけを書き、本文根拠を示さない"],
       points: 2,
@@ -392,7 +570,7 @@ function buildQuestionContent({ scenario, trait }: {
         { text: "しらべるのが|いやで、|おこっている。", correct: false },
       ],
       evidenceRoles: ["resolution", "closing"],
-      evidenceFragments: [removePhraseMarkers(scenario.discovery), "ふたりはわらいました"],
+      evidenceFragments: [removePhraseMarkers(scenario.discovery), "二人はわらいました"],
       correctChoiceText: "ひみつがわかって、うれしい。",
       primaryConstruct: "C3_INFER_EMOTION",
       secondaryDemands: ["結果と反応からの心情推論", "選択肢比較"],
@@ -472,7 +650,7 @@ export const storyClueDiscovery4qBlueprint = Object.freeze({
     };
   },
   templateVersion(_input: { readonly storyPlan: StoryPlanV1 | null }) {
-    return "deterministic-clue-discovery-template.v0.1";
+    return "deterministic-clue-discovery-template.v0.3";
   },
   runMachineChecks: runQuestionSetChecks,
 } satisfies Blueprint<ClueScenario, ClueTrait>);
