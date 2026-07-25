@@ -11,11 +11,13 @@
     "build": "vite build",
     "serve:ai": "node generators/kokugo-no-tane/server/ai-proxy.ts",
     "build:kokugo-no-tane:vocabulary-db": "node generators/kokugo-no-tane/scripts/import-vocabulary.mjs && node generators/kokugo-no-tane/scripts/build-vocabulary-db.mjs && node generators/kokugo-no-tane/scripts/validate-vocabulary-db.mjs && node generators/kokugo-no-tane/scripts/build-generator-vocabulary-projection.mjs",
-    "typecheck": "tsc -p tsconfig.app.json && npm run typecheck:kokugo-no-tane",
+    "typecheck": "tsc -p tsconfig.app.json && npm run typecheck:kokugo-no-tane && npm run typecheck:onaji-no-tsunagi",
     "typecheck:kokugo-no-tane": "tsc -p generators/kokugo-no-tane/tsconfig.json && tsc -p generators/kokugo-no-tane/tsconfig.server.json",
+    "typecheck:onaji-no-tsunagi": "tsc -p generators/onaji-no-tsunagi/tsconfig.json",
     "test": "for test_file in generators/*/tests/*.test.js; do node \"$test_file\" || exit 1; done",
     "test:kazu-sagashi:corpus": "node generators/kazu-sagashi/tests/corpus.mjs",
     "test:kokugo-no-tane:corpus": "node generators/kokugo-no-tane/tests/corpus.mjs",
+    "test:onaji-no-tsunagi:corpus": "node generators/onaji-no-tsunagi/tests/corpus.mjs",
     "test:kokugo-no-tane:ai:live": "node generators/kokugo-no-tane/tests/ai-proxy-live.mjs"
   },
   "dependencies": {

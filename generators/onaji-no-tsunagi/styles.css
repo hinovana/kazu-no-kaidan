@@ -1,0 +1,483 @@
+.onaji-page {
+  --ots-ink: #20332f;
+  --ots-muted: #65736f;
+  --ots-accent: #c96338;
+  --ots-accent-dark: #984324;
+  --ots-teal: #147c79;
+  --ots-paper: #fffef9;
+  --ots-grid: #81908c;
+  color: var(--ots-ink);
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 28px clamp(16px, 4vw, 48px) 64px;
+  font-family: var(--app-font-sans, -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif);
+}
+
+.ots-page-header {
+  max-width: 780px;
+  margin-bottom: 20px;
+}
+
+.ots-back-link {
+  color: var(--ots-teal);
+  font-weight: 700;
+}
+
+.ots-page-kicker,
+.ots-sheet-kicker {
+  margin: 22px 0 4px;
+  color: var(--ots-accent-dark);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.ots-page-header h1 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  letter-spacing: 0.04em;
+}
+
+.ots-page-header p:last-child {
+  font-size: 1.04rem;
+  line-height: 1.8;
+}
+
+.ots-prototype-notice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  padding: 14px 18px;
+  border: 1px solid #e6b59d;
+  border-radius: 12px;
+  background: #fff4ed;
+  color: #6e3825;
+}
+
+.ots-control-panel {
+  margin: 20px 0;
+  padding: 20px;
+  border: 1px solid #cbd5d1;
+  border-radius: 16px;
+  background: #f7faf8;
+  box-shadow: 0 8px 24px rgb(31 63 54 / 8%);
+}
+
+.ots-control-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(150px, 1fr));
+  gap: 14px;
+  align-items: end;
+}
+
+.ots-control-panel label {
+  display: grid;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.ots-control-panel select,
+.ots-control-panel input {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid #99aaa4;
+  border-radius: 8px;
+  background: white;
+  color: var(--ots-ink);
+  font: inherit;
+}
+
+.ots-control-panel select:disabled {
+  opacity: 1;
+  color: var(--ots-ink);
+  cursor: not-allowed;
+}
+
+.ots-seed-field {
+  grid-column: 1 / 2;
+}
+
+.ots-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.ots-primary-button,
+.ots-secondary-button {
+  min-height: 42px;
+  padding: 9px 16px;
+  border-radius: 9px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ots-primary-button {
+  border: 1px solid var(--ots-accent-dark);
+  background: var(--ots-accent);
+  color: white;
+}
+
+.ots-secondary-button {
+  border: 1px solid #75918a;
+  background: white;
+  color: var(--ots-ink);
+}
+
+.ots-primary-button:focus-visible,
+.ots-secondary-button:focus-visible,
+.ots-control-panel input:focus-visible,
+.ots-control-panel select:focus-visible,
+.ots-back-link:focus-visible {
+  outline: 3px solid rgb(20 124 121 / 35%);
+  outline-offset: 2px;
+}
+
+.ots-primary-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.ots-advanced-options,
+.ots-control-note {
+  margin-top: 14px;
+  color: var(--ots-muted);
+}
+
+.ots-control-note {
+  margin-bottom: 0;
+  line-height: 1.65;
+}
+
+.ots-advanced-options label {
+  max-width: 360px;
+  margin-top: 10px;
+}
+
+.ots-empty-state,
+.ots-error,
+.ots-status {
+  padding: 24px;
+  border-radius: 14px;
+  background: #f5f7f5;
+  text-align: center;
+}
+
+.ots-error {
+  border: 1px solid #d48b78;
+  background: #fff2ef;
+  color: #792d1f;
+}
+
+.ots-preview-stack {
+  display: block;
+}
+
+.ots-preview-stack > * + * {
+  margin-top: 28px;
+}
+
+.ots-sheet {
+  box-sizing: border-box;
+  padding: 20px;
+  border: 1px solid #d5d8d3;
+  border-radius: 14px;
+  background: var(--ots-paper);
+  box-shadow: 0 10px 28px rgb(35 53 48 / 8%);
+}
+
+.ots-sheet-header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 20px;
+  align-items: end;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--ots-accent);
+}
+
+.ots-sheet-header h2 {
+  margin: 0;
+  font-size: 1.75rem;
+}
+
+.ots-sheet-kicker {
+  margin-top: 0;
+}
+
+.ots-student-fields {
+  display: grid;
+  grid-template-columns: auto minmax(90px, 1fr);
+  gap: 8px;
+  min-width: 260px;
+  font-size: 0.85rem;
+}
+
+.ots-student-fields i {
+  display: block;
+  border-bottom: 1px solid var(--ots-ink);
+}
+
+.ots-sheet-seed {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--ots-muted);
+  font-size: 0.72rem;
+  text-align: right;
+}
+
+.ots-instruction,
+.ots-thinking-hint,
+.ots-answer-note {
+  margin: 12px 0 0;
+  line-height: 1.65;
+}
+
+.ots-thinking-hint,
+.ots-answer-note {
+  color: var(--ots-teal);
+  font-weight: 700;
+}
+
+.ots-worksheet-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.ots-worksheet-grid--large {
+  grid-template-columns: 1fr;
+}
+
+.ots-puzzle-card {
+  break-inside: avoid;
+  padding: 12px;
+  border: 1px solid #ccd3cf;
+  border-radius: 10px;
+  background: white;
+}
+
+.ots-puzzle-card-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.ots-puzzle-card-heading h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.ots-stars {
+  color: var(--ots-accent);
+  letter-spacing: 0.05em;
+}
+
+.ots-puzzle-board {
+  display: block;
+  width: min(100%, 520px);
+  max-height: 520px;
+  margin: 0 auto;
+}
+
+.ots-board-background {
+  fill: #fff;
+  stroke: var(--ots-grid);
+  stroke-width: 3;
+}
+
+.ots-grid-line {
+  stroke: var(--ots-grid);
+  stroke-width: 2;
+  stroke-dasharray: 8 6;
+}
+
+.ots-marker {
+  fill: #fff;
+  stroke: var(--ots-accent);
+  stroke-width: 8;
+  stroke-linejoin: round;
+}
+
+.ots-answer-line {
+  fill: none;
+  stroke: var(--ots-ink);
+  stroke-width: 14;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ots-answer-line--1 {
+  stroke-dasharray: 26 12;
+}
+
+.ots-answer-line--2 {
+  stroke-dasharray: 8 10;
+}
+
+.ots-puzzle-id {
+  margin: 6px 0 0;
+  color: var(--ots-muted);
+  font-size: 0.68rem;
+  text-align: right;
+}
+
+.ots-answer-screen-hidden {
+  display: none;
+}
+
+.ots-diagnostics {
+  padding: 16px;
+  border: 1px solid #cbd5d1;
+  border-radius: 12px;
+}
+
+.ots-diagnostics summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.ots-diagnostic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.ots-diagnostic-grid section {
+  padding: 12px;
+  background: #f4f7f5;
+}
+
+.ots-diagnostic-grid dl {
+  margin: 0;
+}
+
+.ots-diagnostic-grid dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ots-diagnostic-grid dt {
+  color: var(--ots-muted);
+}
+
+.ots-diagnostic-grid dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 720px) {
+  .ots-control-grid,
+  .ots-worksheet-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ots-seed-field {
+    grid-column: auto;
+  }
+
+  .ots-sheet-header {
+    grid-template-columns: 1fr;
+  }
+
+  .ots-student-fields {
+    min-width: 0;
+  }
+}
+
+@page {
+  size: A4 portrait;
+  margin: 10mm;
+}
+
+@media print {
+  html,
+  body {
+    background: white !important;
+  }
+
+  .onaji-page {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    color: #111;
+  }
+
+  .screen-only {
+    display: none !important;
+  }
+
+  .ots-preview-stack {
+    display: block;
+  }
+
+  .ots-preview-stack > * + * {
+    margin-top: 0;
+  }
+
+  .ots-answer-screen-hidden {
+    display: block;
+  }
+
+  .ots-sheet {
+    width: 190mm;
+    min-height: 250mm;
+    padding: 5mm;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    break-after: page;
+  }
+
+  .ots-sheet-header h2 {
+    font-size: 18pt;
+  }
+
+  .ots-instruction,
+  .ots-thinking-hint,
+  .ots-answer-note {
+    font-size: 9.5pt;
+  }
+
+  .ots-worksheet-grid {
+    gap: 4mm;
+    margin-top: 4mm;
+  }
+
+  .ots-puzzle-card {
+    padding: 2.5mm;
+    border-color: #999;
+  }
+
+  .ots-worksheet-grid:not(.ots-worksheet-grid--large) .ots-puzzle-board {
+    width: 72mm;
+    height: 72mm;
+  }
+
+  .ots-worksheet-grid--large .ots-puzzle-board {
+    width: 104mm;
+    height: 104mm;
+  }
+
+  .ots-grid-line {
+    stroke: #777;
+  }
+
+  .ots-marker {
+    stroke: #111;
+  }
+
+  .ots-answer-line {
+    stroke: #111;
+  }
+
+  .ots-puzzle-id {
+    font-size: 6.5pt;
+  }
+}

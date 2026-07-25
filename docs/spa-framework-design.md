@@ -2,19 +2,19 @@
 
 | 項目 | 値 |
 | --- | --- |
-| 文書状態 | 設計草案 |
-| 文書版 | `spa-framework-design.v0.2-draft` |
-| 最終更新日 | 2026-07-18 |
+| 文書状態 | 実装追随文書 |
+| 文書版 | `spa-framework-design.v0.3` |
+| 最終更新日 | 2026-07-25 |
 | 対象 | リポジトリ全体のブラウザアプリ基盤 |
-| 初期導入モジュール | `kokugo-no-tane` |
-| 実装状態 | フェーズ0〜3を実装。こくごのたねを最初のlazy moduleとして登録し、他2教材と難易度ラボは複数HTML入力で維持 |
+| SPA教材モジュール | `kokugo-no-tane`、`onaji-no-tsunagi` |
+| 実装状態 | フェーズ0〜4を実装。2教材をlazy moduleとして登録し、他2教材と難易度ラボは複数HTML入力で維持 |
 | 非対象 | 教材固有の作問規則、採点規則、印刷紙面の共通化 |
 
 ## 1. 目的
 
 本書は、複数の教材ジェネレータを段階的に受け入れるSPAホストの責務、教材モジュールとの境界、ビルド・配信・移行・検証契約を定める。
 
-最初の移行対象は「こくごのたね」だけとする。数字の階段、かずさがし、難易度ラボは、移行が完了するまで既存の静的HTMLアプリとして維持する。SPAホストは未移行アプリも一覧へ掲載するが、その内部実装へ依存しない。
+最初の移行対象は「こくごのたね」とし、2つ目のTypeScript教材として「おなじのつなぎ」を追加した。数字の階段、かずさがし、難易度ラボは、移行が完了するまで既存の静的HTMLアプリとして維持する。SPAホストは未移行アプリも一覧へ掲載するが、その内部実装へ依存しない。
 
 この変更は、現在の「教材ごとに仕様・作問処理・テストを閉じる」という原則を破棄しない。共通化するのは、実際に複数画面で必要になったアプリシェル、ナビゲーション、デザイントークン、モジュール登録契約、ビルド・型検査基盤に限定する。
 
@@ -48,7 +48,7 @@ Viteはルートの `index.html` を通常のビルド入口にでき、移行�
 
 ### 3.1 ゴール
 
-- こくごのたねを、SPAホストから読み込まれる最初の教材モジュールにする。
+- こくごのたねと、おなじのつなぎをSPAホストから遅延読込する。
 - 後から別教材を追加するとき、ホストの内部を教材固有コードで変更しない。
 - 共通ヘッダ、フッタ、一覧、状態表示、エラー境界、基本アクセシビリティを統一する。
 - モジュールごとのコード分割を行い、未使用教材の実装を初期ロードへ含めない。
@@ -83,6 +83,8 @@ Viteで構築したルートSPA
   +-- Generator Registry
         |
         +-- SPA module: kokugo-no-tane --dynamic import--> 国語UI/application/domain
+        |
+        +-- SPA module: onaji-no-tsunagi --dynamic import--> 算数UI/application/domain
         |
         +-- legacy link: kazu-no-kaidan -------------> 既存静的HTML
         |
@@ -131,6 +133,13 @@ SPAホストは、教材を「一覧へ表示でき、選択時に開けるモ�
 │   │   ├── ui/
 │   │   ├── server/
 │   │   └── tests/
+│   ├── onaji-no-tsunagi/
+│   │   ├── module.tsx
+│   │   ├── SPEC.md
+│   │   ├── domain/
+│   │   ├── application/
+│   │   ├── ui/
+│   │   └── tests/
 │   ├── kazu-no-kaidan/          # 未移行中は既存構成
 │   └── kazu-sagashi/            # 未移行中は既存構成
 ├── docs/
@@ -139,7 +148,7 @@ SPAホストは、教材を「一覧へ表示でき、選択時に開けるモ�
 
 `src/app/` はホスト専用であり、教材固有ロジックを置かない。`generators/<slug>/` はSPA移行後も、仕様、domain、UI、テストを同じ教材配下へ置く。
 
-2つ目の教材をTypeScript化するまで、空の共通domainライブラリや複雑なTypeScript Project References構成を先に作らない。複数のTypeScript教材が実在した時点で、型検査時間と依存境界を確認し、必要ならsolution `tsconfig.json` と教材単位のproject referenceへ移行する。
+2つ目のTypeScript教材として `onaji-no-tsunagi` を追加したが、教材domain間の共有コードはまだ作っていない。型検査は教材単位の `tsconfig.json` をルートスクリプトから順に実行する。実測上必要になった時点でのみ、solution `tsconfig.json` とproject referenceを検討する。
 
 ## 6. モジュール登録契約
 
@@ -239,6 +248,8 @@ export const generatorRegistry = [
 ```text
 /#/                                      教材一覧
 /#/generators/kokugo-no-tane             こくごのたねSPA
+/#/generators/onaji-no-tsunagi           おなじのつなぎSPA
+/generators/onaji-no-tsunagi/            上記Hash URLへの互換転送
 /generators/kazu-no-kaidan/              既存静的アプリ
 /generators/kazu-sagashi/                 既存静的アプリ
 /generators/kazu-sagashi/difficulty-lab.html

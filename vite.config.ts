@@ -14,6 +14,7 @@ export default defineConfig({
         "generators/kazu-sagashi/index.html",
         "generators/kazu-sagashi/difficulty-lab.html",
         "generators/kokugo-no-tane/index.html",
+        "generators/onaji-no-tsunagi/index.html",
       ],
     },
   },
