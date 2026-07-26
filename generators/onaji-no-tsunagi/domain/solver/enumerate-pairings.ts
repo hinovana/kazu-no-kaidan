@@ -27,3 +27,19 @@ export function countPerfectMatchings(terminalCount: number): number {
   }
   return result;
 }
+
+export function orderedTerminalIds(
+  first: string,
+  second: string,
+): readonly [string, string] {
+  return first.localeCompare(second) <= 0
+    ? [first, second]
+    : [second, first];
+}
+
+export function terminalPairKey(
+  first: string,
+  second: string,
+): string {
+  return orderedTerminalIds(first, second).join("|");
+}

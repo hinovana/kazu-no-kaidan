@@ -9,18 +9,8 @@ export interface DifficultyAnalysis {
   readonly exploredStateCount: number;
   readonly backtrackCount: number;
   readonly maximumDecisionDepth: number;
-  readonly forcedMoveRatio: number;
   readonly pairingChoiceCount: number;
-  readonly bottleneckInteractionCount: number;
-  readonly nearestPairTrap: boolean;
   readonly residualReachabilityPruneCount: number;
   readonly componentParityPruneCount: number;
   readonly memoizedFailurePruneCount: number;
-  readonly entryClarity: "clear" | "unclear";
-  readonly naturalHypothesisCount: number;
-  readonly interactionWitnessCount: number;
-  readonly requiredPairingRevision: boolean;
-  readonly requiredShortestPathRevision: boolean;
-  readonly contradictionDepth: number;
-  readonly revisionChainLength: number;
 }

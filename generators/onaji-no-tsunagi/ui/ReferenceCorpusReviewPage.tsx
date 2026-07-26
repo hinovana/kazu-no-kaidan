@@ -14,6 +14,7 @@ import type {
 import type { SymbolId } from "../domain/types/puzzle.ts";
 import exampleCorpusText from "../reference/example-source-corpus.json?raw";
 import { PuzzleBoard } from "./PuzzleBoard.tsx";
+import { symbolLabel } from "./symbol-label.ts";
 
 type ReviewState =
   | { readonly status: "empty" }
@@ -443,14 +444,6 @@ function symbolCounts(problem: ReferenceProblem): Record<SymbolId, number> {
     counts[terminal.symbol] += 1;
   }
   return counts;
-}
-
-function symbolLabel(symbol: SymbolId): string {
-  return {
-    circle: "丸",
-    triangle: "三角",
-    square: "四角",
-  }[symbol];
 }
 
 function resultToState(

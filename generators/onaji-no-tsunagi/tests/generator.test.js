@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import {
-  getFiveByFiveTerminalProfile,
   getUniquePathCoverProfile,
-  selectFiveByFiveTerminalPattern,
+  selectUniquePathCoverProfileId,
 } from "../domain/generation/build-unique-path-cover.ts";
 import { generateWorksheet } from "../domain/generation/generate-worksheet.ts";
 import { countPerfectMatchings } from "../domain/solver/enumerate-pairings.ts";
@@ -30,8 +29,8 @@ assert.deepEqual(
 );
 
 for (const generated of first.puzzles) {
-  const profile = getFiveByFiveTerminalProfile(
-    generated.provenance.terminalPattern,
+  const profile = getUniquePathCoverProfile(
+    generated.provenance.profileId,
   );
   assert.equal(generated.puzzle.width, 5);
   assert.equal(generated.puzzle.height, 5);
@@ -126,7 +125,12 @@ assert.equal(
 
 const selectedPatterns = new Set(
   Array.from({ length: 100 }, (_, index) => (
-    selectFiveByFiveTerminalPattern(`pattern-seed-${index}`, 0, 1)
+    getUniquePathCoverProfile(selectUniquePathCoverProfileId(
+      1,
+      `pattern-seed-${index}`,
+      0,
+      1,
+    )).terminalPattern
   )),
 );
 assert.deepEqual(

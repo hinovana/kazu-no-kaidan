@@ -13,14 +13,10 @@ export type CandidateRejectionReason =
   | "route_plan_not_constructed"
   | "construction_state_budget_exhausted"
   | "duplicate_topology_in_worksheet"
-  | "known_solution_invalid"
   | "validity_solver_budget_exhausted"
   | "quality_optimizer_budget_exhausted"
-  | "counterfactual_solver_budget_exhausted"
-  | "shortest_thread_solution_exists"
   | "planted_solution_not_optimal"
   | "entry_structure_missing"
-  | "interaction_witness_missing"
   | "geometry_gate_failed"
   | "difficulty_band_mismatch"
   | "solution_not_unique";
@@ -32,10 +28,6 @@ export interface CandidateRejection {
 }
 
 export type GenerationError =
-  | {
-      readonly code: "INVALID_REQUEST";
-      readonly issues: readonly string[];
-    }
   | {
       readonly code: "GENERATION_BUDGET_EXHAUSTED";
       readonly attemptedCandidates: number;

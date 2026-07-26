@@ -1,7 +1,8 @@
-import type { Puzzle, SymbolId, Terminal } from "../domain/types/puzzle.ts";
+import type { Puzzle, Terminal } from "../domain/types/puzzle.ts";
 import type { Solution } from "../domain/types/solution.ts";
+import { symbolLabel } from "./symbol-label.ts";
 
-export interface PuzzleBoardProps {
+interface PuzzleBoardProps {
   readonly puzzle: Puzzle;
   readonly solution: Solution | null;
   readonly mode: "problem" | "answer";
@@ -107,12 +108,4 @@ function Marker({ terminal }: { readonly terminal: Terminal }) {
       ) : null}
     </g>
   );
-}
-
-function symbolLabel(symbol: SymbolId): string {
-  return {
-    circle: "丸",
-    triangle: "三角",
-    square: "四角",
-  }[symbol];
 }

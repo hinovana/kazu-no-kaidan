@@ -8,9 +8,20 @@ import type {
   SolverMetrics,
 } from "../types/solution.ts";
 import { validatePuzzle } from "../validation/validate-puzzle.ts";
-import { listSameSymbolPartners } from "./enumerate-pairings.ts";
+import {
+  listSameSymbolPartners,
+  terminalPairKey,
+} from "./enumerate-pairings.ts";
 import { normalizeSolution, solutionHash } from "./normalize-solution.ts";
 import { isBitSet, isReachable, setBit } from "./residual-reachability.ts";
+import {
+  allTerminalsHaveReachablePartners,
+  canEnterPathCell,
+  createTerminalIndexSet,
+  hasEvenSymbolParityInEveryComponent,
+  sortTerminals,
+  terminalSearchStateKey,
+} from "./search-grid.ts";
 
 export interface SolverOptions {
   readonly stateBudget?: number;
@@ -29,8 +40,6 @@ interface MutableMetrics {
   exploredStateCount: number;
   backtrackCount: number;
   maximumDecisionDepth: number;
-  forcedMoveCount: number;
-  decisionPointCount: number;
   pairingCountTried: number;
   residualReachabilityPruneCount: number;
   componentParityPruneCount: number;
@@ -76,7 +85,7 @@ export function solvePuzzle(puzzle: Puzzle, options: SolverOptions = {}): SolveR
   );
   const context: SearchContext = {
     puzzle,
-    terminalIndices: new Set(puzzle.terminals.map((terminal) => cellIndex(terminal, puzzle.width))),
+    terminalIndices: createTerminalIndexSet(puzzle),
     requiredPartnerByTerminalId,
     pathEdgeLimitByPair,
     solutionObserver: options.solutionObserver ?? null,
@@ -145,7 +154,7 @@ function searchTerminals(
     return true;
   }
 
-  const stateKey = searchStateKey(occupied, remainingTerminals);
+  const stateKey = terminalSearchStateKey(occupied, remainingTerminals);
   if (context.useFailureMemo && context.failedStates.has(stateKey)) {
     context.metrics.memoizedFailurePruneCount += 1;
     return false;
@@ -153,7 +162,7 @@ function searchTerminals(
   if (
     context.useComponentParity
     && !hasEvenSymbolParityInEveryComponent(
-      context,
+      context.puzzle,
       remainingTerminals,
       occupied,
     )
@@ -326,8 +335,8 @@ function enumeratePaths(
       context.puzzle.width,
       context.puzzle.height,
     )
-      .filter((nextIndex) => canEnter(
-        context,
+      .filter((nextIndex) => canEnterPathCell(
+        context.terminalIndices,
         nextIndex,
         targetIndex,
         occupied,
@@ -339,11 +348,7 @@ function enumeratePaths(
         || left - right
       ));
 
-    if (candidates.length === 1) {
-      context.metrics.forcedMoveCount += 1;
-    } else if (candidates.length > 1) {
-      context.metrics.decisionPointCount += 1;
-    } else {
+    if (candidates.length === 0) {
       context.metrics.backtrackCount += 1;
     }
 
@@ -353,10 +358,12 @@ function enumeratePaths(
       if (
         nextIndex !== targetIndex
         && path.length % 3 === 0
-        && !remainingTerminalsHaveReachablePartners(
-          context,
+        && !allTerminalsHaveReachablePartners(
+          context.puzzle,
+          context.terminalIndices,
           remainingTerminals,
           nextOccupied,
+          context.requiredPartnerByTerminalId,
         )
       ) {
         context.metrics.residualReachabilityPruneCount += 1;
@@ -372,89 +379,6 @@ function enumeratePaths(
   }
 }
 
-function remainingTerminalsHaveReachablePartners(
-  context: SearchContext,
-  terminals: readonly Terminal[],
-  occupied: bigint,
-): boolean {
-  return terminals.every((terminal) => {
-    const requiredPartnerId = context.requiredPartnerByTerminalId.get(
-      terminal.terminalId,
-    );
-    return terminals.some((candidate) => (
-      candidate.terminalId !== terminal.terminalId
-      && candidate.symbol === terminal.symbol
-      && (requiredPartnerId === undefined || candidate.terminalId === requiredPartnerId)
-      && isReachable({
-        width: context.puzzle.width,
-        height: context.puzzle.height,
-        occupied,
-        terminalIndices: context.terminalIndices,
-      }, cellIndex(terminal, context.puzzle.width), cellIndex(candidate, context.puzzle.width))
-    ));
-  });
-}
-
-function hasEvenSymbolParityInEveryComponent(
-  context: SearchContext,
-  terminals: readonly Terminal[],
-  occupied: bigint,
-): boolean {
-  const componentByIndex = new Int16Array(
-    context.puzzle.width * context.puzzle.height,
-  );
-  componentByIndex.fill(-1);
-  let component = 0;
-  for (let index = 0; index < componentByIndex.length; index += 1) {
-    if (componentByIndex[index] !== -1 || isBitSet(occupied, index)) {
-      continue;
-    }
-    const queue = [index];
-    componentByIndex[index] = component;
-    for (let cursor = 0; cursor < queue.length; cursor += 1) {
-      const current = queue[cursor];
-      if (current === undefined) {
-        continue;
-      }
-      for (const neighbor of adjacentIndices(
-        current,
-        context.puzzle.width,
-        context.puzzle.height,
-      )) {
-        if (
-          componentByIndex[neighbor] === -1
-          && !isBitSet(occupied, neighbor)
-        ) {
-          componentByIndex[neighbor] = component;
-          queue.push(neighbor);
-        }
-      }
-    }
-    component += 1;
-  }
-  const counts = new Map<string, number>();
-  for (const terminal of terminals) {
-    const index = cellIndex(terminal, context.puzzle.width);
-    const componentId = componentByIndex[index];
-    const key = `${componentId}:${terminal.symbol}`;
-    counts.set(key, (counts.get(key) ?? 0) + 1);
-  }
-  return [...counts.values()].every((count) => count % 2 === 0);
-}
-
-function canEnter(
-  context: SearchContext,
-  index: number,
-  targetIndex: number,
-  occupied: bigint,
-  visited: bigint,
-): boolean {
-  if (isBitSet(occupied, index) || isBitSet(visited, index)) {
-    return false;
-  }
-  return index === targetIndex || !context.terminalIndices.has(index);
-}
-
 function distanceToTarget(
   index: number,
   targetIndex: number,
@@ -464,26 +388,6 @@ function distanceToTarget(
     indexToCell(index, width),
     indexToCell(targetIndex, width),
   );
-}
-
-function searchStateKey(
-  occupied: bigint,
-  remainingTerminals: readonly Terminal[],
-): string {
-  return `${occupied.toString(16)}|${remainingTerminals
-    .map((terminal) => terminal.terminalId)
-    .toSorted()
-    .join(",")}`;
-}
-
-function sortTerminals(
-  terminals: readonly Terminal[],
-  width: number,
-): readonly Terminal[] {
-  return terminals.toSorted((left, right) => (
-    cellIndex(left, width) - cellIndex(right, width)
-    || left.terminalId.localeCompare(right.terminalId)
-  ));
 }
 
 function buildRequiredPartnerMap(
@@ -546,12 +450,6 @@ function buildPathEdgeLimitMap(
   return result;
 }
 
-function terminalPairKey(first: string, second: string): string {
-  return first.localeCompare(second) <= 0
-    ? `${first}|${second}`
-    : `${second}|${first}`;
-}
-
 function shouldStop(context: SearchContext): boolean {
   return context.budgetExhausted || context.stoppedAtLimit;
 }
@@ -561,8 +459,6 @@ function createMutableMetrics(): MutableMetrics {
     exploredStateCount: 0,
     backtrackCount: 0,
     maximumDecisionDepth: 0,
-    forcedMoveCount: 0,
-    decisionPointCount: 0,
     pairingCountTried: 0,
     residualReachabilityPruneCount: 0,
     componentParityPruneCount: 0,

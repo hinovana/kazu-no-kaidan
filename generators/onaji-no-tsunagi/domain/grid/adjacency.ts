@@ -8,7 +8,7 @@ const DIRECTIONS = [
   { row: 0, column: -1 },
 ] as const;
 
-export function adjacentCells(cell: Cell, width: number, height: number): readonly Cell[] {
+function adjacentCells(cell: Cell, width: number, height: number): readonly Cell[] {
   const result: Cell[] = [];
   for (const direction of DIRECTIONS) {
     const next = {

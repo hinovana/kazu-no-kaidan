@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import {
-  getFiveByFiveTerminalProfile,
+  getUniquePathCoverProfile,
 } from "../domain/generation/build-unique-path-cover.ts";
 import { generateWorksheet } from "../domain/generation/generate-worksheet.ts";
 import { validateSolution } from "../domain/validation/validate-solution.ts";
@@ -46,8 +46,8 @@ for (let seedIndex = 0; seedIndex < seedCount; seedIndex += 1) {
   });
   const generated = worksheet.puzzles[0];
   assert.ok(generated);
-  const profile = getFiveByFiveTerminalProfile(
-    generated.provenance.terminalPattern,
+  const profile = getUniquePathCoverProfile(
+    generated.provenance.profileId,
   );
   const stats = patternStats.get(profile.terminalPattern);
   assert.ok(stats);

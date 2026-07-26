@@ -84,8 +84,8 @@ export function DeveloperDiagnostics({ worksheet }: { readonly worksheet: Worksh
               <div><dt>探索状態</dt><dd>{generated.difficulty.exploredStateCount}</dd></div>
               <div><dt>構成状態</dt><dd>{generated.provenance.constructionStateCount}</dd></div>
               <div><dt>撤回</dt><dd>{generated.difficulty.backtrackCount}</dd></div>
+              <div><dt>最大判断深さ</dt><dd>{generated.difficulty.maximumDecisionDepth}</dd></div>
               <div><dt>ペア候補指標</dt><dd>{generated.difficulty.pairingChoiceCount}</dd></div>
-              <div><dt>回廊判断の連鎖</dt><dd>{generated.difficulty.revisionChainLength}</dd></div>
               <div>
                 <dt>到達不能枝の除外</dt>
                 <dd>{generated.difficulty.residualReachabilityPruneCount}</dd>
@@ -98,7 +98,6 @@ export function DeveloperDiagnostics({ worksheet }: { readonly worksheet: Worksh
                 <dt>失敗memo枝の除外</dt>
                 <dd>{generated.difficulty.memoizedFailurePruneCount}</dd>
               </div>
-              <div><dt>最短ペアの罠</dt><dd>{generated.difficulty.nearestPairTrap ? "あり" : "なし"}</dd></div>
               <div>
                 <dt>採用candidate</dt>
                 <dd>

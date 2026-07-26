@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import {
-  buildUniqueFiveByFive,
-  getFiveByFiveTerminalProfile,
-  UNIQUE_FIVE_BY_FIVE_PROFILE,
+  buildUniquePathCover,
+  getUniquePathCoverProfile,
 } from "../domain/generation/build-unique-path-cover.ts";
 import { createSeededRandom } from "../domain/generation/random.ts";
 import { solvePuzzle } from "../domain/solver/solve-puzzle.ts";
@@ -13,21 +12,23 @@ import { validateSolution } from "../domain/validation/validate-solution.ts";
 
 const results = [];
 for (const pattern of ["2-2-2", "4-2-2", "4-4-2"]) {
-  const profile = getFiveByFiveTerminalProfile(pattern);
+  const profileId = `5x5-${pattern}`;
+  const profile = getUniquePathCoverProfile(profileId);
   const topologyHashes = new Set();
   let constructedPlanCount = 0;
   let exactUniqueQualityCount = 0;
 
   for (let seedIndex = 0; seedIndex < 3_000; seedIndex += 1) {
     const seed = `unique-five-${pattern}-layout-${seedIndex}`;
-    const plan = buildUniqueFiveByFive(
+    const buildResult = buildUniquePathCover(
       seed,
       createSeededRandom(seed),
-      pattern,
+      profileId,
     );
-    if (plan === null) {
+    if (buildResult.status !== "built") {
       continue;
     }
+    const { plan } = buildResult;
     constructedPlanCount += 1;
     assert.equal(plan.puzzle.width, 5);
     assert.equal(plan.puzzle.height, 5);
@@ -53,7 +54,7 @@ for (const pattern of ["2-2-2", "4-2-2", "4-4-2"]) {
     }
     const result = solvePuzzle(plan.puzzle, {
       solutionLimit: 2,
-      stateBudget: UNIQUE_FIVE_BY_FIVE_PROFILE.maximumValidityStates,
+      stateBudget: profile.maximumValidityStates,
     });
     if (
       result.status !== "solved"

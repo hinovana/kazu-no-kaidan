@@ -2,7 +2,6 @@ import type { DifficultyAnalysis } from "./difficulty.ts";
 import type { CandidateRejection, GenerationRequest } from "./generation.ts";
 import type {
   Puzzle,
-  SymbolId,
   TerminalMultiplicityPattern,
   UniquePathCoverProfileId,
 } from "./puzzle.ts";
@@ -13,10 +12,7 @@ import type {
   SolutionGeometryAnalysis,
 } from "./solution.ts";
 
-export type EntryPatternKind = "unique_path_cover";
-
 interface EntrySymbolGroup {
-  readonly symbol: SymbolId;
   readonly terminalIds: readonly string[];
   readonly pairingChoiceCount: number;
 }
@@ -30,23 +26,14 @@ export interface UniquePathCoverEntryAnalysis {
   readonly symbolGroups: readonly EntrySymbolGroup[];
   readonly pairingChoiceCount: number;
   readonly forcedExitTerminalIds: readonly string[];
-  readonly openExitCountByTerminalId: Readonly<Record<string, number>>;
   readonly maximumLineConcentration: number;
   readonly naturalHypothesisCount: number;
   readonly machineStatus: "entry_candidate";
 }
 
-export type EntryAnalysis = UniquePathCoverEntryAnalysis;
-
 export type InteractionMotifKind =
-  | "anchor_route_conflict"
-  | "visible_blocker"
-  | "scaffold_gate"
   | "forced_exit"
-  | "shared_gate"
-  | "separation_trap"
   | "pairing_choice"
-  | "ordering_dependency"
   | "unique_solution";
 
 export interface InteractionWitness {
@@ -55,9 +42,6 @@ export interface InteractionWitness {
   readonly temptingConstraint: Readonly<Record<string, unknown>>;
   readonly consequence:
     | "remaining_pair_unreachable"
-    | "component_parity_impossible"
-    | "shared_gate_conflict"
-    | "strictly_worse_optimal_cost"
     | "alternative_solution_unsatisfiable";
   readonly proofStatus: "proven";
   readonly exploredStateCount: number;
@@ -70,8 +54,6 @@ export interface RouteRoles {
 }
 
 export interface GenerationWitnessAnalysis {
-  readonly plantedCost: SolutionCost;
-  readonly optimalCost: SolutionCost;
   readonly plantedInflationEdgeCount: number;
   readonly rolePreservationStatus: "proven";
 }
@@ -85,10 +67,6 @@ export interface MachineCheck {
 export interface MachineCheckReport {
   readonly allPassed: boolean;
   readonly checks: readonly MachineCheck[];
-  readonly qualityAssessment: {
-    readonly status: "structural_candidate_only";
-    readonly reason: string;
-  };
 }
 
 export interface GenerationProvenance {
@@ -106,7 +84,6 @@ export interface GenerationProvenance {
     | "onaji-no-tsunagi-profiles.v3.3"
     | "onaji-no-tsunagi-profiles.v3.4-draft";
   readonly seed: string;
-  readonly generatedAt: null;
 }
 
 export interface PuzzleProvenance {
@@ -129,7 +106,7 @@ export interface GeneratedPuzzle {
     readonly count: 1;
   };
   readonly solutionCost: SolutionCost;
-  readonly entry: EntryAnalysis;
+  readonly entry: UniquePathCoverEntryAnalysis;
   readonly geometry: SolutionGeometryAnalysis;
   readonly interactionWitnesses: readonly InteractionWitness[];
   readonly routeRoles: RouteRoles;
@@ -157,6 +134,4 @@ export interface Worksheet {
   readonly puzzles: readonly GeneratedPuzzle[];
   readonly machineChecks: MachineCheckReport & { readonly allPassed: true };
   readonly provenance: GenerationProvenance;
-  readonly manualReview: { readonly status: "not_started" };
-  readonly calibration: { readonly status: "not_calibrated" };
 }

@@ -9,7 +9,7 @@ import type {
 } from "../types/puzzle.ts";
 import type { UniquePathCoverEntryAnalysis } from "../types/worksheet.ts";
 
-export interface UniquePathCoverEntryCriteria {
+interface UniquePathCoverEntryCriteria {
   readonly terminalPattern: TerminalMultiplicityPattern;
   readonly terminalCount: number;
   readonly symbolPathCounts: readonly [number, number, number];
@@ -18,7 +18,7 @@ export interface UniquePathCoverEntryCriteria {
   readonly maximumLineConcentration: number;
 }
 
-export type UniquePathCoverEntryResult =
+type UniquePathCoverEntryResult =
   | {
       readonly status: "candidate";
       readonly analysis: UniquePathCoverEntryAnalysis;
@@ -111,8 +111,7 @@ export function analyzeUniquePathCoverEntry(
         : "onaji-no-tsunagi-entry.v3.4-draft",
       pattern: "unique_path_cover",
       terminalPattern: criteria.terminalPattern,
-      symbolGroups: symbolGroups.map(([symbol, terminals]) => ({
-        symbol,
+      symbolGroups: symbolGroups.map(([, terminals]) => ({
         terminalIds: terminals
           .map((terminal) => terminal.terminalId)
           .toSorted(),
@@ -120,7 +119,6 @@ export function analyzeUniquePathCoverEntry(
       })),
       pairingChoiceCount,
       forcedExitTerminalIds,
-      openExitCountByTerminalId,
       maximumLineConcentration,
       naturalHypothesisCount:
         pairingChoiceCount * localExitHypothesisCount,

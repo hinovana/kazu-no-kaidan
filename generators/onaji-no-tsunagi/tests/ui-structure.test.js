@@ -94,6 +94,7 @@ assert.match(diagnostics, /最適性証明状態/);
 assert.match(diagnostics, /採用candidate/);
 assert.match(diagnostics, /到達不能枝の除外/);
 assert.match(diagnostics, /構成状態/);
+assert.match(diagnostics, /最大判断深さ/);
 assert.match(diagnostics, /成分偶奇枝の除外/);
 assert.match(diagnostics, /失敗memo枝の除外/);
 assert.match(diagnostics, /profile/);

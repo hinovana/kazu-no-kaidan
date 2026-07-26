@@ -20,11 +20,18 @@ import { validateSolution } from "../validation/validate-solution.ts";
 import { listSameSymbolPartners } from "./enumerate-pairings.ts";
 import { normalizeSolution } from "./normalize-solution.ts";
 import {
-  isBitSet,
   isReachable,
   setBit,
   shortestPathDistance,
 } from "./residual-reachability.ts";
+import {
+  allTerminalsHaveReachablePartners,
+  canEnterPathCell,
+  createTerminalIndexSet,
+  hasEvenSymbolParityInEveryComponent,
+  sortTerminals,
+  terminalSearchStateKey,
+} from "./search-grid.ts";
 
 export interface OptimizeSolutionOptions {
   readonly stateBudget?: number;
@@ -46,7 +53,7 @@ interface OptimizerContext {
   budgetExhausted: boolean;
   bestSolution: Solution;
   bestCost: SolutionCost;
-  optimalPrimaryCostSolutionCount: number;
+  foundSolution: boolean;
 }
 
 interface TerminalSelection {
@@ -74,9 +81,7 @@ export function optimizeSolution(
   const normalizedPlanted = normalizeSolution(plantedSolution, puzzle.width);
   const context: OptimizerContext = {
     puzzle,
-    terminalIndices: new Set(
-      puzzle.terminals.map((terminal) => cellIndex(terminal, puzzle.width)),
-    ),
+    terminalIndices: createTerminalIndexSet(puzzle),
     stateBudget: Math.max(
       1,
       Math.floor(options.stateBudget ?? 2_000_000),
@@ -87,7 +92,7 @@ export function optimizeSolution(
     budgetExhausted: false,
     bestSolution: normalizedPlanted,
     bestCost: calculateSolutionCost(puzzle, normalizedPlanted),
-    optimalPrimaryCostSolutionCount: 0,
+    foundSolution: false,
   };
   const terminals = sortTerminals(puzzle.terminals, puzzle.width);
   const lowerBound = minimumMatchingDistance(context, terminals, 0n);
@@ -102,7 +107,7 @@ export function optimizeSolution(
       exploredStateCount: context.exploredStateCount,
     };
   }
-  if (context.optimalPrimaryCostSolutionCount === 0) {
+  if (!context.foundSolution) {
     return {
       status: "unsatisfiable",
       exploredStateCount: context.exploredStateCount,
@@ -112,8 +117,6 @@ export function optimizeSolution(
     status: "optimal",
     solution: context.bestSolution,
     cost: context.bestCost,
-    optimalPrimaryCostSolutionCount:
-      context.optimalPrimaryCostSolutionCount,
     exploredStateCount: context.exploredStateCount,
   };
 }
@@ -145,14 +148,14 @@ function searchTerminals(
     return;
   }
   if (!hasEvenSymbolParityInEveryComponent(
-    context,
+    context.puzzle,
     remainingTerminals,
     occupied,
   )) {
     return;
   }
 
-  const stateKey = searchStateKey(occupied, remainingTerminals);
+  const stateKey = terminalSearchStateKey(occupied, remainingTerminals);
   const completedPrefix = context.completedPrefixByState.get(stateKey);
   if (
     completedPrefix !== undefined
@@ -264,8 +267,8 @@ function enumeratePaths(
       context.puzzle.width,
       context.puzzle.height,
     )
-      .filter((nextIndex) => canEnter(
-        context,
+      .filter((nextIndex) => canEnterPathCell(
+        context.terminalIndices,
         nextIndex,
         targetIndex,
         occupied,
@@ -286,8 +289,9 @@ function enumeratePaths(
       if (
         nextIndex !== targetIndex
         && path.length % 3 === 0
-        && !remainingTerminalsHaveReachablePartners(
-          context,
+        && !allTerminalsHaveReachablePartners(
+          context.puzzle,
+          context.terminalIndices,
           remainingTerminals,
           occupied | nextVisited,
         )
@@ -322,11 +326,11 @@ function considerCompleteSolution(
   if (primaryComparison < 0) {
     context.bestSolution = normalized;
     context.bestCost = cost;
-    context.optimalPrimaryCostSolutionCount = 1;
+    context.foundSolution = true;
     return;
   }
   if (primaryComparison === 0) {
-    context.optimalPrimaryCostSolutionCount += 1;
+    context.foundSolution = true;
     if (compareSolutionCost(cost, context.bestCost) < 0) {
       context.bestSolution = normalized;
       context.bestCost = cost;
@@ -445,72 +449,6 @@ function shortestResidualDistance(
     ?? Number.POSITIVE_INFINITY;
 }
 
-function remainingTerminalsHaveReachablePartners(
-  context: OptimizerContext,
-  terminals: readonly Terminal[],
-  occupied: bigint,
-): boolean {
-  return terminals.every((terminal) => terminals.some((candidate) => (
-    candidate.terminalId !== terminal.terminalId
-    && candidate.symbol === terminal.symbol
-    && isReachable({
-      width: context.puzzle.width,
-      height: context.puzzle.height,
-      occupied,
-      terminalIndices: context.terminalIndices,
-    }, cellIndex(terminal, context.puzzle.width), cellIndex(candidate, context.puzzle.width))
-  )));
-}
-
-function hasEvenSymbolParityInEveryComponent(
-  context: OptimizerContext,
-  terminals: readonly Terminal[],
-  occupied: bigint,
-): boolean {
-  const componentByIndex = new Int16Array(
-    context.puzzle.width * context.puzzle.height,
-  );
-  componentByIndex.fill(-1);
-  let component = 0;
-  for (let index = 0; index < componentByIndex.length; index += 1) {
-    if (componentByIndex[index] !== -1 || isBitSet(occupied, index)) {
-      continue;
-    }
-    const queue = [index];
-    componentByIndex[index] = component;
-    for (let cursor = 0; cursor < queue.length; cursor += 1) {
-      const current = queue[cursor];
-      if (current === undefined) {
-        continue;
-      }
-      for (const neighbor of adjacentIndices(
-        current,
-        context.puzzle.width,
-        context.puzzle.height,
-      )) {
-        if (
-          componentByIndex[neighbor] === -1
-          && !isBitSet(occupied, neighbor)
-        ) {
-          componentByIndex[neighbor] = component;
-          queue.push(neighbor);
-        }
-      }
-    }
-    component += 1;
-  }
-  const counts = new Map<string, number>();
-  for (const terminal of terminals) {
-    const componentId = componentByIndex[cellIndex(
-      terminal,
-      context.puzzle.width,
-    )];
-    const key = `${componentId}:${terminal.symbol}`;
-    counts.set(key, (counts.get(key) ?? 0) + 1);
-  }
-  return [...counts.values()].every((count) => count % 2 === 0);
-}
-
 function canStillImprove(
   prefix: PrefixCost,
   remainingEdgeLowerBound: number,
@@ -568,19 +506,6 @@ function direction(
   return `${to.row - from.row},${to.column - from.column}`;
 }
 
-function canEnter(
-  context: OptimizerContext,
-  index: number,
-  targetIndex: number,
-  occupied: bigint,
-  visited: bigint,
-): boolean {
-  if (isBitSet(occupied, index) || isBitSet(visited, index)) {
-    return false;
-  }
-  return index === targetIndex || !context.terminalIndices.has(index);
-}
-
 function comparePrimaryCost(
   left: SolutionCost,
   right: SolutionCost,
@@ -597,26 +522,6 @@ function comparePrimaryPrefix(
   return left.totalEdgeCount - right.totalEdgeCount
     || left.unitBayCount - right.unitBayCount
     || left.totalTurnCount - right.totalTurnCount;
-}
-
-function searchStateKey(
-  occupied: bigint,
-  remainingTerminals: readonly Terminal[],
-): string {
-  return `${occupied.toString(16)}|${remainingTerminals
-    .map((terminal) => terminal.terminalId)
-    .toSorted()
-    .join(",")}`;
-}
-
-function sortTerminals(
-  terminals: readonly Terminal[],
-  width: number,
-): readonly Terminal[] {
-  return terminals.toSorted((left, right) => (
-    cellIndex(left, width) - cellIndex(right, width)
-    || left.terminalId.localeCompare(right.terminalId)
-  ));
 }
 
 function emptyPrefix(): PrefixCost {

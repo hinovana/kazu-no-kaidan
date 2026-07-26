@@ -162,13 +162,6 @@ export function runMachineChecks(
   return {
     allPassed: checks.every((check) => check.passed),
     checks,
-    qualityAssessment: {
-      status: "structural_candidate_only",
-      reason: [
-        "5×5・6/8/10端点または6×6・10/12/14端点の唯一解、ペアリング、取っ掛かり、経路形状を機械検査済みです。",
-        "挑戦したくなるか、解いて面白いか、児童向け難易度は人間未確認です。",
-      ].join(""),
-    },
   };
 }
 

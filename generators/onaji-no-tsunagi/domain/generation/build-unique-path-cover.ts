@@ -16,12 +16,12 @@ import {
   type SeededRandom,
 } from "./random.ts";
 
-export interface PathCandidate {
+interface PathCandidate {
   readonly cells: readonly number[];
   readonly occupiedMask: bigint;
 }
 
-export interface PathCandidateSource {
+interface PathCandidateSource {
   candidatesFor(
     length: number,
     remainingMask: bigint,
@@ -50,7 +50,7 @@ export interface UniquePathCoverProfile {
   readonly maximumProofStates: number;
 }
 
-export type BuildUniquePathCoverResult =
+type BuildUniquePathCoverResult =
   | {
       readonly status: "built";
       readonly plan: MaterializedPathPlan;
@@ -239,7 +239,7 @@ const SIX_BY_SIX_PROFILES = {
   Record<string, UniquePathCoverProfile>
 >;
 
-export const UNIQUE_PATH_COVER_PROFILES = {
+const UNIQUE_PATH_COVER_PROFILES = {
   ...FIVE_BY_FIVE_PROFILES,
   ...SIX_BY_SIX_PROFILES,
 } as const satisfies Readonly<
@@ -1007,52 +1007,3 @@ function selectRandom<T>(
     ? undefined
     : values[random.integer(0, values.length - 1)];
 }
-
-export type FiveByFiveTerminalPattern =
-  | "2-2-2"
-  | "4-2-2"
-  | "4-4-2";
-
-export function getFiveByFiveTerminalProfile(
-  pattern: FiveByFiveTerminalPattern,
-): UniquePathCoverProfile {
-  return getUniquePathCoverProfile(`5x5-${pattern}`);
-}
-
-export function selectFiveByFiveTerminalPattern(
-  requestSeed: string,
-  puzzleIndex: number,
-  puzzleCount: number,
-): FiveByFiveTerminalPattern {
-  return getUniquePathCoverProfile(
-    selectFiveByFiveProfileId(requestSeed, puzzleIndex, puzzleCount),
-  ).terminalPattern as FiveByFiveTerminalPattern;
-}
-
-export function buildUniqueFiveByFive(
-  puzzleSeed: string,
-  random: SeededRandom,
-  pattern: FiveByFiveTerminalPattern = "2-2-2",
-): MaterializedPathPlan | null {
-  const result = buildUniquePathCover(
-    puzzleSeed,
-    random,
-    `5x5-${pattern}`,
-  );
-  return result.status === "built" ? result.plan : null;
-}
-
-export const UNIQUE_FIVE_BY_FIVE_PROFILE = {
-  width: 5,
-  height: 5,
-  maximumCandidateCount: 30_000,
-  maximumConstructionStates: 4_000,
-  maximumValidityStates: 500_000,
-  maximumProofStates: 500_000,
-  minimumUsedCellCount: 25,
-  terminalProfiles: {
-    "2-2-2": FIVE_BY_FIVE_PROFILES["5x5-2-2-2"],
-    "4-2-2": FIVE_BY_FIVE_PROFILES["5x5-4-2-2"],
-    "4-4-2": FIVE_BY_FIVE_PROFILES["5x5-4-4-2"],
-  },
-} as const;

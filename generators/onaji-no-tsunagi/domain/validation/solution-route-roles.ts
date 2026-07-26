@@ -1,4 +1,5 @@
 import { cellKey } from "../grid/coordinates.ts";
+import { terminalPairKey } from "../solver/enumerate-pairings.ts";
 import type { Puzzle } from "../types/puzzle.ts";
 import type { Solution } from "../types/solution.ts";
 import type { RouteRoles } from "../types/worksheet.ts";
@@ -25,16 +26,12 @@ export function doesSolutionPreserveRouteRoles(
       const second = terminalByCell.get(cellKey(secondCell));
       return first === undefined || second === undefined
         ? ""
-        : pairKey([first.terminalId, second.terminalId]);
+        : terminalPairKey(first.terminalId, second.terminalId);
     }),
   );
   return [
     roles.spineTerminalIds,
     roles.threadTerminalIds,
     ...roles.scaffoldTerminalIdPairs,
-  ].every((pair) => actualPairs.has(pairKey(pair)));
-}
-
-function pairKey(pair: readonly [string, string]): string {
-  return [...pair].toSorted().join("|");
+  ].every((pair) => actualPairs.has(terminalPairKey(...pair)));
 }

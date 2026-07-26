@@ -1,4 +1,5 @@
 import { cellIndex, cellKey } from "../grid/coordinates.ts";
+import { orderedTerminalIds } from "../solver/enumerate-pairings.ts";
 import type { Cell, Puzzle, SymbolId, Terminal } from "../types/puzzle.ts";
 import type { PathSolution, Solution } from "../types/solution.ts";
 import type { RouteRoles } from "../types/worksheet.ts";
@@ -103,15 +104,6 @@ export function materializePathPlan(
     },
     topologyHash,
   };
-}
-
-function orderedTerminalIds(
-  first: string,
-  second: string,
-): readonly [string, string] {
-  return first.localeCompare(second) <= 0
-    ? [first, second]
-    : [second, first];
 }
 
 function failMissingPair(): never {

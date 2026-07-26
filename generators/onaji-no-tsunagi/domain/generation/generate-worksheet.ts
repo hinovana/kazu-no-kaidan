@@ -33,6 +33,22 @@ import {
 } from "./build-unique-path-cover.ts";
 import { createSeededRandom, stableHash } from "./random.ts";
 
+const STABLE_VERSIONS = {
+  schemaVersion: "onaji-no-tsunagi.worksheet.v3.3",
+  generatorVersion: "onaji-no-tsunagi-generator.v3.3",
+  algorithmSpecVersion: "onaji-no-tsunagi-spec.v3.3",
+  analyzerVersion: "onaji-no-tsunagi-difficulty.v3.3",
+  profileVersion: "onaji-no-tsunagi-profiles.v3.3",
+} as const;
+
+const DRAFT_VERSIONS = {
+  schemaVersion: "onaji-no-tsunagi.worksheet.v3.4-draft",
+  generatorVersion: "onaji-no-tsunagi-generator.v3.4-draft",
+  algorithmSpecVersion: "onaji-no-tsunagi-spec.v3.4-draft",
+  analyzerVersion: "onaji-no-tsunagi-difficulty.v3.4-draft",
+  profileVersion: "onaji-no-tsunagi-profiles.v3.4-draft",
+} as const;
+
 export class GenerationFailure extends Error {
   readonly detail: GenerationError;
 
@@ -44,6 +60,9 @@ export class GenerationFailure extends Error {
 }
 
 export function generateWorksheet(request: GenerationRequest): Worksheet {
+  const versions = request.difficulty === 1
+    ? STABLE_VERSIONS
+    : DRAFT_VERSIONS;
   const puzzles: GeneratedPuzzle[] = [];
   let totalAttempts = 0;
   const allRejections: CandidateRejection[] = [];
@@ -80,9 +99,7 @@ export function generateWorksheet(request: GenerationRequest): Worksheet {
       );
       const routeSeed = [
         request.seed,
-        request.difficulty === 1
-          ? "onaji-no-tsunagi-generator.v3.3"
-          : "onaji-no-tsunagi-generator.v3.4-draft",
+        versions.generatorVersion,
         `puzzle-${puzzleIndex + 1}`,
         request.difficulty === 1
           ? `terminals-${terminalPattern}`
@@ -198,8 +215,6 @@ export function generateWorksheet(request: GenerationRequest): Worksheet {
       const geometry = analyzeSolutionGeometry(
         plan.puzzle,
         optimization.solution,
-        plan.routeRoles,
-        optimization.optimalPrimaryCostSolutionCount,
       );
       const coverage = analyzeSolutionCoverage(
         plan.puzzle,
@@ -221,9 +236,6 @@ export function generateWorksheet(request: GenerationRequest): Worksheet {
       const difficulty = analyzeDifficulty(
         request.difficulty,
         plan.puzzle,
-        geometry,
-        entryResult.analysis,
-        interactionWitnesses,
         validity.metrics,
       );
       if (difficulty.measuredBand !== request.difficulty) {
@@ -241,8 +253,6 @@ export function generateWorksheet(request: GenerationRequest): Worksheet {
         interactionWitnesses,
         routeRoles: plan.routeRoles,
         generationWitness: {
-          plantedCost,
-          optimalCost: optimization.cost,
           plantedInflationEdgeCount:
             plantedCost.totalEdgeCount
             - optimization.cost.totalEdgeCount,
@@ -304,9 +314,7 @@ export function generateWorksheet(request: GenerationRequest): Worksheet {
   }
 
   return {
-    schemaVersion: request.difficulty === 1
-      ? "onaji-no-tsunagi.worksheet.v3.3"
-      : "onaji-no-tsunagi.worksheet.v3.4-draft",
+    schemaVersion: versions.schemaVersion,
     worksheetId: `ots-sheet-${stableHash(JSON.stringify(request))}`,
     usageClass: "development_preview",
     childUsePermitted: false,
@@ -314,24 +322,13 @@ export function generateWorksheet(request: GenerationRequest): Worksheet {
     puzzles,
     machineChecks: { ...report, allPassed: true },
     provenance: {
-      generatorVersion: request.difficulty === 1
-        ? "onaji-no-tsunagi-generator.v3.3"
-        : "onaji-no-tsunagi-generator.v3.4-draft",
-      algorithmSpecVersion: request.difficulty === 1
-        ? "onaji-no-tsunagi-spec.v3.3"
-        : "onaji-no-tsunagi-spec.v3.4-draft",
+      generatorVersion: versions.generatorVersion,
+      algorithmSpecVersion: versions.algorithmSpecVersion,
       solverVersion: "onaji-no-tsunagi-solver.v3.1",
-      analyzerVersion: request.difficulty === 1
-        ? "onaji-no-tsunagi-difficulty.v3.3"
-        : "onaji-no-tsunagi-difficulty.v3.4-draft",
-      profileVersion: request.difficulty === 1
-        ? "onaji-no-tsunagi-profiles.v3.3"
-        : "onaji-no-tsunagi-profiles.v3.4-draft",
+      analyzerVersion: versions.analyzerVersion,
+      profileVersion: versions.profileVersion,
       seed: request.seed,
-      generatedAt: null,
     },
-    manualReview: { status: "not_started" },
-    calibration: { status: "not_calibrated" },
   };
 }
 

@@ -150,7 +150,6 @@
   opacity: 0.65;
 }
 
-.ots-advanced-options,
 .ots-control-note {
   margin-top: 14px;
   color: var(--ots-muted);
@@ -159,11 +158,6 @@
 .ots-control-note {
   margin-bottom: 0;
   line-height: 1.65;
-}
-
-.ots-advanced-options label {
-  max-width: 360px;
-  margin-top: 10px;
 }
 
 .ots-empty-state,

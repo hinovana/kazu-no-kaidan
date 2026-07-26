@@ -69,6 +69,7 @@ generators/onaji-no-tsunagi/
 │   │   ├── normalize-solution.ts
 │   │   ├── optimize-solution.ts
 │   │   ├── residual-reachability.ts
+│   │   ├── search-grid.ts
 │   │   └── solve-puzzle.ts
 │   ├── types/
 │   │   ├── difficulty.ts
@@ -95,6 +96,8 @@ generators/onaji-no-tsunagi/
 │   ├── generator.test.js
 │   ├── layout-quality.test.js
 │   ├── reference-corpus.test.js
+│   ├── six-by-six-corpus.mjs
+│   ├── six-by-six-layout.test.js
 │   ├── solver.test.js
 │   ├── typescript-contract.test.ts
 │   ├── ui-structure.test.js
@@ -105,7 +108,8 @@ generators/onaji-no-tsunagi/
 │   ├── OnajiNoTsunagiPage.tsx
 │   ├── PuzzleBoard.tsx
 │   ├── ReferenceCorpusReviewPage.tsx
-│   └── WorksheetPreview.tsx
+│   ├── WorksheetPreview.tsx
+│   └── symbol-label.ts
 ├── index.html
 ├── module.tsx
 ├── redirect.ts
@@ -181,6 +185,7 @@ generators/onaji-no-tsunagi/
 | `enumerate-pairings.ts` | 同記号端点のpartner候補と完全マッチング数 |
 | `solve-puzzle.ts` | 端点だけを入力に、partnerを固定せず有効解を探索する独立solver |
 | `residual-reachability.ts` | 使用済みマスを除いた残余盤面の到達可能性とBigInt bitset |
+| `search-grid.ts` | solverとoptimizerが共有する端点順序、探索状態key、残余成分偶奇の判定 |
 | `normalize-solution.ts` | 経路順・向きを正規化し、解の同一性を判定するhashを作る |
 | `optimize-solution.ts` | 有効解の中から形状cost順の最適解を完全探索する |
 
@@ -211,6 +216,7 @@ validatorは「保存済みの答えと同じか」ではなく、ルールを�
 | `PuzzleBoard.tsx` | 問題と答えで共有するSVG盤面。参照確認時はセル座標も表示できる |
 | `DeveloperDiagnostics.tsx` | 一意性、形状、棄却理由など開発者向け証拠 |
 | `ReferenceCorpusReviewPage.tsx` | ローカルJSONの盤面再描画、座標表、原本PDF SHA-256照合 |
+| `symbol-label.ts` | SVG盤面と参照確認画面で共有する記号の日本語表示名 |
 
 問題用紙の`PuzzleBoard`へ解答経路を渡さない。印刷上の変更では、問題用紙と答えの両方をA4全ページで確認する。
 
@@ -233,6 +239,8 @@ validatorは「保存済みの答えと同じか」ではなく、ルールを�
 | `solver.test.js` | pairing、bitset、solver、optimizer、正規化、予算超過 |
 | `validator.test.js` | PuzzleとSolutionの正例・反例 |
 | `reference-corpus.test.js` | 参照JSONのschema、厳格デコード、SHA結合、異常系 |
+| `six-by-six-layout.test.js` | 6×6の構成成功率、状態予算、経路長profile、トポロジー |
+| `six-by-six-corpus.mjs` | 6×6各profileの多数seed生成、完全探索、品質gate、性能 |
 | `ui-structure.test.js` | SPA登録、Worker、問題・答え分離、印刷CSS、参照確認画面 |
 | `typescript-contract.test.ts` | 公開する教材内型のコンパイル契約 |
 | `corpus.mjs` | 多数seedでの再現性、品質gate、分布、重複、性能 |
