@@ -57,6 +57,23 @@ export function assignSixBySixPathSymbols(
   pathCounts: SymbolPathCounts,
   variant: number,
 ): readonly SymbolId[] {
+  const assignments = enumerateSixBySixPathSymbols(routeSeed, pathCounts);
+  return assignments[variant % assignments.length] ?? [];
+}
+
+/**
+ * route seedが定める巡回順で、6×6の異なる記号割当をすべて返す。
+ *
+ * @remarks
+ * 同じ経路本数を持つ記号名の入れ替えは同一assignmentとして列挙し、
+ * 記号名自体の対応はroute seedから決定する。
+ *
+ * @internal
+ */
+export function enumerateSixBySixPathSymbols(
+  routeSeed: string,
+  pathCounts: SymbolPathCounts,
+): readonly (readonly SymbolId[])[] {
   const assignments = enumerateSymbolAssignments(pathCounts);
   if (assignments.length === 0) {
     return [];
@@ -67,12 +84,14 @@ export function assignSixBySixPathSymbols(
     random.integer(1, assignments.length),
     assignments.length,
   );
-  const assignment =
-    assignments[(offset + variant * step) % assignments.length] ?? [];
   const symbolOrder = createSeededRandom(`${routeSeed}::symbol-labels`).shuffle(
     SYMBOLS,
   );
-  return assignment.map(groupIndex => symbolOrder[groupIndex] ?? 'circle');
+  return assignments.map((_, variant) => {
+    const assignment =
+      assignments[(offset + variant * step) % assignments.length] ?? [];
+    return assignment.map(groupIndex => symbolOrder[groupIndex] ?? 'circle');
+  });
 }
 
 function enumerateSymbolAssignments(

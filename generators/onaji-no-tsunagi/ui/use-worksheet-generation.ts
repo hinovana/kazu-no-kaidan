@@ -13,13 +13,18 @@ import type {
   GenerationWorkerResponse,
 } from '../application/generation-worker-contract.ts';
 import type {Worksheet} from '../domain/types/worksheet.ts';
+import type {GenerationError} from '../domain/types/generation.ts';
 
 /** Worksheet生成画面が表示する非同期処理状態。 @internal */
 export type WorksheetGenerationState =
   | {readonly status: 'idle'}
   | {readonly status: 'generating'}
   | {readonly status: 'ready'; readonly worksheet: Worksheet}
-  | {readonly status: 'error'; readonly message: string};
+  | {
+      readonly status: 'error';
+      readonly message: string;
+      readonly report?: GenerationError;
+    };
 
 interface WorksheetGenerationController {
   /** 現在のWorker実行状態または生成結果。 */
@@ -87,6 +92,9 @@ export function useWorksheetGeneration(): WorksheetGenerationController {
       setState({
         status: 'error',
         message: error instanceof Error ? error.message : '不明なエラーです。',
+        ...(error instanceof WorkerGenerationError && error.report !== undefined
+          ? {report: error.report}
+          : {}),
       });
     } finally {
       if (activeGeneration.current?.requestId === requestId) {
@@ -121,8 +129,13 @@ function startWorksheetGeneration(
           const {worksheet} = response;
           settle(() => resolve(worksheet));
         } else {
-          const {message} = response;
-          settle(() => reject(new Error(message)));
+          const {message, report} = response;
+          console.error('[onaji-no-tsunagi] worksheet generation failed', {
+            requestId,
+            message,
+            ...(report === undefined ? {} : {report}),
+          });
+          settle(() => reject(new WorkerGenerationError(message, report)));
         }
       },
     );
@@ -164,5 +177,15 @@ class SupersededGenerationError extends Error {
   constructor() {
     super('A newer worksheet generation request superseded this request.');
     this.name = 'SupersededGenerationError';
+  }
+}
+
+class WorkerGenerationError extends Error {
+  readonly report: GenerationError | undefined;
+
+  constructor(message: string, report?: GenerationError) {
+    super(message);
+    this.name = 'WorkerGenerationError';
+    this.report = report;
   }
 }

@@ -9,6 +9,8 @@
 import {useState} from 'react';
 import {useSearchParams} from 'react-router-dom';
 import type {GeneratorModuleProps} from '../../../src/app/generator-module.ts';
+import {ACCEPTABLE_DIFFICULTY_CLASSIFICATIONS} from '../domain/types/generation.ts';
+import type {GenerationError} from '../domain/types/generation.ts';
 import {
   useWorksheetGeneration,
   type WorksheetGenerationState,
@@ -26,6 +28,7 @@ const INITIAL_FORM: WorksheetGenerationForm = {
   difficulty: 1,
   puzzleCount: 2,
   seed: 'onaji-start',
+  acceptedDifficultyClassifications: ACCEPTABLE_DIFFICULTY_CLASSIFICATIONS,
 };
 
 /**
@@ -81,7 +84,8 @@ export function WorksheetGeneratorPage({onRequestPrint}: GeneratorModuleProps) {
       <aside className="ots-prototype-notice screen-only" role="note">
         <strong>開発確認用プロトタイプ</strong>
         <span>
-          v3.4 draft: 5×5・6×6・6/8/10/12/14端点・唯一解を完全探索で証明済み
+          v3.4 draft.3: 5×5・6×6・6/8/10/12/14端点・唯一解を完全探索で証明済み
+          （6×6・10端点は端点配置policy適用）
         </span>
         <span>6×6の機械gateは完了、人間レビュー・難易度校正は未完了</span>
         <span>レベル4の唯一解文法は準備中</span>
@@ -97,7 +101,7 @@ export function WorksheetGeneratorPage({onRequestPrint}: GeneratorModuleProps) {
         onChange={setForm}
         onGenerate={async () => {
           setShowAnswers(false);
-          await generation.generate(form);
+          await generation.generate(generationInputFromForm(form));
         }}
         onToggleAnswers={() => setShowAnswers(current => !current)}
         onPrint={handlePrint}
@@ -131,10 +135,20 @@ function GenerationResult({
     );
   }
   if (state.status === 'error') {
+    const {report} = state;
     return (
       <section className="ots-error screen-only" role="alert">
         <h2>問題を生成できませんでした</h2>
         <p>{state.message}</p>
+        {report === undefined ? null : (
+          <button
+            className="ots-secondary-button"
+            type="button"
+            onClick={() => downloadGenerationErrorReport(report)}
+          >
+            エラーレポートをJSONで保存
+          </button>
+        )}
       </section>
     );
   }
@@ -145,4 +159,37 @@ function GenerationResult({
       <DeveloperDiagnostics worksheet={state.worksheet} />
     </div>
   );
+}
+
+function generationInputFromForm(
+  form: WorksheetGenerationForm,
+): Record<string, unknown> {
+  const input = {
+    difficulty: form.difficulty,
+    puzzleCount: form.puzzleCount,
+    seed: form.seed,
+  };
+  return form.difficulty === 2
+    ? {
+        ...input,
+        acceptedDifficultyClassifications:
+          form.acceptedDifficultyClassifications,
+      }
+    : input;
+}
+
+function downloadGenerationErrorReport(report: GenerationError): void {
+  const blob = new Blob([`${JSON.stringify(report, null, 2)}\n`], {
+    type: 'application/json',
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = [
+    'onaji-no-tsunagi-generation-error',
+    report.code.toLowerCase().replaceAll('_', '-'),
+    '.json',
+  ].join('');
+  anchor.click();
+  URL.revokeObjectURL(url);
 }

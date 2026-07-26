@@ -8,15 +8,18 @@
  */
 
 import type {
+  AcceptedDifficultyClassification,
   AvailableDifficultyLevel,
   PuzzleCount,
 } from '../domain/types/generation.ts';
+import {ACCEPTABLE_DIFFICULTY_CLASSIFICATIONS} from '../domain/types/generation.ts';
 
 /** Worksheet生成フォームで編集する値。 @internal */
 export interface WorksheetGenerationForm {
   readonly difficulty: AvailableDifficultyLevel;
   readonly puzzleCount: PuzzleCount;
   readonly seed: string;
+  readonly acceptedDifficultyClassifications: readonly AcceptedDifficultyClassification[];
 }
 
 interface WorksheetGenerationControlsProps {
@@ -41,6 +44,9 @@ export function WorksheetGenerationControls({
   onToggleAnswers,
   onPrint,
 }: WorksheetGenerationControlsProps) {
+  const selectionPolicyCanApply = form.difficulty === 2;
+  const noClassificationSelected =
+    form.acceptedDifficultyClassifications.length === 0;
   return (
     <form
       className="ots-control-panel screen-only"
@@ -109,11 +115,50 @@ export function WorksheetGenerationControls({
         生成した問題は、同じ形が4個以上ある場合のペアリングも含め、
         答えが1通りだけであることを完全探索で確認します。
       </p>
+      <fieldset
+        className="ots-selection-criteria"
+        disabled={!selectionPolicyCanApply || generating}
+      >
+        <legend>6×6・10端点の採用基準</legend>
+        <div className="ots-selection-options">
+          {ACCEPTABLE_DIFFICULTY_CLASSIFICATIONS.map(classification => (
+            <label key={classification}>
+              <input
+                type="checkbox"
+                checked={form.acceptedDifficultyClassifications.includes(
+                  classification,
+                )}
+                onChange={() =>
+                  onChange({
+                    ...form,
+                    acceptedDifficultyClassifications: toggleClassification(
+                      form.acceptedDifficultyClassifications,
+                      classification,
+                    ),
+                  })
+                }
+              />
+              {difficultyClassificationLabel(classification)}
+            </label>
+          ))}
+        </div>
+        <p className="ots-control-note">
+          現在は6×6・10端点だけに適用します。「明らかに簡単側」は選択肢に
+          関係なく再生成します。
+        </p>
+        {selectionPolicyCanApply && noClassificationSelected ? (
+          <p className="ots-form-error" role="alert">
+            採用基準を1つ以上選んでください。
+          </p>
+        ) : null}
+      </fieldset>
       <div className="ots-action-row">
         <button
           className="ots-primary-button"
           type="submit"
-          disabled={generating}
+          disabled={
+            generating || (selectionPolicyCanApply && noClassificationSelected)
+          }
         >
           {generating ? '作っています…' : 'この条件でつくる'}
         </button>
@@ -138,6 +183,33 @@ export function WorksheetGenerationControls({
       </div>
     </form>
   );
+}
+
+function toggleClassification(
+  selected: readonly AcceptedDifficultyClassification[],
+  target: AcceptedDifficultyClassification,
+): readonly AcceptedDifficultyClassification[] {
+  const next = new Set(selected);
+  if (next.has(target)) {
+    next.delete(target);
+  } else {
+    next.add(target);
+  }
+  return ACCEPTABLE_DIFFICULTY_CLASSIFICATIONS.filter(classification =>
+    next.has(classification),
+  );
+}
+
+function difficultyClassificationLabel(
+  classification: AcceptedDifficultyClassification,
+): string {
+  if (classification === 'reference_like') {
+    return '原本近傍';
+  }
+  if (classification === 'clearly_harder') {
+    return '明らかに難しい側';
+  }
+  return '指標混合';
 }
 
 function createRandomSeed(): string {

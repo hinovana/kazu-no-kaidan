@@ -22,6 +22,8 @@
     "test:kokugo-no-tane:corpus": "node generators/kokugo-no-tane/tests/corpus.mjs",
     "test:onaji-no-tsunagi:corpus": "node generators/onaji-no-tsunagi/tests/corpus.mjs",
     "test:onaji-no-tsunagi:6x6-corpus": "node generators/onaji-no-tsunagi/tests/six-by-six-corpus.mjs",
+    "audit:onaji-no-tsunagi:6x6-difficulty": "node generators/onaji-no-tsunagi/tests/six-by-six-difficulty-audit.mjs",
+    "audit:onaji-no-tsunagi:6x6-terminal-placement": "node generators/onaji-no-tsunagi/tests/six-by-six-central-terminal-experiment.mjs",
     "test:onaji-no-tsunagi:unit": "for test_file in generators/onaji-no-tsunagi/tests/*.test.js; do node \"$test_file\" || exit 1; done",
     "test:onaji-no-tsunagi:dom": "vitest run --environment jsdom generators/onaji-no-tsunagi/tests/ui-behavior.test.tsx",
     "test:onaji-no-tsunagi:quick-corpus": "OTS_CORPUS_SEEDS_PER_LEVEL=30 node generators/onaji-no-tsunagi/tests/corpus.mjs && OTS_SIX_BY_SIX_CORPUS_SEEDS_PER_PROFILE=100 node generators/onaji-no-tsunagi/tests/six-by-six-corpus.mjs",

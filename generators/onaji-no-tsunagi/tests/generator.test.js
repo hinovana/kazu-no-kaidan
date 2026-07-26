@@ -6,6 +6,9 @@ import {
 } from "../domain/generation/build-unique-path-cover.ts";
 import { generateWorksheet } from "../domain/generation/generate-worksheet.ts";
 import { countPerfectMatchings } from "../domain/solver/enumerate-pairings.ts";
+import {
+  evaluatePuzzleSelectionFilters,
+} from "../domain/generation/puzzle-selection-policy.ts";
 import { validateSolution } from "../domain/validation/validate-solution.ts";
 
 const request = {
@@ -159,8 +162,12 @@ const levelTwo = generateWorksheet(levelTwoRequest);
 assert.deepEqual(generateWorksheet(levelTwoRequest), levelTwo);
 assert.equal(
   worksheetHash(levelTwo),
-  "021775c3e198bc6da6281946925d8048b7b732dc54f0f2d079dd6c16a678f6fa",
-  "v3.4 draft level 2 output must remain stable",
+  "4d12c002aafc3e33648e342f20a7d5f50773407003793310eb8c10c1ea51f9f2",
+  "v3.4 draft.3 level 2 output must remain stable",
+);
+assert.equal(
+  levelTwo.schemaVersion,
+  "onaji-no-tsunagi.worksheet.v3.4-draft.3",
 );
 assert.deepEqual(
   levelTwo.puzzles.map((generated) => generated.provenance.profileId),
@@ -181,8 +188,8 @@ const levelThree = generateWorksheet(levelThreeRequest);
 assert.deepEqual(generateWorksheet(levelThreeRequest), levelThree);
 assert.equal(
   worksheetHash(levelThree),
-  "1cca583ca28d5d671ffeee0125b49fe5fbea4f9f550e4eb76a761a54c6ff79e8",
-  "v3.4 draft level 3 output must remain stable",
+  "b1a88edd2760b799b56947a22dc91ae8cc27f3d503ddea38792cccf92d2880b1",
+  "v3.4 draft.3 level 3 output must remain stable",
 );
 assert.deepEqual(
   levelThree.puzzles.map((generated) => generated.provenance.profileId),
@@ -200,6 +207,39 @@ for (const worksheet of [levelTwo, levelThree]) {
       symbolAssignmentStrategy: "enumerated-route-variants",
       reuseRouteCoverAcrossSymbolAssignments: true,
     });
+    assert.equal(
+      profile.terminalPlacementPolicy !== null,
+      profile.profileId === "6x6-4-4-2",
+    );
+    assert.equal(
+      profile.puzzleSelectionPolicy.filterRuleIds.length > 0,
+      profile.profileId === "6x6-4-4-2",
+    );
+    assert.equal(
+      profile.puzzleSelectionPolicy.difficultyReference !== null,
+      profile.profileId === "6x6-4-4-2",
+    );
+    assert.equal(
+      generated.provenance.terminalPlacementDiagnostics !== undefined,
+      profile.profileId === "6x6-4-4-2",
+    );
+    assert.equal(
+      generated.difficultySelection !== undefined,
+      profile.profileId === "6x6-4-4-2",
+    );
+    if (profile.profileId === "6x6-4-4-2") {
+      assert.notEqual(
+        generated.difficultySelection.classification,
+        "clearly_easier",
+      );
+      assert.equal(
+        evaluatePuzzleSelectionFilters(
+          generated.puzzle,
+          profile.puzzleSelectionPolicy.filterRuleIds,
+        ).allConfiguredFiltersPassed,
+        true,
+      );
+    }
     assert.equal(generated.puzzle.width, 6);
     assert.equal(generated.puzzle.height, 6);
     assert.equal(generated.puzzle.terminals.length, profile.terminalCount);
@@ -235,6 +275,32 @@ for (const worksheet of [levelTwo, levelThree]) {
     );
   }
 }
+
+const referenceOnly = generateWorksheet({
+  difficulty: 2,
+  puzzleCount: 2,
+  seed: "v34-level-two-four",
+  acceptedDifficultyClassifications: ["reference_like"],
+});
+assert.equal(
+  referenceOnly.puzzles[0].difficultySelection.classification,
+  "reference_like",
+);
+assert.ok(
+  referenceOnly.puzzles[0].provenance.precedingRejections.some(
+    rejection => (
+      rejection.reason === "difficulty_classification_not_selected"
+    ),
+  ),
+);
+assert.equal(
+  referenceOnly.puzzles[1].provenance.profileId,
+  "6x6-4-4-4",
+);
+assert.equal(
+  referenceOnly.puzzles[1].difficultySelection,
+  undefined,
+);
 
 assert.deepEqual(
   levelThree.puzzles.map((generated) => (

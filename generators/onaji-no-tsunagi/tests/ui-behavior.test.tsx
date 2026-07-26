@@ -15,7 +15,10 @@ import type {
   GenerationWorkerResponse,
 } from '../application/generation-worker-contract.ts';
 import {generateWorksheet} from '../domain/generation/generate-worksheet.ts';
-import type {GenerationRequest} from '../domain/types/generation.ts';
+import type {
+  GenerationError,
+  GenerationRequest,
+} from '../domain/types/generation.ts';
 import type {Worksheet} from '../domain/types/worksheet.ts';
 import {WorksheetGeneratorPage} from '../ui/OnajiNoTsunagiPage.tsx';
 import {useWorksheetGeneration} from '../ui/use-worksheet-generation.ts';
@@ -161,6 +164,97 @@ describe('おなじのつなぎ生成UI', () => {
     await flushAnimationFrame(animationFrameCallbacks);
     expect(onRequestPrint).toHaveBeenCalledTimes(1);
   });
+
+  it('10端点の採用基準をWorkerへ渡し、採用分類を問題と答案へ表示する', async () => {
+    await act(async () => {
+      root.render(
+        createElement(WorksheetGeneratorPage, {
+          onRequestPrint: vi.fn(),
+        }),
+      );
+    });
+
+    const [difficultySelect, puzzleCountSelect] =
+      container.querySelectorAll('select');
+    expect(difficultySelect).toBeInstanceOf(HTMLSelectElement);
+    expect(puzzleCountSelect).toBeInstanceOf(HTMLSelectElement);
+    await changeSelect(difficultySelect as HTMLSelectElement, '2');
+    await changeSelect(puzzleCountSelect as HTMLSelectElement, '2');
+    const checkboxes = [
+      ...container.querySelectorAll<HTMLInputElement>(
+        '.ots-selection-options input',
+      ),
+    ];
+    expect(checkboxes).toHaveLength(3);
+    await click(checkboxes[1] as HTMLInputElement);
+    await click(checkboxes[2] as HTMLInputElement);
+    await submitForm(container);
+
+    const worker = lastWorker();
+    const request = worker.lastRequest();
+    expect(request.input).toEqual({
+      difficulty: 2,
+      puzzleCount: 2,
+      seed: 'onaji-start',
+      acceptedDifficultyClassifications: ['reference_like'],
+    });
+    const worksheet = generateWorksheet(request.input as GenerationRequest);
+    await act(async () => {
+      worker.emitMessage({
+        requestId: request.requestId,
+        status: 'ready',
+        worksheet,
+      });
+    });
+
+    const badges = [...container.querySelectorAll('.ots-classification-badge')];
+    expect(badges).toHaveLength(2);
+    expect(badges.every(badge => badge.textContent === '原本近傍')).toBe(true);
+  });
+
+  it('構造化エラーをconsoleへ記録し、JSON保存操作を表示する', async () => {
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+    const createObjectUrl = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:error-report');
+    const revokeObjectUrl = vi
+      .spyOn(URL, 'revokeObjectURL')
+      .mockImplementation(() => {});
+    const anchorClick = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => {});
+    await act(async () => {
+      root.render(
+        createElement(WorksheetGeneratorPage, {
+          onRequestPrint: vi.fn(),
+        }),
+      );
+    });
+    await submitForm(container);
+
+    const worker = lastWorker();
+    const request = worker.lastRequest();
+    const report = difficultyRetryError();
+    await act(async () => {
+      worker.emitMessage({
+        requestId: request.requestId,
+        status: 'error',
+        message: '10問連続したため中止しました。',
+        report,
+      });
+    });
+
+    expect(consoleError).toHaveBeenCalledWith(
+      '[onaji-no-tsunagi] worksheet generation failed',
+      expect.objectContaining({report}),
+    );
+    await click(findButton(container, 'エラーレポートをJSONで保存'));
+    expect(createObjectUrl).toHaveBeenCalledTimes(1);
+    expect(anchorClick).toHaveBeenCalledTimes(1);
+    expect(revokeObjectUrl).toHaveBeenCalledWith('blob:error-report');
+  });
 });
 
 function GenerationHookHarness() {
@@ -268,9 +362,27 @@ function requiredElement(parent: ParentNode, selector: string): Element {
   return element as Element;
 }
 
-async function click(button: HTMLButtonElement): Promise<void> {
+async function click(button: HTMLElement): Promise<void> {
   await act(async () => {
     button.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+  });
+}
+
+async function changeSelect(
+  select: HTMLSelectElement,
+  value: string,
+): Promise<void> {
+  await act(async () => {
+    select.value = value;
+    select.dispatchEvent(new Event('change', {bubbles: true}));
+  });
+}
+
+async function submitForm(parent: ParentNode): Promise<void> {
+  await act(async () => {
+    parent
+      .querySelector('form')
+      ?.dispatchEvent(new Event('submit', {bubbles: true, cancelable: true}));
   });
 }
 
@@ -282,4 +394,19 @@ async function flushAnimationFrame(
   await act(async () => {
     callback?.(performance.now());
   });
+}
+
+function difficultyRetryError(): GenerationError {
+  return {
+    code: 'DIFFICULTY_RETRY_EXHAUSTED',
+    request: {
+      difficulty: 2,
+      puzzleCount: 1,
+      seed: 'retry-error',
+    },
+    profileId: '6x6-4-4-2',
+    puzzleIndex: 0,
+    retryCount: 10,
+    rejectedCandidates: [],
+  };
 }

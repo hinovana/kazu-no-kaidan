@@ -6,7 +6,11 @@
 
 import type {Worksheet} from '../domain/types/worksheet.ts';
 import {PuzzleBoard} from './PuzzleBoard.tsx';
-import {DifficultyStars, SheetHeader} from './WorksheetPreview.tsx';
+import {
+  DifficultyClassificationBadge,
+  DifficultyStars,
+  SheetHeader,
+} from './WorksheetPreview.tsx';
 
 /**
  * canonical solutionだけを描画する答案用紙。
@@ -100,7 +104,12 @@ function AnswerCard({
     <article className="ots-puzzle-card">
       <div className="ots-puzzle-card-heading">
         <h3>問題 {index + 1} の答え</h3>
-        <DifficultyStars level={level} />
+        <div className="ots-puzzle-card-classification">
+          <DifficultyClassificationBadge
+            classification={generated.difficultySelection?.classification}
+          />
+          <DifficultyStars level={level} />
+        </div>
       </div>
       <PuzzleBoard
         puzzle={generated.puzzle}

@@ -58,7 +58,8 @@ assert.match(redirect, /window\.location\.replace/);
 
 for (const text of [
   "開発確認用プロトタイプ",
-  "v3.4 draft: 5×5・6×6・6/8/10/12/14端点・唯一解を完全探索で証明済み",
+  "v3.4 draft.3: 5×5・6×6・6/8/10/12/14端点・唯一解を完全探索で証明済み",
+  "6×6・10端点は端点配置policy適用",
   "6×6の機械gateは完了",
   "6×6・10/12個・唯一解",
   "6×6・14個・唯一解",
@@ -67,6 +68,11 @@ for (const text of [
   "児童利用・学力判定不可",
   "この条件でつくる",
   "ランダムseed",
+  "6×6・10端点の採用基準",
+  "原本近傍",
+  "明らかに難しい側",
+  "指標混合",
+  "明らかに簡単側",
   "答えを表示",
   "ペアリングも含め",
   "お手本JSONを盤面で確認",
@@ -86,6 +92,10 @@ assert.doesNotMatch(generatorPageSource, /reviewMode/);
 assert.match(generationControls, /globalThis\.crypto\.getRandomValues/);
 assert.match(workerSource, /generateWorksheetUseCase\(input\)/);
 assert.match(workerSource, /generationErrorMessage/);
+assert.match(workerSource, /generationErrorReport/);
+assert.match(generationHook, /console\.error/);
+assert.match(page, /エラーレポートをJSONで保存/);
+assert.match(problemPreview, /DifficultyClassificationBadge/);
 assert.match(page, /<AnswerPreview worksheet=\{state\.worksheet\} hidden=\{!showAnswers\} \/>/);
 assert.match(problemPreview, /solution=\{null\}/);
 assert.match(answerPreview, /solution=\{generated\.canonicalSolution\}/);

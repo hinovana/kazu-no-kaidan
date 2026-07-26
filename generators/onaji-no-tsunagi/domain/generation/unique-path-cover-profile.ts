@@ -13,6 +13,12 @@ import type {
   UniquePathCoverProfileId,
 } from '../types/puzzle.ts';
 import {createSeededRandom} from './random.ts';
+import {
+  SIX_BY_SIX_TEN_TERMINAL_SELECTION_POLICY,
+  UNFILTERED_PUZZLE_SELECTION_POLICY,
+  type PuzzleSelectionPolicy,
+} from './puzzle-selection-policy.ts';
+import type {TerminalPlacementPolicy} from './terminal-placement-policy.ts';
 
 /** profileごとに切り替える、版・seed・記号割当・cover再利用の方針。 */
 export interface UniquePathCoverGenerationPolicy {
@@ -33,6 +39,8 @@ export interface UniquePathCoverGenerationPolicy {
 export interface UniquePathCoverProfile {
   readonly profileId: UniquePathCoverProfileId;
   readonly generationPolicy: UniquePathCoverGenerationPolicy;
+  readonly terminalPlacementPolicy: TerminalPlacementPolicy | null;
+  readonly puzzleSelectionPolicy: PuzzleSelectionPolicy;
   readonly width: number;
   readonly height: number;
   readonly terminalPattern: TerminalMultiplicityPattern;
@@ -67,10 +75,22 @@ const SIX_BY_SIX_GENERATION_POLICY = {
   reuseRouteCoverAcrossSymbolAssignments: true,
 } as const satisfies UniquePathCoverGenerationPolicy;
 
+const SIX_BY_SIX_TEN_TERMINAL_PLACEMENT_POLICY = {
+  policyId: 'onaji-no-tsunagi-terminal-placement.6x6-4-4-2.v1',
+  maximumOuterAdjacencyPairCount: 1,
+  maximumCentralAdjacencyPairCount: 1,
+  prohibitStraightTerminalRuns: true,
+  prohibitLShapedTerminalTriples: true,
+  requireEverySymbolInCentralRegion: true,
+  prohibitSameSymbolOuterAdjacency: true,
+} as const satisfies TerminalPlacementPolicy;
+
 const FIVE_BY_FIVE_PROFILES = {
   '5x5-2-2-2': {
     profileId: '5x5-2-2-2',
     generationPolicy: FIVE_BY_FIVE_GENERATION_POLICY,
+    terminalPlacementPolicy: null,
+    puzzleSelectionPolicy: UNFILTERED_PUZZLE_SELECTION_POLICY,
     width: 5,
     height: 5,
     terminalPattern: '2-2-2',
@@ -102,6 +122,8 @@ const FIVE_BY_FIVE_PROFILES = {
   '5x5-4-2-2': {
     profileId: '5x5-4-2-2',
     generationPolicy: FIVE_BY_FIVE_GENERATION_POLICY,
+    terminalPlacementPolicy: null,
+    puzzleSelectionPolicy: UNFILTERED_PUZZLE_SELECTION_POLICY,
     width: 5,
     height: 5,
     terminalPattern: '4-2-2',
@@ -131,6 +153,8 @@ const FIVE_BY_FIVE_PROFILES = {
   '5x5-4-4-2': {
     profileId: '5x5-4-4-2',
     generationPolicy: FIVE_BY_FIVE_GENERATION_POLICY,
+    terminalPlacementPolicy: null,
+    puzzleSelectionPolicy: UNFILTERED_PUZZLE_SELECTION_POLICY,
     width: 5,
     height: 5,
     terminalPattern: '4-4-2',
@@ -162,6 +186,8 @@ const SIX_BY_SIX_PROFILES = {
   '6x6-4-4-2': {
     profileId: '6x6-4-4-2',
     generationPolicy: SIX_BY_SIX_GENERATION_POLICY,
+    terminalPlacementPolicy: SIX_BY_SIX_TEN_TERMINAL_PLACEMENT_POLICY,
+    puzzleSelectionPolicy: SIX_BY_SIX_TEN_TERMINAL_SELECTION_POLICY,
     width: 6,
     height: 6,
     terminalPattern: '4-4-2',
@@ -189,6 +215,8 @@ const SIX_BY_SIX_PROFILES = {
   '6x6-4-4-4': {
     profileId: '6x6-4-4-4',
     generationPolicy: SIX_BY_SIX_GENERATION_POLICY,
+    terminalPlacementPolicy: null,
+    puzzleSelectionPolicy: UNFILTERED_PUZZLE_SELECTION_POLICY,
     width: 6,
     height: 6,
     terminalPattern: '4-4-4',
@@ -216,6 +244,8 @@ const SIX_BY_SIX_PROFILES = {
   '6x6-6-4-4': {
     profileId: '6x6-6-4-4',
     generationPolicy: SIX_BY_SIX_GENERATION_POLICY,
+    terminalPlacementPolicy: null,
+    puzzleSelectionPolicy: UNFILTERED_PUZZLE_SELECTION_POLICY,
     width: 6,
     height: 6,
     terminalPattern: '6-4-4',

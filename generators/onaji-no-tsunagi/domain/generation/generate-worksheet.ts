@@ -9,11 +9,15 @@
 import {optimizeSolution} from '../solver/optimize-solution.ts';
 import {solvePuzzle} from '../solver/solve-puzzle.ts';
 import type {
+  AcceptedDifficultyClassification,
   CandidateRejection,
   CandidateRejectionReason,
+  DifficultyClassification,
+  DifficultyRejectedCandidate,
   GenerationError,
   GenerationRequest,
 } from '../types/generation.ts';
+import {ACCEPTABLE_DIFFICULTY_CLASSIFICATIONS} from '../types/generation.ts';
 import type {
   GeneratedPuzzle,
   UniquePathCoverEntryAnalysis,
@@ -30,6 +34,12 @@ import {explainUniquePathCover} from '../validation/explain-unique-path-cover.ts
 import {runMachineChecks} from '../validation/run-machine-checks.ts';
 import {validateSolution} from '../validation/validate-solution.ts';
 import {analyzeDifficulty} from './analyze-difficulty.ts';
+import {classifyDifficultySelection} from './classify-difficulty-selection.ts';
+import {
+  createDifficultyRetryState,
+  observeDifficultyRetryCandidate,
+  type DifficultyRetryState,
+} from './difficulty-retry-policy.ts';
 import {
   buildUniquePathCover,
   getUniquePathCoverProfile,
@@ -42,6 +52,7 @@ import {
   getProfileSymbolAssignmentVariantCount,
 } from './generation-profile-adapter.ts';
 import {createSeededRandom, stableHash} from './random.ts';
+import {evaluatePuzzleSelectionFilters} from './puzzle-selection-policy.ts';
 
 interface GenerationProgress {
   totalAttempts: number;
@@ -64,6 +75,8 @@ type CandidateEvaluation =
       readonly status: 'rejected';
       readonly reason: CandidateRejectionReason;
       readonly skipRemainingSymbolAssignments: boolean;
+      readonly difficultyClassification?: DifficultyClassification;
+      readonly difficultyRejectedCandidate?: DifficultyRejectedCandidate;
     };
 
 /**
@@ -168,6 +181,7 @@ function generatePuzzle(
   const symbolAssignmentVariantCount =
     getProfileSymbolAssignmentVariantCount(profile);
   const puzzleRejections: CandidateRejection[] = [];
+  let difficultyRetryState = createDifficultyRetryState();
 
   for (
     let candidateIndex = 0;
@@ -198,6 +212,28 @@ function generatePuzzle(
       puzzleRejections,
       progress.allRejections,
     );
+    difficultyRetryState = updateClearlyEasierRetryState(
+      evaluation,
+      difficultyRetryState,
+    );
+    const maximumClearlyEasierRetries =
+      profile.puzzleSelectionPolicy.maximumConsecutiveClearlyEasierCandidates;
+    if (
+      maximumClearlyEasierRetries !== null &&
+      difficultyRetryState.consecutiveClearlyEasierCandidates.length >=
+        maximumClearlyEasierRetries
+    ) {
+      throw new GenerationFailure({
+        code: 'DIFFICULTY_RETRY_EXHAUSTED',
+        request,
+        profileId: profile.profileId,
+        puzzleIndex,
+        retryCount: maximumClearlyEasierRetries,
+        rejectedCandidates: [
+          ...difficultyRetryState.consecutiveClearlyEasierCandidates,
+        ],
+      });
+    }
     if (evaluation.skipRemainingSymbolAssignments) {
       candidateIndex +=
         symbolAssignmentVariantCount - identity.symbolAssignmentVariant - 1;
@@ -264,6 +300,9 @@ function evaluateCandidate(
   }
   if (buildResult.status === 'not_constructed') {
     return rejectedCandidate('route_plan_not_constructed', true);
+  }
+  if (buildResult.status === 'symbol_assignment_unavailable') {
+    return rejectedCandidate('terminal_symbol_assignment_unavailable', true);
   }
 
   const {plan} = buildResult;
@@ -344,58 +383,142 @@ function evaluateCandidate(
     return rejectedCandidate('difficulty_band_mismatch');
   }
 
-  return {
-    status: 'accepted',
-    generatedPuzzle: {
-      puzzle: plan.puzzle,
-      canonicalSolution: optimization.solution,
-      answerCoverage: coverage,
-      solutionCount: {kind: 'exact', count: 1},
-      solutionCost: optimization.cost,
-      entry: entryResult.analysis,
-      geometry,
-      interactionWitnesses: explainUniquePathCover(
-        entryResult.analysis,
-        validity.metrics.exploredStateCount,
-      ),
-      routeRoles: plan.routeRoles,
-      generationWitness: {
-        plantedInflationEdgeCount:
-          plantedCost.totalEdgeCount - optimization.cost.totalEdgeCount,
-        rolePreservationStatus: 'proven',
-      },
-      difficulty,
-      qualityProof: {
-        status: 'optimal',
-        exploredStateCount: optimization.exploredStateCount,
-      },
-      uniquenessProof: {
-        status: 'proven',
-        exploredStateCount: validity.metrics.exploredStateCount,
-      },
-      provenance: {
-        terminalPattern: profile.terminalPattern,
-        profileId: profile.profileId,
-        constructionStateCount: buildResult.constructionStateCount,
-        pathLengthProfile: buildResult.pathLengthProfile,
+  const selectionFilterEvaluation = evaluatePuzzleSelectionFilters(
+    plan.puzzle,
+    profile.puzzleSelectionPolicy.filterRuleIds,
+  );
+  if (!selectionFilterEvaluation.allConfiguredFiltersPassed) {
+    return rejectedCandidate('puzzle_selection_filter_failed');
+  }
+
+  const difficultyReference = profile.puzzleSelectionPolicy.difficultyReference;
+  const difficultySelection =
+    difficultyReference === null
+      ? undefined
+      : classifyDifficultySelection(
+          {
+            entryHypothesisCount: entryResult.analysis.naturalHypothesisCount,
+            solverStateCount: validity.metrics.exploredStateCount,
+            forcedExitCount: entryResult.analysis.forcedExitTerminalIds.length,
+            totalTurnCount: optimization.cost.totalTurnCount,
+          },
+          difficultyReference,
+        );
+
+  const generatedPuzzle: GeneratedPuzzle = {
+    puzzle: plan.puzzle,
+    canonicalSolution: optimization.solution,
+    answerCoverage: coverage,
+    solutionCount: {kind: 'exact', count: 1},
+    solutionCost: optimization.cost,
+    entry: entryResult.analysis,
+    geometry,
+    interactionWitnesses: explainUniquePathCover(
+      entryResult.analysis,
+      validity.metrics.exploredStateCount,
+    ),
+    routeRoles: plan.routeRoles,
+    generationWitness: {
+      plantedInflationEdgeCount:
+        plantedCost.totalEdgeCount - optimization.cost.totalEdgeCount,
+      rolePreservationStatus: 'proven',
+    },
+    difficulty,
+    ...(difficultySelection === undefined ? {} : {difficultySelection}),
+    qualityProof: {
+      status: 'optimal',
+      exploredStateCount: optimization.exploredStateCount,
+    },
+    uniquenessProof: {
+      status: 'proven',
+      exploredStateCount: validity.metrics.exploredStateCount,
+    },
+    provenance: {
+      terminalPattern: profile.terminalPattern,
+      profileId: profile.profileId,
+      constructionStateCount: buildResult.constructionStateCount,
+      pathLengthProfile: buildResult.pathLengthProfile,
+      candidateIndex: identity.candidateIndex,
+      puzzleSeed: identity.puzzleSeed,
+      topologyHash: plan.topologyHash,
+      precedingRejections: [...precedingRejections],
+      ...(buildResult.terminalPlacementDiagnostics === undefined
+        ? {}
+        : {
+            terminalPlacementDiagnostics:
+              buildResult.terminalPlacementDiagnostics,
+          }),
+    },
+  };
+  if (difficultySelection?.classification === 'clearly_easier') {
+    return rejectedCandidate('clearly_easier_candidate', false, {
+      difficultyClassification: difficultySelection.classification,
+      difficultyRejectedCandidate: {
         candidateIndex: identity.candidateIndex,
         puzzleSeed: identity.puzzleSeed,
         topologyHash: plan.topologyHash,
-        precedingRejections: [...precedingRejections],
+        puzzle: plan.puzzle,
+        canonicalSolution: optimization.solution,
+        selection: difficultySelection,
+        terminalPlacementFilterResults: selectionFilterEvaluation.results,
       },
-    },
+    });
+  }
+  if (
+    difficultySelection !== undefined &&
+    !acceptedDifficultyClassifications(request).includes(
+      difficultySelection.classification,
+    )
+  ) {
+    return rejectedCandidate('difficulty_classification_not_selected', false, {
+      difficultyClassification: difficultySelection.classification,
+    });
+  }
+
+  return {
+    status: 'accepted',
+    generatedPuzzle,
   };
 }
 
 function rejectedCandidate(
   reason: CandidateRejectionReason,
   skipRemainingSymbolAssignments = false,
+  detail: Pick<
+    Extract<CandidateEvaluation, {readonly status: 'rejected'}>,
+    'difficultyClassification' | 'difficultyRejectedCandidate'
+  > = {},
 ): CandidateEvaluation {
   return {
     status: 'rejected',
     reason,
     skipRemainingSymbolAssignments,
+    ...detail,
   };
+}
+
+function updateClearlyEasierRetryState(
+  evaluation: Extract<CandidateEvaluation, {readonly status: 'rejected'}>,
+  state: DifficultyRetryState,
+): DifficultyRetryState {
+  if (evaluation.difficultyClassification === undefined) {
+    return state;
+  }
+  return observeDifficultyRetryCandidate(state, {
+    classification: evaluation.difficultyClassification,
+    ...(evaluation.difficultyRejectedCandidate === undefined
+      ? {}
+      : {rejectedCandidate: evaluation.difficultyRejectedCandidate}),
+  });
+}
+
+function acceptedDifficultyClassifications(
+  request: GenerationRequest,
+): readonly AcceptedDifficultyClassification[] {
+  return (
+    request.acceptedDifficultyClassifications ??
+    ACCEPTABLE_DIFFICULTY_CLASSIFICATIONS
+  );
 }
 
 function recordRejection(

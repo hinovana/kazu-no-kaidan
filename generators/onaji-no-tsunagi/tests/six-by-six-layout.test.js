@@ -6,6 +6,9 @@ import {
 import { createSeededRandom } from "../domain/generation/random.ts";
 import { analyzeSolutionCoverage } from "../domain/validation/analyze-solution-coverage.ts";
 import { calculateSolutionCost } from "../domain/validation/analyze-solution-geometry.ts";
+import {
+  analyzeTerminalPlacement,
+} from "../domain/validation/analyze-terminal-placement.ts";
 import { validateSolution } from "../domain/validation/validate-solution.ts";
 
 const profileIds = [
@@ -43,6 +46,21 @@ for (const profileId of profileIds) {
     }
     builtCount += 1;
     const { plan } = result;
+    if (profileId === "6x6-4-4-2") {
+      const placement = analyzeTerminalPlacement(plan.puzzle);
+      assert.equal(placement.satisfiesEdgeAdjacencyPairLimit, true);
+      assert.equal(placement.satisfiesNoLShapedTerminalTriple, true);
+      assert.equal(placement.satisfiesNoStraightTerminalRun, true);
+      assert.equal(placement.satisfiesLimitedCentralAdjacency, true);
+      assert.equal(placement.satisfiesCentralSymbolCoverage, true);
+      assert.equal(
+        placement.satisfiesDifferentSymbolEdgeAdjacency,
+        true,
+      );
+      assert.ok(result.terminalPlacementDiagnostics);
+    } else {
+      assert.equal(result.terminalPlacementDiagnostics, undefined);
+    }
     assert.equal(plan.puzzle.width, 6);
     assert.equal(plan.puzzle.height, 6);
     assert.equal(plan.puzzle.terminals.length, profile.terminalCount);

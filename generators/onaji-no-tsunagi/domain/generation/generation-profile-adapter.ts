@@ -19,16 +19,18 @@ import type {UniquePathCoverProfile} from './unique-path-cover-profile.ts';
 /** Worksheetと来歴へ保存する、profile世代に対応した版集合。 */
 export interface GeneratorVersions {
   readonly schemaVersion:
-    'onaji-no-tsunagi.worksheet.v3.3' | 'onaji-no-tsunagi.worksheet.v3.4-draft';
+    | 'onaji-no-tsunagi.worksheet.v3.3'
+    | 'onaji-no-tsunagi.worksheet.v3.4-draft.3';
   readonly generatorVersion:
-    'onaji-no-tsunagi-generator.v3.3' | 'onaji-no-tsunagi-generator.v3.4-draft';
+    | 'onaji-no-tsunagi-generator.v3.3'
+    | 'onaji-no-tsunagi-generator.v3.4-draft.3';
   readonly algorithmSpecVersion:
-    'onaji-no-tsunagi-spec.v3.3' | 'onaji-no-tsunagi-spec.v3.4-draft';
+    'onaji-no-tsunagi-spec.v3.3' | 'onaji-no-tsunagi-spec.v3.4-draft.3';
   readonly analyzerVersion:
     | 'onaji-no-tsunagi-difficulty.v3.3'
     | 'onaji-no-tsunagi-difficulty.v3.4-draft';
   readonly profileVersion:
-    'onaji-no-tsunagi-profiles.v3.3' | 'onaji-no-tsunagi-profiles.v3.4-draft';
+    'onaji-no-tsunagi-profiles.v3.3' | 'onaji-no-tsunagi-profiles.v3.4-draft.3';
 }
 
 /** 一候補を再現する経路seed、成果物seed、記号割当variant。 */
@@ -47,11 +49,11 @@ const VERSIONS_BY_TRACK = {
     profileVersion: 'onaji-no-tsunagi-profiles.v3.3',
   },
   'v3.4-draft': {
-    schemaVersion: 'onaji-no-tsunagi.worksheet.v3.4-draft',
-    generatorVersion: 'onaji-no-tsunagi-generator.v3.4-draft',
-    algorithmSpecVersion: 'onaji-no-tsunagi-spec.v3.4-draft',
+    schemaVersion: 'onaji-no-tsunagi.worksheet.v3.4-draft.3',
+    generatorVersion: 'onaji-no-tsunagi-generator.v3.4-draft.3',
+    algorithmSpecVersion: 'onaji-no-tsunagi-spec.v3.4-draft.3',
     analyzerVersion: 'onaji-no-tsunagi-difficulty.v3.4-draft',
-    profileVersion: 'onaji-no-tsunagi-profiles.v3.4-draft',
+    profileVersion: 'onaji-no-tsunagi-profiles.v3.4-draft.3',
   },
 } as const satisfies Readonly<
   Record<

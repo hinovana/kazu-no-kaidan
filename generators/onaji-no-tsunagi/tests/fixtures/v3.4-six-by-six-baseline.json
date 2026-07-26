@@ -1,6 +1,6 @@
 {
-  "schemaVersion": "onaji-no-tsunagi.six-by-six-regression-baseline.v1",
-  "corpusVersion": "onaji-no-tsunagi-corpus.v3.4-draft",
+  "schemaVersion": "onaji-no-tsunagi.six-by-six-regression-baseline.v2",
+  "corpusVersion": "onaji-no-tsunagi-corpus.v3.4-draft.3",
   "sampleSizePerProfile": 1000,
   "minimumRegressionSampleSize": 100,
   "tolerances": {
@@ -12,54 +12,54 @@
   },
   "profiles": {
     "6x6-4-4-2": {
-      "uniqueTopologyCount": 891,
-      "maximumCandidateIndex": 574,
-      "rejectionsPerAccepted": 16.173,
+      "uniqueTopologyCount": 258,
+      "maximumCandidateIndex": 354,
+      "rejectionsPerAccepted": 14.963,
       "constructionStates": {
-        "maximum": 7618,
-        "p95": 1009
+        "maximum": 29579,
+        "p95": 25388
       },
       "uniquenessStates": {
-        "maximum": 12409,
-        "p95": 2535
+        "maximum": 4425,
+        "p95": 1700
       },
       "optimalityStates": {
-        "maximum": 12455,
-        "p95": 2535
+        "maximum": 6710,
+        "p95": 2130
       }
     },
     "6x6-4-4-4": {
-      "uniqueTopologyCount": 982,
-      "maximumCandidateIndex": 167,
-      "rejectionsPerAccepted": 7.107,
+      "uniqueTopologyCount": 980,
+      "maximumCandidateIndex": 184,
+      "rejectionsPerAccepted": 6.576,
       "constructionStates": {
-        "maximum": 21289,
-        "p95": 2931
+        "maximum": 20531,
+        "p95": 2906
       },
       "uniquenessStates": {
-        "maximum": 9431,
-        "p95": 960
+        "maximum": 4069,
+        "p95": 1177
       },
       "optimalityStates": {
-        "maximum": 4667,
-        "p95": 858
+        "maximum": 5281,
+        "p95": 922
       }
     },
     "6x6-6-4-4": {
-      "uniqueTopologyCount": 995,
-      "maximumCandidateIndex": 847,
-      "rejectionsPerAccepted": 12.714,
+      "uniqueTopologyCount": 996,
+      "maximumCandidateIndex": 529,
+      "rejectionsPerAccepted": 12.917,
       "constructionStates": {
-        "maximum": 29042,
-        "p95": 15055
+        "maximum": 29267,
+        "p95": 14073
       },
       "uniquenessStates": {
-        "maximum": 1689,
-        "p95": 373
+        "maximum": 2595,
+        "p95": 434
       },
       "optimalityStates": {
-        "maximum": 1547,
-        "p95": 348
+        "maximum": 2179,
+        "p95": 365
       }
     }
   }

@@ -10,7 +10,10 @@ import type {
   GenerationWorkerRequest,
   GenerationWorkerResponse,
 } from './generation-worker-contract.ts';
-import {generationErrorMessage} from './generation-error-message.ts';
+import {
+  generationErrorMessage,
+  generationErrorReport,
+} from './generation-error-message.ts';
 import {generateWorksheetUseCase} from './generate-worksheet-use-case.ts';
 
 self.addEventListener(
@@ -25,10 +28,12 @@ self.addEventListener(
         worksheet: generateWorksheetUseCase(input),
       };
     } catch (error: unknown) {
+      const report = generationErrorReport(error);
       response = {
         requestId,
         status: 'error',
         message: generationErrorMessage(error),
+        ...(report === undefined ? {} : {report}),
       };
     }
     self.postMessage(response);

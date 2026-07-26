@@ -60,13 +60,17 @@ generators/onaji-no-tsunagi/
 │   ├── generation/
 │   │   ├── analyze-difficulty.ts
 │   │   ├── build-unique-path-cover.ts
+│   │   ├── classify-difficulty-selection.ts
+│   │   ├── difficulty-retry-policy.ts
 │   │   ├── generate-worksheet.ts
 │   │   ├── materialize-path-plan.ts
 │   │   ├── path-candidate-source.ts
 │   │   ├── path-cover-grid.ts
 │   │   ├── path-symbol-assignment.ts
+│   │   ├── puzzle-selection-policy.ts
 │   │   ├── random.ts
 │   │   ├── select-path-cover.ts
+│   │   ├── terminal-placement-policy.ts
 │   │   └── unique-path-cover-profile.ts
 │   ├── grid/
 │   │   ├── adjacency.ts
@@ -86,6 +90,7 @@ generators/onaji-no-tsunagi/
 │   │   ├── solution.ts
 │   │   └── worksheet.ts
 │   └── validation/
+│       ├── analyze-terminal-placement.ts
 │       ├── analyze-solution-coverage.ts
 │       ├── analyze-solution-geometry.ts
 │       ├── analyze-unique-path-cover-entry.ts
@@ -147,15 +152,21 @@ TypeDocの生成物はリポジトリルートの
 `docs/onaji-no-tsunagi/reference/`へ置く。このディレクトリはGit管理対象外とし、
 生成物を直接編集せず、`npm run docs:onaji-no-tsunagi`で再生成する。
 
+`tests/six-by-six-difficulty-audit.mjs`は、ローカル原本参照JSONを明示的に
+受け取り、profile別の生成分布と原本基準点を比較する。
+`tests/difficulty-audit-policy.mjs`が候補分類と標本選定、
+`tests/difficulty-audit-html.mjs`が人間レビュー用HTMLを担当する。
+原本座標と生成した監査HTML・JSONはGit管理対象にしない。
+
 ## 4. `application/`: Webとdomainの境界
 
 | ファイル | 責務 |
 | --- | --- |
 | `parse-generation-request.ts` | フォームなどから来る未知の入力を`GenerationRequest`へ厳格変換する |
 | `generate-worksheet-use-case.ts` | 入力parse後にdomainのWorksheet生成を呼ぶ同期ユースケース |
-| `generation-worker-contract.ts` | request ID付きのWorker要求と、同じIDを返す成功・失敗メッセージ型 |
+| `generation-worker-contract.ts` | request ID付きのWorker要求と、構造化error reportを含む成功・失敗メッセージ型 |
 | `generation-worker.ts` | 重い生成処理をメインスレッド外で実行するWorker入口 |
-| `generation-error-message.ts` | domain/applicationの例外を画面向け日本語へ変換する |
+| `generation-error-message.ts` | domain/applicationの例外を画面向け日本語と保存可能なerror reportへ変換する |
 | `decode-reference-corpus.ts` | 原本参照JSONを厳格デコードし、問題validatorへ接続する |
 | `strict-json-reader.ts` | 未知のJSON値をpath付きエラーへ変換する、schema非依存の低水準reader |
 
@@ -195,6 +206,10 @@ TypeDocの生成物はリポジトリルートの
 | `path-candidate-source.ts` | 低曲がり単純経路候補の列挙、向きの重複排除、geometry単位の遅延cache |
 | `select-path-cover.ts` | 経路候補から盤面全体を一度ずつ覆う組を探すexact-cover探索 |
 | `path-symbol-assignment.ts` | 構成済み経路への三記号割当と、6×6の割当variant列挙 |
+| `terminal-placement-policy.ts` | 6x6-4-4-2の端点配置条件をexact-coverの枝刈りと記号割当て制約へ変換し、探索診断値を集計 |
+| `puzzle-selection-policy.ts` | profile共通の後段配置filterと、10端点だけに有効な原本基準点・連続棄却上限 |
+| `classify-difficulty-selection.ts` | 原本集約指標との4指標比較から、レビュー用の4分類を決定する |
+| `difficulty-retry-policy.ts` | 分類済み候補の「明らかに簡単側」連続数を、ほかの棄却理由と分離して追跡する |
 | `path-cover-grid.ts` | 生成seed互換の隣接順と、経路構成用BigInt bitmask操作 |
 | `materialize-path-plan.ts` | 選択した経路計画へ端点ID・記号・route roleを割り当て、PuzzleとSolutionへ変換する |
 | `generate-worksheet.ts` | profile選択、候補生成、独立solver、optimizer、品質gateを統括しWorksheetを作る |
@@ -225,6 +240,7 @@ TypeDocの生成物はリポジトリルートの
 | `analyze-solution-coverage.ts` | 解が使用するマス数と空きマス数 |
 | `analyze-solution-geometry.ts` | 辺数、曲がり、U字、経路形状cost |
 | `analyze-unique-path-cover-entry.ts` | 取っ掛かり候補、端点集中、ペアリング候補など入口品質 |
+| `analyze-terminal-placement.ts` | 中央・外周隣接、縦横3連、L字、記号網羅など、生成policyと監査で共有する端点配置分析 |
 | `solution-route-roles.ts` | solver解がsolution-first時のroute roleを保つか調べる |
 | `run-machine-checks.ts` | 採用前の機械gateをまとめて実行する |
 | `explain-unique-path-cover.ts` | 機械分析を開発診断・説明用の文へ変換する |
@@ -268,7 +284,19 @@ validatorは「保存済みの答えと同じか」ではなく、ルールを�
 | `validator.test.js` | PuzzleとSolutionの正例・反例 |
 | `reference-corpus.test.js` | 参照JSONのschema、厳格デコード、SHA結合、異常系 |
 | `six-by-six-layout.test.js` | 6×6の構成成功率、状態予算、経路長profile、トポロジー |
+| `terminal-placement-policy.test.js` | 配置条件の境界、L字の完成時判定、有効な記号割当てだけを具体化する契約 |
+| `puzzle-selection-policy.test.js` | 共通の空policy、10端点の4 filter・原本基準分類・10回連続棄却 |
+| `generation-error-report.test.js` | 10回連続棄却errorの日本語表示と構造化report抽出 |
+| `ui-behavior.test.tsx` | checkbox入力、分類label、Worker競合、構造化error log、JSON保存、印刷遷移 |
 | `six-by-six-corpus.mjs` | 6×6各profileの多数seed生成、完全探索、品質gate、JSON基準値との性能・多様性回帰 |
+| `six-by-six-difficulty-audit.mjs` | ローカル原本3問と生成3,000問の比較、監査JSON・HTMLの出力 |
+| `six-by-six-central-terminal-experiment.mjs` | 6x6-4-4-2の10個の端点配置条件を同数のcohortで段階評価し、条件別却下率を出力 |
+| `difficulty-audit-analysis.mjs` | 原本と生成結果を共通の監査候補・profile情報へ変換 |
+| `difficulty-audit-hypothesis.mjs` | 中央・外周条件、中央外周境界、縦横3連、L字3連、2×2、外周一辺集中型を判定 |
+| `difficulty-audit-hypothesis.test.js` | L字3連、縦横3連、2×2、中央外周境界、外周一辺集中型の回転対称な判定境界 |
+| `difficulty-audit-policy.mjs` | 原本近傍・簡単側・難しい側・混合の分類とレビュー標本選定 |
+| `difficulty-audit-policy.test.js` | 難易度監査の分類方向、近傍条件、20問の重複なし選定 |
+| `difficulty-audit-html.mjs` | 問題・答え・指標・人間レビュー入力を含む自己完結HTML |
 | `ui-structure.test.js` | SPA登録、問題・答え分離、印刷CSS、参照確認画面の静的構造 |
 | `ui-behavior.test.tsx` | 実DOMでWorker多重要求、最新結果の表示順、印刷前の答案状態 |
 | `typescript-contract.test.ts` | 公開する教材内型のコンパイル契約 |
@@ -280,12 +308,20 @@ validatorは「保存済みの答えと同じか」ではなく、ルールを�
 node generators/onaji-no-tsunagi/tests/<対象>.test.js
 npm run test:onaji-no-tsunagi
 npm run test:onaji-no-tsunagi:corpus
+npm run test:onaji-no-tsunagi:6x6-corpus
 npm run typecheck:onaji-no-tsunagi
 npm test
 npm run build
 ```
 
 コーパステストは通常の単体テストより重いため、作問文法、solver、品質gate、profile、seed再現性を変更したときに実行する。
+
+原本6×6を基準点とする監査は、公開fixtureではなくローカル参照JSONのpathを
+明示して`npm run audit:onaji-no-tsunagi:6x6-difficulty -- ...`を実行する。
+端点配置仮説の対照実験は
+`npm run audit:onaji-no-tsunagi:6x6-terminal-placement -- ...`を実行する。
+具体的な引数と結果は
+[`six-by-six-difficulty-audit.md`](six-by-six-difficulty-audit.md)を参照する。
 
 ## 9. 主な処理フロー
 

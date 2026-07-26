@@ -9,8 +9,11 @@
  */
 
 import {indexToCell} from '../grid/coordinates.ts';
-import type {AvailableDifficultyLevel} from '../types/generation.ts';
-import type {UniquePathCoverProfileId} from '../types/puzzle.ts';
+import type {
+  AvailableDifficultyLevel,
+  TerminalPlacementSearchDiagnostics,
+} from '../types/generation.ts';
+import type {SymbolId, UniquePathCoverProfileId} from '../types/puzzle.ts';
 import {
   assignProfilePathSymbols,
   canReuseRouteCover,
@@ -29,6 +32,7 @@ import {
   type UniquePathCoverProfile,
 } from './unique-path-cover-profile.ts';
 import {selectPathCover, type PathCoverResult} from './select-path-cover.ts';
+import {createTerminalPlacementSearch} from './terminal-placement-policy.ts';
 
 export type {UniquePathCoverProfile} from './unique-path-cover-profile.ts';
 
@@ -44,14 +48,22 @@ type BuildUniquePathCoverResult =
       readonly plan: MaterializedPathPlan;
       readonly constructionStateCount: number;
       readonly pathLengthProfile: readonly number[];
+      readonly terminalPlacementDiagnostics?: TerminalPlacementSearchDiagnostics;
     }
   | {
       readonly status: 'not_constructed';
       readonly constructionStateCount: number;
+      readonly terminalPlacementDiagnostics?: TerminalPlacementSearchDiagnostics;
     }
   | {
       readonly status: 'budget_exhausted';
       readonly constructionStateCount: number;
+      readonly terminalPlacementDiagnostics?: TerminalPlacementSearchDiagnostics;
+    }
+  | {
+      readonly status: 'symbol_assignment_unavailable';
+      readonly constructionStateCount: number;
+      readonly terminalPlacementDiagnostics: TerminalPlacementSearchDiagnostics;
     };
 
 interface BuildUniquePathCoverOptions {
@@ -63,6 +75,8 @@ interface CachedRouteCover {
   readonly cacheKey: string;
   readonly lengths: readonly number[];
   readonly result: PathCoverResult;
+  readonly allowedSymbolAssignments?: readonly (readonly SymbolId[])[];
+  readonly terminalPlacementDiagnostics?: TerminalPlacementSearchDiagnostics;
 }
 
 let lastReusableRouteCover: CachedRouteCover | undefined;
@@ -123,15 +137,35 @@ export function buildUniquePathCover(
     return {status: 'not_constructed', constructionStateCount: 0};
   }
   if (routeCover.result.status !== 'built') {
-    return routeCover.result;
+    return routeCover.terminalPlacementDiagnostics === undefined
+      ? routeCover.result
+      : {
+          ...routeCover.result,
+          terminalPlacementDiagnostics: routeCover.terminalPlacementDiagnostics,
+        };
   }
 
-  const symbols = assignProfilePathSymbols(
-    profile,
-    routeSeed,
-    random,
-    options.symbolAssignmentVariant ?? 0,
-  );
+  const symbolAssignmentVariant = options.symbolAssignmentVariant ?? 0;
+  const symbols =
+    routeCover.allowedSymbolAssignments?.[symbolAssignmentVariant] ??
+    (routeCover.allowedSymbolAssignments === undefined
+      ? assignProfilePathSymbols(
+          profile,
+          routeSeed,
+          random,
+          symbolAssignmentVariant,
+        )
+      : undefined);
+  if (symbols === undefined) {
+    if (routeCover.terminalPlacementDiagnostics !== undefined) {
+      return {
+        status: 'symbol_assignment_unavailable',
+        constructionStateCount: routeCover.result.constructionStateCount,
+        terminalPlacementDiagnostics: routeCover.terminalPlacementDiagnostics,
+      };
+    }
+    throw new TypeError('terminal symbol assignment is unavailable');
+  }
   if (symbols.length !== profile.pathCount) {
     throw new TypeError('terminal profile does not match its path count');
   }
@@ -155,6 +189,11 @@ export function buildUniquePathCover(
     ),
     constructionStateCount: routeCover.result.constructionStateCount,
     pathLengthProfile: [...routeCover.lengths],
+    ...(routeCover.terminalPlacementDiagnostics === undefined
+      ? {}
+      : {
+          terminalPlacementDiagnostics: routeCover.terminalPlacementDiagnostics,
+        }),
   };
 }
 
@@ -165,6 +204,8 @@ function buildOrReuseRouteCover(
 ): {
   readonly lengths: readonly number[];
   readonly result: PathCoverResult;
+  readonly allowedSymbolAssignments?: readonly (readonly SymbolId[])[];
+  readonly terminalPlacementDiagnostics?: TerminalPlacementSearchDiagnostics;
 } {
   const cacheKey = `${profile.profileId}|${routeSeed}`;
   if (
@@ -178,16 +219,42 @@ function buildOrReuseRouteCover(
     profile.pathLengthProfiles[
       random.integer(0, profile.pathLengthProfiles.length - 1)
     ] ?? [];
+  const terminalPlacementSearch =
+    profile.terminalPlacementPolicy === null
+      ? undefined
+      : createTerminalPlacementSearch(
+          profile.terminalPlacementPolicy,
+          profile.width,
+          profile.height,
+          profile.symbolPathCounts,
+          routeSeed,
+        );
   const result = selectPathCover(
     lengths,
     random,
     profile,
     getPathCandidateSource(profile),
+    terminalPlacementSearch,
   );
+  const allowedSymbolAssignments =
+    result.status === 'built' && terminalPlacementSearch !== undefined
+      ? terminalPlacementSearch.allowedSymbolAssignments(result.paths)
+      : undefined;
+  const terminalPlacementDiagnostics = terminalPlacementSearch?.diagnostics();
+  const routeCover = {
+    lengths,
+    result,
+    ...(allowedSymbolAssignments === undefined
+      ? {}
+      : {allowedSymbolAssignments}),
+    ...(terminalPlacementDiagnostics === undefined
+      ? {}
+      : {terminalPlacementDiagnostics}),
+  };
   if (canReuseRouteCover(profile)) {
-    lastReusableRouteCover = {cacheKey, lengths, result};
+    lastReusableRouteCover = {cacheKey, ...routeCover};
   }
-  return {lengths, result};
+  return routeCover;
 }
 
 function hasExpectedPathLengths(

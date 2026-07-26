@@ -19,7 +19,7 @@
 - `generators/kazu-no-kaidan/`: 数字の階段
 - `generators/kazu-sagashi/`: かずさがし。入門のレベル1、3種類の問題を均等に混ぜるレベル2、リンゴとナシの関係を探すレベル3、3種類の大小関係を扱う「レベル: ノイマン（試験版）」に対応します。通常仕様は [`generators/kazu-sagashi/SPEC.md`](generators/kazu-sagashi/SPEC.md)、ノイマン専用仕様は [`generators/kazu-sagashi/SPEC-NEUMANN.md`](generators/kazu-sagashi/SPEC-NEUMANN.md) を参照してください。多数seedを複数解法で比較する開発用画面は [`generators/kazu-sagashi/difficulty-lab.html`](generators/kazu-sagashi/difficulty-lab.html) です。
 - `generators/kokugo-no-tane/`: こくごのたね。TypeScript・ReactのSPA教材モジュールとして、小学1〜3年生向けの物語文と標準4問をseed付きで生成する開発確認用ブラウザプロトタイプです。構造的自動検査は通過していますが人間未確認であり、児童利用や学力判定には使用できません。設計資料は [`generators/kokugo-no-tane/docs/README.md`](generators/kokugo-no-tane/docs/README.md) を参照してください。
-- `generators/onaji-no-tsunagi/`: おなじのつなぎ。同じ形を2個ずつ、同じマスを共有しない線で結ぶ問題をseed付きで生成するTypeScript・Reactの開発確認用SPA教材モジュールです。通常の開発画面で、v3.3の5×5・6/8/10端点（レベル1）と、v3.4 draftの6×6・10/12/14端点（暫定レベル2/3）を選べます。同記号4個・6個の組み方を含めて正規化解が1個と完全探索で証明できた問題だけを表示します。人間レビュー・難易度校正・公開判定前のため、児童利用はできません。契約は [`generators/onaji-no-tsunagi/SPEC.md`](generators/onaji-no-tsunagi/SPEC.md) を参照してください。
+- `generators/onaji-no-tsunagi/`: おなじのつなぎ。同じ形を2個ずつ、同じマスを共有しない線で結ぶ問題をseed付きで生成するTypeScript・Reactの開発確認用SPA教材モジュールです。通常の開発画面で、v3.3の5×5・6/8/10端点（レベル1）と、v3.4 draft.3の6×6・10/12/14端点（暫定レベル2/3）を選べます。同記号4個・6個の組み方を含めて正規化解が1個と完全探索で証明できた問題だけを表示します。10端点では、端点配置の6条件を生成探索内で保証し、残る4条件と原本基準分類を後段の粗悪問題除外gateに使います。フォームで`原本近傍`・`明らかに難しい側`・`指標混合`の採用区分を選べますが、この分類は児童の体感難易度や良問であることを保証しません。人間レビュー・難易度校正・公開判定前のため、児童利用はできません。契約は [`generators/onaji-no-tsunagi/SPEC.md`](generators/onaji-no-tsunagi/SPEC.md)、原本6×6と生成3,000問の比較は [`generators/onaji-no-tsunagi/docs/six-by-six-difficulty-audit.md`](generators/onaji-no-tsunagi/docs/six-by-six-difficulty-audit.md) を参照してください。
 
 ## 起動
 

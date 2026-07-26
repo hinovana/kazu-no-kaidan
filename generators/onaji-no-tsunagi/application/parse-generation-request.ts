@@ -7,10 +7,12 @@
  */
 
 import type {
+  AcceptedDifficultyClassification,
   AvailableDifficultyLevel,
   GenerationRequest,
   PuzzleCount,
 } from '../domain/types/generation.ts';
+import {ACCEPTABLE_DIFFICULTY_CLASSIFICATIONS} from '../domain/types/generation.ts';
 
 /**
  * 生成条件のruntime検証で見つかった問題をまとめて保持する例外。
@@ -47,6 +49,11 @@ export function parseGenerationRequest(input: unknown): GenerationRequest {
     : null;
   const availablePuzzleCount = isPuzzleCount(puzzleCount) ? puzzleCount : null;
   const seed = typeof input.seed === 'string' ? input.seed.trim() : '';
+  const acceptedDifficultyClassifications =
+    parseAcceptedDifficultyClassifications(
+      input.acceptedDifficultyClassifications,
+      issues,
+    );
 
   if (difficulty === 4) {
     issues.push('レベル4の唯一解文法は準備中です。');
@@ -71,7 +78,42 @@ export function parseGenerationRequest(input: unknown): GenerationRequest {
     difficulty: availableDifficulty,
     puzzleCount: availablePuzzleCount,
     seed,
+    ...(acceptedDifficultyClassifications === undefined
+      ? {}
+      : {acceptedDifficultyClassifications}),
   };
+}
+
+function parseAcceptedDifficultyClassifications(
+  value: unknown,
+  issues: string[],
+): readonly AcceptedDifficultyClassification[] | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (!Array.isArray(value)) {
+    issues.push('採用基準は配列で指定します。');
+    return undefined;
+  }
+  const selected = new Set<AcceptedDifficultyClassification>();
+  for (const classification of value) {
+    if (!isAcceptedDifficultyClassification(classification)) {
+      issues.push('採用基準に未対応の分類が含まれています。');
+      return undefined;
+    }
+    selected.add(classification);
+  }
+  if (selected.size !== value.length) {
+    issues.push('採用基準に同じ分類を重複指定できません。');
+    return undefined;
+  }
+  if (selected.size === 0) {
+    issues.push('採用基準を1つ以上選んでください。');
+    return undefined;
+  }
+  return ACCEPTABLE_DIFFICULTY_CLASSIFICATIONS.filter(classification =>
+    selected.has(classification),
+  );
 }
 
 function parseInteger(value: unknown): number | null {
@@ -96,4 +138,12 @@ function isAvailableDifficultyLevel(
 
 function isPuzzleCount(value: number | null): value is PuzzleCount {
   return value === 1 || value === 2 || value === 3 || value === 4;
+}
+
+function isAcceptedDifficultyClassification(
+  value: unknown,
+): value is AcceptedDifficultyClassification {
+  return ACCEPTABLE_DIFFICULTY_CLASSIFICATIONS.some(
+    classification => classification === value,
+  );
 }

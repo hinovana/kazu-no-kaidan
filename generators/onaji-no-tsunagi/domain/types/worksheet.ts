@@ -5,7 +5,12 @@
  */
 
 import type {DifficultyAnalysis} from './difficulty.ts';
-import type {CandidateRejection, GenerationRequest} from './generation.ts';
+import type {
+  CandidateRejection,
+  DifficultySelectionAnalysis,
+  GenerationRequest,
+  TerminalPlacementSearchDiagnostics,
+} from './generation.ts';
 import type {
   Puzzle,
   TerminalMultiplicityPattern,
@@ -97,15 +102,16 @@ export interface MachineCheckReport {
 /** 同一Worksheetを再現するための版とrequest seed。 */
 export interface GenerationProvenance {
   readonly generatorVersion:
-    'onaji-no-tsunagi-generator.v3.3' | 'onaji-no-tsunagi-generator.v3.4-draft';
+    | 'onaji-no-tsunagi-generator.v3.3'
+    | 'onaji-no-tsunagi-generator.v3.4-draft.3';
   readonly algorithmSpecVersion:
-    'onaji-no-tsunagi-spec.v3.3' | 'onaji-no-tsunagi-spec.v3.4-draft';
+    'onaji-no-tsunagi-spec.v3.3' | 'onaji-no-tsunagi-spec.v3.4-draft.3';
   readonly solverVersion: 'onaji-no-tsunagi-solver.v3.1';
   readonly analyzerVersion:
     | 'onaji-no-tsunagi-difficulty.v3.3'
     | 'onaji-no-tsunagi-difficulty.v3.4-draft';
   readonly profileVersion:
-    'onaji-no-tsunagi-profiles.v3.3' | 'onaji-no-tsunagi-profiles.v3.4-draft';
+    'onaji-no-tsunagi-profiles.v3.3' | 'onaji-no-tsunagi-profiles.v3.4-draft.3';
   readonly seed: string;
 }
 
@@ -119,6 +125,7 @@ export interface PuzzleProvenance {
   readonly puzzleSeed: string;
   readonly topologyHash: string;
   readonly precedingRejections: readonly CandidateRejection[];
+  readonly terminalPlacementDiagnostics?: TerminalPlacementSearchDiagnostics;
 }
 
 /**
@@ -141,6 +148,8 @@ export interface GeneratedPuzzle {
   readonly routeRoles: RouteRoles;
   readonly generationWitness: GenerationWitnessAnalysis;
   readonly difficulty: DifficultyAnalysis;
+  /** profileで原本基準分類が有効な場合だけ保存するレビュー区分。 */
+  readonly difficultySelection?: DifficultySelectionAnalysis;
   readonly qualityProof: {
     readonly status: 'optimal';
     readonly exploredStateCount: number;
@@ -161,7 +170,8 @@ export interface GeneratedPuzzle {
  */
 export interface Worksheet {
   readonly schemaVersion:
-    'onaji-no-tsunagi.worksheet.v3.3' | 'onaji-no-tsunagi.worksheet.v3.4-draft';
+    | 'onaji-no-tsunagi.worksheet.v3.3'
+    | 'onaji-no-tsunagi.worksheet.v3.4-draft.3';
   readonly worksheetId: string;
   readonly usageClass: 'development_preview';
   readonly childUsePermitted: false;

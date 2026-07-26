@@ -5,6 +5,7 @@
  */
 
 import type {Worksheet} from '../domain/types/worksheet.ts';
+import type {GenerationError} from '../domain/types/generation.ts';
 
 /**
  * React UIから生成Workerへ送る、一意な要求ID付きの入力。
@@ -32,4 +33,5 @@ export type GenerationWorkerResponse =
       readonly requestId: number;
       readonly status: 'error';
       readonly message: string;
+      readonly report?: GenerationError;
     };

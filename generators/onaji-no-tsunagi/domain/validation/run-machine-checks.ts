@@ -7,7 +7,10 @@
  */
 
 import {getUniquePathCoverProfile} from '../generation/build-unique-path-cover.ts';
+import {classifyDifficultySelection} from '../generation/classify-difficulty-selection.ts';
+import {evaluatePuzzleSelectionFilters} from '../generation/puzzle-selection-policy.ts';
 import {countPerfectMatchings} from '../solver/enumerate-pairings.ts';
+import {ACCEPTABLE_DIFFICULTY_CLASSIFICATIONS} from '../types/generation.ts';
 import type {GenerationRequest} from '../types/generation.ts';
 import type {
   GeneratedPuzzle,
@@ -15,6 +18,7 @@ import type {
   MachineCheckReport,
 } from '../types/worksheet.ts';
 import type {UniquePathCoverProfile} from '../generation/build-unique-path-cover.ts';
+import {analyzeTerminalPlacement} from './analyze-terminal-placement.ts';
 import {doesSolutionPreserveRouteRoles} from './solution-route-roles.ts';
 import {validatePuzzle} from './validate-puzzle.ts';
 import {validateSolution} from './validate-solution.ts';
@@ -106,6 +110,39 @@ export function runMachineChecks(
         /^[0-9a-f]{8}$/u.test(entry.provenance.topologyHash),
       ),
     ),
+    ...(puzzles.some(
+      entry => profileFor(entry).terminalPlacementPolicy !== null,
+    )
+      ? [
+          aggregateCheck(
+            'terminal_placement_policy_satisfied',
+            puzzles.map(satisfiesTerminalPlacementPolicy),
+          ),
+        ]
+      : []),
+    ...(puzzles.some(
+      entry => profileFor(entry).puzzleSelectionPolicy.filterRuleIds.length > 0,
+    )
+      ? [
+          aggregateCheck(
+            'puzzle_selection_filters_satisfied',
+            puzzles.map(satisfiesPuzzleSelectionFilters),
+          ),
+        ]
+      : []),
+    ...(puzzles.some(
+      entry =>
+        profileFor(entry).puzzleSelectionPolicy.difficultyReference !== null,
+    )
+      ? [
+          aggregateCheck(
+            'difficulty_selection_policy_satisfied',
+            puzzles.map(entry =>
+              satisfiesDifficultySelectionPolicy(entry, request),
+            ),
+          ),
+        ]
+      : []),
     aggregateCheck(
       'render_geometry_valid',
       puzzles.map(hasExpectedRenderGeometry),
@@ -115,6 +152,58 @@ export function runMachineChecks(
     allPassed: checks.every(check => check.passed),
     checks,
   };
+}
+
+function satisfiesPuzzleSelectionFilters(entry: GeneratedPuzzle): boolean {
+  const policy = profileFor(entry).puzzleSelectionPolicy;
+  return evaluatePuzzleSelectionFilters(entry.puzzle, policy.filterRuleIds)
+    .allConfiguredFiltersPassed;
+}
+
+function satisfiesDifficultySelectionPolicy(
+  entry: GeneratedPuzzle,
+  request: GenerationRequest,
+): boolean {
+  const reference = profileFor(entry).puzzleSelectionPolicy.difficultyReference;
+  if (reference === null) {
+    return entry.difficultySelection === undefined;
+  }
+  const expected = classifyDifficultySelection(
+    {
+      entryHypothesisCount: entry.entry.naturalHypothesisCount,
+      solverStateCount: entry.uniquenessProof.exploredStateCount,
+      forcedExitCount: entry.entry.forcedExitTerminalIds.length,
+      totalTurnCount: entry.solutionCost.totalTurnCount,
+    },
+    reference,
+  );
+  const accepted =
+    request.acceptedDifficultyClassifications ??
+    ACCEPTABLE_DIFFICULTY_CLASSIFICATIONS;
+  return (
+    entry.difficultySelection !== undefined &&
+    JSON.stringify(entry.difficultySelection) === JSON.stringify(expected) &&
+    expected.classification !== 'clearly_easier' &&
+    accepted.includes(expected.classification)
+  );
+}
+
+function satisfiesTerminalPlacementPolicy(entry: GeneratedPuzzle): boolean {
+  const profile = profileFor(entry);
+  if (profile.terminalPlacementPolicy === null) {
+    return entry.provenance.terminalPlacementDiagnostics === undefined;
+  }
+  const placement = analyzeTerminalPlacement(entry.puzzle);
+  return (
+    entry.provenance.terminalPlacementDiagnostics?.policyId ===
+      profile.terminalPlacementPolicy.policyId &&
+    placement.satisfiesEdgeAdjacencyPairLimit &&
+    placement.satisfiesNoLShapedTerminalTriple &&
+    placement.satisfiesNoStraightTerminalRun &&
+    placement.satisfiesLimitedCentralAdjacency &&
+    placement.satisfiesCentralSymbolCoverage &&
+    placement.satisfiesDifferentSymbolEdgeAdjacency
+  );
 }
 
 function hasExpectedEntryStructure(entry: GeneratedPuzzle): boolean {

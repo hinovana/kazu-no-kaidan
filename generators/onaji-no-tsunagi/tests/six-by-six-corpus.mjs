@@ -4,6 +4,12 @@ import {
   getUniquePathCoverProfile,
 } from "../domain/generation/build-unique-path-cover.ts";
 import { generateWorksheet } from "../domain/generation/generate-worksheet.ts";
+import {
+  evaluatePuzzleSelectionFilters,
+} from "../domain/generation/puzzle-selection-policy.ts";
+import {
+  analyzeTerminalPlacement,
+} from "../domain/validation/analyze-terminal-placement.ts";
 import { validateSolution } from "../domain/validation/validate-solution.ts";
 
 const regressionBaseline = JSON.parse(await readFile(
@@ -73,13 +79,6 @@ for (const [profileId, stats] of statsByProfile) {
     stats.pathLengthProfiles.size,
     profile.pathLengthProfiles.length,
   );
-  if (seedsPerProfile >= regressionBaseline.minimumRegressionSampleSize) {
-    assertProfileWithinRegressionBaseline(
-      profileId,
-      summarize(stats),
-      regressionBaseline,
-    );
-  }
 }
 
 const summariesByProfile = new Map(
@@ -90,7 +89,7 @@ const summariesByProfile = new Map(
 );
 const result = {
   generator: "onaji-no-tsunagi",
-  corpusVersion: "onaji-no-tsunagi-corpus.v3.4-draft",
+  corpusVersion: "onaji-no-tsunagi-corpus.v3.4-draft.3",
   contract: "exactly-one-normalized-solution-including-pairing",
   board: "6x6",
   seedsPerProfile,
@@ -106,6 +105,21 @@ const result = {
 };
 
 console.log(JSON.stringify(result, null, 2));
+
+assert.equal(
+  regressionBaseline.corpusVersion,
+  result.corpusVersion,
+  "regression baseline corpusVersion must match the generator corpus",
+);
+if (seedsPerProfile >= regressionBaseline.minimumRegressionSampleSize) {
+  for (const [profileId, summary] of summariesByProfile) {
+    assertProfileWithinRegressionBaseline(
+      profileId,
+      summary,
+      regressionBaseline,
+    );
+  }
+}
 
 function record(generated, difficulty, stats) {
   const profile = getUniquePathCoverProfile(
@@ -149,6 +163,50 @@ function record(generated, difficulty, stats) {
   assert.ok(generated.interactionWitnesses.some((witness) => (
     witness.kind === "unique_solution"
   )));
+  if (profile.terminalPlacementPolicy !== null) {
+    const placement = analyzeTerminalPlacement(generated.puzzle);
+    assert.equal(placement.satisfiesEdgeAdjacencyPairLimit, true);
+    assert.equal(placement.satisfiesNoLShapedTerminalTriple, true);
+    assert.equal(placement.satisfiesNoStraightTerminalRun, true);
+    assert.equal(placement.satisfiesLimitedCentralAdjacency, true);
+    assert.equal(placement.satisfiesCentralSymbolCoverage, true);
+    assert.equal(
+      placement.satisfiesDifferentSymbolEdgeAdjacency,
+      true,
+    );
+    assert.equal(
+      generated.provenance.terminalPlacementDiagnostics?.policyId,
+      profile.terminalPlacementPolicy.policyId,
+    );
+  } else {
+    assert.equal(
+      generated.provenance.terminalPlacementDiagnostics,
+      undefined,
+    );
+  }
+  if (profile.puzzleSelectionPolicy.difficultyReference !== null) {
+    assert.equal(
+      evaluatePuzzleSelectionFilters(
+        generated.puzzle,
+        profile.puzzleSelectionPolicy.filterRuleIds,
+      ).allConfiguredFiltersPassed,
+      true,
+    );
+    assert.ok(generated.difficultySelection);
+    assert.notEqual(
+      generated.difficultySelection.classification,
+      "clearly_easier",
+    );
+    stats.classificationCounts.set(
+      generated.difficultySelection.classification,
+      (stats.classificationCounts.get(
+        generated.difficultySelection.classification,
+      ) ?? 0) + 1,
+    );
+  } else {
+    assert.deepEqual(profile.puzzleSelectionPolicy.filterRuleIds, []);
+    assert.equal(generated.difficultySelection, undefined);
+  }
 
   stats.acceptedCount += 1;
   stats.exactUniqueCount += 1;
@@ -200,6 +258,7 @@ function createStats() {
     lineConcentrations: [],
     pathLengthProfiles: new Set(),
     rejectionReasons: new Map(),
+    classificationCounts: new Map(),
   };
 }
 
@@ -219,6 +278,7 @@ function summarize(stats) {
       totalRejectionCount / stats.acceptedCount,
     ),
     rejectionReasons: Object.fromEntries(stats.rejectionReasons),
+    classificationCounts: Object.fromEntries(stats.classificationCounts),
     constructionStates: summarizeNumbers(stats.constructionStates),
     uniquenessStates: summarizeNumbers(stats.uniquenessStates),
     optimalityStates: summarizeNumbers(stats.optimalityStates),

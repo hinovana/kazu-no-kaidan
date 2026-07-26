@@ -5,6 +5,7 @@
  */
 
 import type {Worksheet} from '../domain/types/worksheet.ts';
+import type {DifficultyClassification} from '../domain/types/generation.ts';
 import {PuzzleBoard} from './PuzzleBoard.tsx';
 
 /**
@@ -96,11 +97,41 @@ function ProblemCard({
     <article className="ots-puzzle-card">
       <div className="ots-puzzle-card-heading">
         <h3>問題 {index + 1}</h3>
-        <DifficultyStars level={level} />
+        <div className="ots-puzzle-card-classification">
+          <DifficultyClassificationBadge
+            classification={generated.difficultySelection?.classification}
+          />
+          <DifficultyStars level={level} />
+        </div>
       </div>
       <PuzzleBoard puzzle={generated.puzzle} solution={null} mode="problem" />
       <p className="ots-puzzle-id">{generated.puzzle.puzzleId}</p>
     </article>
+  );
+}
+
+/** 原本基準の機械分類を、校正済み難易度と誤認しない補助labelで表示する。 */
+export function DifficultyClassificationBadge({
+  classification,
+}: {
+  readonly classification: DifficultyClassification | undefined;
+}) {
+  if (classification === undefined || classification === 'clearly_easier') {
+    return null;
+  }
+  const label =
+    classification === 'reference_like'
+      ? '原本近傍'
+      : classification === 'clearly_harder'
+        ? '明らかに難しい側'
+        : '指標混合';
+  return (
+    <span
+      className="ots-classification-badge screen-only"
+      aria-label={`原本基準の機械分類: ${label}`}
+    >
+      {label}
+    </span>
   );
 }
 

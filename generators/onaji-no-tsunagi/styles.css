@@ -155,6 +155,46 @@
   color: var(--ots-muted);
 }
 
+.ots-selection-criteria {
+  margin: 16px 0 0;
+  padding: 14px;
+  border: 1px solid #cbd5d1;
+  border-radius: 10px;
+}
+
+.ots-selection-criteria legend {
+  padding: 0 6px;
+  font-weight: 800;
+}
+
+.ots-selection-criteria:disabled {
+  opacity: 0.62;
+}
+
+.ots-selection-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+}
+
+.ots-selection-options label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ots-selection-options input {
+  width: auto;
+  min-height: 0;
+  margin: 0;
+}
+
+.ots-form-error {
+  margin: 8px 0 0;
+  color: #9a341f;
+  font-weight: 800;
+}
+
 .ots-control-note {
   margin-bottom: 0;
   line-height: 1.65;
@@ -274,6 +314,24 @@
 .ots-puzzle-card-heading h3 {
   margin: 0;
   font-size: 1rem;
+}
+
+.ots-puzzle-card-classification {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: baseline;
+}
+
+.ots-classification-badge {
+  padding: 2px 8px;
+  border: 1px solid #78a69b;
+  border-radius: 999px;
+  background: #e8f5f1;
+  color: #155e59;
+  font-size: 0.72rem;
+  font-weight: 800;
 }
 
 .ots-stars {

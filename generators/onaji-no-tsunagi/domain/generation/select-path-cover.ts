@@ -37,12 +37,35 @@ export type PathCoverResult =
       readonly constructionStateCount: number;
     };
 
+/** exact-cover探索へ任意の部分配置・完成配置制約を渡す。 @internal */
+export interface PathCoverConstraint {
+  readonly isPathSelectionAllowed: (
+    paths: readonly PathCandidate[],
+    complete: boolean,
+  ) => boolean;
+}
+
 /**
  * 経路長列を満たす、互いに交差しない盤面全体のexact coverを一つ選ぶ。
+ *
+ * 制約を渡さない場合はv3.3/v3.4初版の探索順を変更しない。制約付き探索では
+ * 最初の経路もbacktracking対象にして、禁止された完成配置から探索へ戻る。
  *
  * @internal
  */
 export function selectPathCover(
+  lengths: readonly number[],
+  random: SeededRandom,
+  profile: UniquePathCoverProfile,
+  source: PathCandidateSource,
+  constraint?: PathCoverConstraint,
+): PathCoverResult {
+  return constraint === undefined
+    ? selectUnconstrainedPathCover(lengths, random, profile, source)
+    : selectConstrainedPathCover(lengths, random, profile, source, constraint);
+}
+
+function selectUnconstrainedPathCover(
   lengths: readonly number[],
   random: SeededRandom,
   profile: UniquePathCoverProfile,
@@ -127,6 +150,80 @@ export function selectPathCover(
       }
       selectedPaths.push(candidate);
       if (search(nextLengths, remainingMask & ~candidate.occupiedMask)) {
+        return true;
+      }
+      selectedPaths.pop();
+      if (budgetExhausted) {
+        return false;
+      }
+    }
+    return false;
+  }
+}
+
+function selectConstrainedPathCover(
+  lengths: readonly number[],
+  random: SeededRandom,
+  profile: UniquePathCoverProfile,
+  source: PathCandidateSource,
+  constraint: PathCoverConstraint,
+): PathCoverResult {
+  const fullBoardMask = fullPathCoverMask(profile.width * profile.height);
+  const selectedPaths: PathCandidate[] = [];
+  let constructionStateCount = 0;
+  let budgetExhausted = false;
+  const found = search(lengths, fullBoardMask);
+  if (found) {
+    return {
+      status: 'built',
+      paths: selectedPaths,
+      constructionStateCount,
+    };
+  }
+  return {
+    status: budgetExhausted ? 'budget_exhausted' : 'not_constructed',
+    constructionStateCount,
+  };
+
+  function search(
+    remainingLengths: readonly number[],
+    remainingMask: bigint,
+  ): boolean {
+    if (budgetExhausted) {
+      return false;
+    }
+    if (remainingLengths.length === 0) {
+      return remainingMask === 0n;
+    }
+    if (!canFillRemainingCells(remainingMask, remainingLengths, profile)) {
+      return false;
+    }
+    const selectedOption = chooseNextLength(
+      remainingLengths,
+      remainingMask,
+      source,
+      false,
+    );
+    if (
+      selectedOption === undefined ||
+      selectedOption.candidates.length === 0
+    ) {
+      return false;
+    }
+    const nextLengths = remainingLengths.toSpliced(selectedOption.index, 1);
+    for (const candidate of random.shuffle(selectedOption.candidates)) {
+      constructionStateCount += 1;
+      if (constructionStateCount > profile.maximumConstructionStates) {
+        budgetExhausted = true;
+        return false;
+      }
+      selectedPaths.push(candidate);
+      const nextMask = remainingMask & ~candidate.occupiedMask;
+      const complete = nextLengths.length === 0 && nextMask === 0n;
+      if (
+        constraint.isPathSelectionAllowed(selectedPaths, complete) &&
+        search(nextLengths, nextMask)
+      ) {
         return true;
       }
       selectedPaths.pop();
