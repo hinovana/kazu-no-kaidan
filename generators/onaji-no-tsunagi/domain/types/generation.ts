@@ -41,6 +41,13 @@ export interface GenerationRequest {
   readonly puzzleCount: PuzzleCount;
   readonly seed: string;
   /**
+   * 通常の難易度別profile選択を使わず、全問題を指定profileで生成する。
+   *
+   * 省略時は従来どおりseed・問題数・位置からprofileを選ぶ。指定時は
+   * `difficulty`とprofileの対応が一致しなければならない。
+   */
+  readonly profileId?: UniquePathCoverProfileId;
+  /**
    * 原本基準の分類policyが有効なprofileで採用する区分。
    *
    * 省略時は選択可能な3区分をすべて採用する。policy未設定profileでは

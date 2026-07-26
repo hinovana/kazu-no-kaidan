@@ -4,7 +4,10 @@ import {
   getUniquePathCoverProfile,
   selectUniquePathCoverProfileId,
 } from "../domain/generation/build-unique-path-cover.ts";
-import { generateWorksheet } from "../domain/generation/generate-worksheet.ts";
+import {
+  generateWorksheet,
+  generateWorksheetForProfile,
+} from "../domain/generation/generate-worksheet.ts";
 import { countPerfectMatchings } from "../domain/solver/enumerate-pairings.ts";
 import {
   evaluatePuzzleSelectionFilters,
@@ -194,6 +197,57 @@ assert.equal(
 assert.deepEqual(
   levelThree.puzzles.map((generated) => generated.provenance.profileId),
   ["6x6-6-4-4", "6x6-6-4-4"],
+);
+
+const fixedTwelveTerminalProfile = generateWorksheetForProfile(
+  {
+    difficulty: 2,
+    puzzleCount: 2,
+    seed: "v34-fixed-twelve-terminal-profile",
+  },
+  "6x6-4-4-4",
+);
+assert.equal(
+  fixedTwelveTerminalProfile.request.profileId,
+  "6x6-4-4-4",
+);
+assert.deepEqual(
+  fixedTwelveTerminalProfile.puzzles.map(
+    generated => generated.provenance.profileId,
+  ),
+  ["6x6-4-4-4", "6x6-4-4-4"],
+);
+const requestedTwelveTerminalProfile = generateWorksheet({
+  difficulty: 2,
+  puzzleCount: 2,
+  seed: "v34-requested-twelve-terminal-profile",
+  profileId: "6x6-4-4-4",
+});
+assert.deepEqual(
+  requestedTwelveTerminalProfile.puzzles.map(
+    generated => generated.provenance.profileId,
+  ),
+  ["6x6-4-4-4", "6x6-4-4-4"],
+);
+assert.throws(
+  () => generateWorksheetForProfile(
+    {
+      difficulty: 3,
+      puzzleCount: 1,
+      seed: "v34-invalid-fixed-profile",
+    },
+    "6x6-4-4-4",
+  ),
+  /requires difficulty 2/u,
+);
+assert.throws(
+  () => generateWorksheet({
+    difficulty: 3,
+    puzzleCount: 1,
+    seed: "v34-invalid-requested-profile",
+    profileId: "6x6-4-4-4",
+  }),
+  /requires difficulty 2/u,
 );
 
 for (const worksheet of [levelTwo, levelThree]) {

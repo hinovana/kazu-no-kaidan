@@ -32,7 +32,7 @@ import {
   getUniquePathCoverProfile,
 } from "../domain/generation/build-unique-path-cover.ts";
 import {
-  generateWorksheet,
+  generateWorksheetForProfile,
 } from "../domain/generation/generate-worksheet.ts";
 let lastReportedTotal = 0;
 
@@ -150,51 +150,32 @@ async function generateCandidates(samplesPerProfile, profileIds) {
   const candidatesByProfile = new Map(
     profileIds.map(profileId => [profileId, []]),
   );
-  const levelTwoProfileIds = profileIds.filter(
-    profileId => profileId !== "6x6-6-4-4",
-  );
   let generationRequestCount = 0;
-  let levelTwoIndex = 0;
-  while (
-    levelTwoProfileIds.some(
-      profileId =>
-        candidatesByProfile.get(profileId).length < samplesPerProfile,
-    )
-  ) {
-    const seed = `difficulty-audit-v34-level-2-${levelTwoIndex}`;
-    levelTwoIndex += 1;
-    generationRequestCount += 1;
-    const generated = generateSinglePuzzle(2, seed);
-    const candidates = candidatesByProfile.get(
-      generated.provenance.profileId,
-    );
-    if (candidates !== undefined && candidates.length < samplesPerProfile) {
-      candidates.push(toDifficultyCandidate(seed, generated));
-      reportProgress(candidatesByProfile, profileIds, samplesPerProfile);
-    }
-  }
-
-  if (profileIds.includes("6x6-6-4-4")) {
+  for (const profileId of profileIds) {
+    const difficulty = profileId === "6x6-6-4-4" ? 3 : 2;
+    const candidates = candidatesByProfile.get(profileId);
+    assert.ok(candidates);
     for (let index = 0; index < samplesPerProfile; index += 1) {
-      const seed = `difficulty-audit-v34-level-3-${index}`;
+      const seed = `difficulty-audit-v34-level-${difficulty}-${index}`;
       generationRequestCount += 1;
-      const generated = generateSinglePuzzle(3, seed);
-      assert.equal(generated.provenance.profileId, "6x6-6-4-4");
-      candidatesByProfile.get("6x6-6-4-4").push(
-        toDifficultyCandidate(seed, generated),
-      );
+      const generated = generateSinglePuzzle(difficulty, seed, profileId);
+      assert.equal(generated.provenance.profileId, profileId);
+      candidates.push(toDifficultyCandidate(seed, generated));
       reportProgress(candidatesByProfile, profileIds, samplesPerProfile);
     }
   }
   return {candidatesByProfile, generationRequestCount};
 }
 
-function generateSinglePuzzle(difficulty, seed) {
-  const worksheet = generateWorksheet({
-    difficulty,
-    puzzleCount: 1,
-    seed,
-  });
+function generateSinglePuzzle(difficulty, seed, profileId) {
+  const worksheet = generateWorksheetForProfile(
+    {
+      difficulty,
+      puzzleCount: 1,
+      seed,
+    },
+    profileId,
+  );
   const generated = worksheet.puzzles[0];
   assert.ok(generated);
   return generated;
@@ -282,6 +263,7 @@ function createReport(
     sampling: {
       profileIds,
       generationRequestCount: generation.generationRequestCount,
+      profileSelection: "forced_by_audit_option",
       builtInGenerationPolicy:
         targetOnly
           ? "onaji-no-tsunagi-terminal-placement.6x6-4-4-2.v1"

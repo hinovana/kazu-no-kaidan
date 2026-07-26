@@ -31,6 +31,19 @@ npm run audit:onaji-no-tsunagi:6x6-difficulty -- \
 「レビュー結果をJSON保存」から書き出せる。生成物とレビュー入力はGit管理対象に
 しない。
 
+一つのprofileだけを監査する場合は`--profile`を指定する。
+
+```bash
+npm run audit:onaji-no-tsunagi:6x6-difficulty -- \
+  --reference-corpus ../ref/onaji-no-tsunagi-source-corpus.json \
+  --profile 6x6-4-4-4 \
+  --samples-per-profile 1000 \
+  --output-prefix /private/tmp/onaji-no-tsunagi-v34-6x6-4-4-4-audit
+```
+
+`--profile`は生成後の収集filterではなく、最初から指定profileだけを生成する。
+したがって、生成request数は`--samples-per-profile`と一致する。
+
 `6x6-4-4-2`の端点配置仮説を対照評価する場合は、次を実行する。
 
 ```bash

@@ -18,6 +18,7 @@ import type {
   GenerationRequest,
 } from '../types/generation.ts';
 import {ACCEPTABLE_DIFFICULTY_CLASSIFICATIONS} from '../types/generation.ts';
+import type {UniquePathCoverProfileId} from '../types/puzzle.ts';
 import type {
   GeneratedPuzzle,
   UniquePathCoverEntryAnalysis,
@@ -53,6 +54,7 @@ import {
 } from './generation-profile-adapter.ts';
 import {createSeededRandom, stableHash} from './random.ts';
 import {evaluatePuzzleSelectionFilters} from './puzzle-selection-policy.ts';
+import {findUniquePathCoverProfileDifficulty} from './unique-path-cover-profile.ts';
 
 interface GenerationProgress {
   totalAttempts: number;
@@ -109,6 +111,40 @@ export class GenerationFailure extends Error {
  */
 export function generateWorksheet(request: GenerationRequest): Worksheet {
   const profiles = selectWorksheetProfiles(request);
+  return generateWorksheetWithProfiles(request, profiles);
+}
+
+/**
+ * 指定profileだけを使ってWorksheetを生成する監査・回帰検査用の入口。
+ *
+ * @remarks
+ * 通常UIのprofile選択規則と`GenerationRequest`の形式は変更しない。指定profile
+ * とrequestの暫定難易度が一致しない場合は生成せず、呼び出し側の設定誤りとして
+ * 扱う。
+ *
+ * @throws `RangeError`
+ * profileとrequestの暫定難易度が一致しない場合。
+ */
+export function generateWorksheetForProfile(
+  request: GenerationRequest,
+  profileId: UniquePathCoverProfileId,
+): Worksheet {
+  const expectedDifficulty = findUniquePathCoverProfileDifficulty(profileId);
+  if (request.difficulty !== expectedDifficulty) {
+    throw new RangeError(
+      `profile ${profileId} requires difficulty ${expectedDifficulty}`,
+    );
+  }
+  if (request.profileId !== undefined && request.profileId !== profileId) {
+    throw new RangeError('request profile conflicts with fixed profile');
+  }
+  return generateWorksheet({...request, profileId});
+}
+
+function generateWorksheetWithProfiles(
+  request: GenerationRequest,
+  profiles: readonly UniquePathCoverProfile[],
+): Worksheet {
   const firstProfile = profiles[0];
   if (firstProfile === undefined) {
     throw brokenInvariant('worksheet_has_profile');
@@ -268,6 +304,18 @@ function createCandidateIdentity(
 function selectWorksheetProfiles(
   request: GenerationRequest,
 ): readonly UniquePathCoverProfile[] {
+  if (request.profileId !== undefined) {
+    const expectedDifficulty = findUniquePathCoverProfileDifficulty(
+      request.profileId,
+    );
+    if (request.difficulty !== expectedDifficulty) {
+      throw new RangeError(
+        `profile ${request.profileId} requires difficulty ${expectedDifficulty}`,
+      );
+    }
+    const profile = getUniquePathCoverProfile(request.profileId);
+    return Array.from({length: request.puzzleCount}, () => profile);
+  }
   return Array.from({length: request.puzzleCount}, (_, puzzleIndex) => {
     const profileId = selectUniquePathCoverProfileId(
       request.difficulty,

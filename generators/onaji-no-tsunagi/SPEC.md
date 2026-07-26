@@ -293,14 +293,22 @@ interface GenerationRequest {
   readonly difficulty: AvailableDifficultyLevel;
   readonly puzzleCount: 1 | 2 | 3 | 4;
   readonly seed: string;
+  readonly profileId?: UniquePathCoverProfileId;
+  readonly acceptedDifficultyClassifications?: readonly (
+    | "reference_like"
+    | "clearly_harder"
+    | "mixed"
+  )[];
 }
 ```
 
 - レベル1は現行5×5を変更しない
-- レベル2は6×6の10/12端点を生成する
+- レベル2は6×6の10端点固定、12端点固定、10/12端点混合を選べる
 - レベル3は6×6の14端点を生成する
 - レベル4は生成不可を維持する
-- 画面から端点数や解数方針を直接選ばせない
+- `profileId`省略時は従来のprofile順を使い、既存requestの出力を維持する
+- `profileId`指定時は全問題を同じprofileで生成し、難易度との不一致を拒否する
+- 画面から解数方針は変更させず、全選択肢で唯一解だけを採用する
 
 レベル2のprofile順:
 
@@ -564,8 +572,8 @@ optimizerも36マスで探索を完走し、植え込み解が最適解と同じ
 通常の開発画面で行うv3.4 draftの変更:
 
 - レベル2と3を選択可能にする
-- レベル2へ「6×6・10/12個・唯一解」と表示する
-- レベル3へ「6×6・14個・唯一解」と表示する
+- レベル2を「6×6・10端点」「6×6・12端点」「6×6・10/12端点・混合」に分ける
+- レベル3へ「6×6・14端点・唯一解」と表示する
 - 説明文を「同じ形が4個以上あるときは、どの2個を組にするかも考える」とする
 - 14端点でもSVGの`aria-label`が動的に正しい数を出す
 - 6×6は一問につきA4一ページを使う
@@ -653,6 +661,11 @@ optimizerも36マスで探索を完走し、植え込み解が最適解と同じ
 [`docs/six-by-six-difficulty-audit.md`](docs/six-by-six-difficulty-audit.md)
 を正本とする。HTMLでは簡単側、原本近傍、混合指標の両端を優先し、不足分を
 分布全体から補って各profile 20問を提示する。
+
+監査CLIの`--profile`は生成後の収集filterではなく、指定profileを固定して
+直接生成する。通常UIも同じ任意の`GenerationRequest.profileId`を使って、
+レベル2の10端点固定・12端点固定・混合を区別する。profile固定入口はrequestの
+暫定難易度との整合を検証し、不一致を拒否する。
 
 `6x6-4-4-2`について、最初に中央4×4へ全記号を1個以上置く条件と、
 外周で隣接する端点pairを異記号1組までに制限する条件を、同じseed系列の

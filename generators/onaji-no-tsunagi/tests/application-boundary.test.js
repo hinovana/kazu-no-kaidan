@@ -19,6 +19,7 @@ assert.deepEqual(parseGenerationRequest({
   difficulty: "2",
   puzzleCount: "1",
   seed: " classified ",
+  profileId: "6x6-4-4-2",
   acceptedDifficultyClassifications: [
     "mixed",
     "reference_like",
@@ -27,11 +28,32 @@ assert.deepEqual(parseGenerationRequest({
   difficulty: 2,
   puzzleCount: 1,
   seed: "classified",
+  profileId: "6x6-4-4-2",
   acceptedDifficultyClassifications: [
     "reference_like",
     "mixed",
   ],
 });
+
+assert.throws(
+  () => parseGenerationRequest({
+    difficulty: 2,
+    puzzleCount: 1,
+    seed: "unknown-profile",
+    profileId: "6x6-unknown",
+  }),
+  /未対応のprofile/u,
+);
+
+assert.throws(
+  () => parseGenerationRequest({
+    difficulty: 3,
+    puzzleCount: 1,
+    seed: "profile-difficulty-mismatch",
+    profileId: "6x6-4-4-4",
+  }),
+  /指定profileと暫定難易度が一致しません/u,
+);
 
 assert.throws(
   () => parseGenerationRequest({
@@ -99,8 +121,14 @@ const sixBySixWorksheet = generateWorksheetUseCase({
   difficulty: "2",
   puzzleCount: "1",
   seed: "six-by-six-use-case",
+  profileId: "6x6-4-4-4",
 });
 assert.equal(sixBySixWorksheet.request.difficulty, 2);
+assert.equal(sixBySixWorksheet.request.profileId, "6x6-4-4-4");
+assert.equal(
+  sixBySixWorksheet.puzzles[0].provenance.profileId,
+  "6x6-4-4-4",
+);
 assert.equal(sixBySixWorksheet.puzzles[0].puzzle.width, 6);
 assert.deepEqual(
   sixBySixWorksheet.puzzles[0].solutionCount,

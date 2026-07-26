@@ -28,6 +28,7 @@ const INITIAL_FORM: WorksheetGenerationForm = {
   difficulty: 1,
   puzzleCount: 2,
   seed: 'onaji-start',
+  profileId: undefined,
   acceptedDifficultyClassifications: ACCEPTABLE_DIFFICULTY_CLASSIFICATIONS,
 };
 
@@ -168,8 +169,11 @@ function generationInputFromForm(
     difficulty: form.difficulty,
     puzzleCount: form.puzzleCount,
     seed: form.seed,
+    ...(form.profileId === undefined ? {} : {profileId: form.profileId}),
   };
-  return form.difficulty === 2
+  const selectionPolicyCanApply =
+    form.difficulty === 2 && form.profileId !== '6x6-4-4-4';
+  return selectionPolicyCanApply
     ? {
         ...input,
         acceptedDifficultyClassifications:

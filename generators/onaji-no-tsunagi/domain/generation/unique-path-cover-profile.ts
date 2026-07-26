@@ -279,6 +279,17 @@ const UNIQUE_PATH_COVER_PROFILES = {
   Record<UniquePathCoverProfileId, UniquePathCoverProfile>
 >;
 
+const DIFFICULTY_BY_PROFILE = {
+  '5x5-2-2-2': 1,
+  '5x5-4-2-2': 1,
+  '5x5-4-4-2': 1,
+  '6x6-4-4-2': 2,
+  '6x6-4-4-4': 2,
+  '6x6-6-4-4': 3,
+} as const satisfies Readonly<
+  Record<UniquePathCoverProfileId, AvailableDifficultyLevel>
+>;
+
 const FIVE_BY_FIVE_PROFILE_SEQUENCES: Readonly<
   Record<number, readonly UniquePathCoverProfileId[]>
 > = {
@@ -307,6 +318,19 @@ export function findUniquePathCoverProfile(
   profileId: UniquePathCoverProfileId,
 ): UniquePathCoverProfile {
   return UNIQUE_PATH_COVER_PROFILES[profileId];
+}
+
+/**
+ * profileを通常生成で扱う暫定難易度へ対応付ける。
+ *
+ * profile固定の監査入口が難易度gateを迂回しないために利用する。
+ *
+ * @internal
+ */
+export function findUniquePathCoverProfileDifficulty(
+  profileId: UniquePathCoverProfileId,
+): AvailableDifficultyLevel {
+  return DIFFICULTY_BY_PROFILE[profileId];
 }
 
 /**

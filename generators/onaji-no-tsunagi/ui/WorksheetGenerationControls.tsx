@@ -13,12 +13,19 @@ import type {
   PuzzleCount,
 } from '../domain/types/generation.ts';
 import {ACCEPTABLE_DIFFICULTY_CLASSIFICATIONS} from '../domain/types/generation.ts';
+import type {UniquePathCoverProfileId} from '../domain/types/puzzle.ts';
+
+type LevelTwoProfileId = Extract<
+  UniquePathCoverProfileId,
+  '6x6-4-4-2' | '6x6-4-4-4'
+>;
 
 /** Worksheet生成フォームで編集する値。 @internal */
 export interface WorksheetGenerationForm {
   readonly difficulty: AvailableDifficultyLevel;
   readonly puzzleCount: PuzzleCount;
   readonly seed: string;
+  readonly profileId: LevelTwoProfileId | undefined;
   readonly acceptedDifficultyClassifications: readonly AcceptedDifficultyClassification[];
 }
 
@@ -44,7 +51,8 @@ export function WorksheetGenerationControls({
   onToggleAnswers,
   onPrint,
 }: WorksheetGenerationControlsProps) {
-  const selectionPolicyCanApply = form.difficulty === 2;
+  const selectionPolicyCanApply =
+    form.difficulty === 2 && form.profileId !== '6x6-4-4-4';
   const noClassificationSelected =
     form.acceptedDifficultyClassifications.length === 0;
   return (
@@ -59,17 +67,30 @@ export function WorksheetGenerationControls({
         <label>
           暫定難易度
           <select
-            value={form.difficulty}
-            onChange={event =>
+            value={difficultyProfileOption(form)}
+            onChange={event => {
+              const selection = parseDifficultyProfileOption(
+                event.target.value,
+              );
               onChange({
                 ...form,
-                difficulty: parseDifficultyOption(event.target.value),
-              })
-            }
+                ...selection,
+              });
+            }}
           >
-            <option value={1}>★☆☆☆ レベル1（5×5・6/8/10個・唯一解）</option>
-            <option value={2}>★★☆☆ レベル2（6×6・10/12個・唯一解）</option>
-            <option value={3}>★★★☆ レベル3（6×6・14個・唯一解）</option>
+            <option value="level-1">
+              ★☆☆☆ レベル1（5×5・6/8/10端点・唯一解）
+            </option>
+            <option value="level-2-ten">
+              ★★☆☆ レベル2（6×6・10端点・唯一解）
+            </option>
+            <option value="level-2-twelve">
+              ★★☆☆ レベル2（6×6・12端点・唯一解）
+            </option>
+            <option value="level-2-mixed">
+              ★★☆☆ レベル2（6×6・10/12端点・混合）
+            </option>
+            <option value="level-3">★★★☆ レベル3（6×6・14端点・唯一解）</option>
           </select>
         </label>
         <label>
@@ -218,17 +239,42 @@ function createRandomSeed(): string {
   return `onaji-${[...values].map(value => value.toString(36)).join('-')}`;
 }
 
-function parseDifficultyOption(value: string): AvailableDifficultyLevel {
-  if (value === '1') {
-    return 1;
+function difficultyProfileOption(form: WorksheetGenerationForm): string {
+  if (form.difficulty === 1) {
+    return 'level-1';
   }
-  if (value === '2') {
-    return 2;
+  if (form.difficulty === 3) {
+    return 'level-3';
   }
-  if (value === '3') {
-    return 3;
+  if (form.profileId === '6x6-4-4-2') {
+    return 'level-2-ten';
   }
-  throw new RangeError('unsupported difficulty option');
+  if (form.profileId === '6x6-4-4-4') {
+    return 'level-2-twelve';
+  }
+  return 'level-2-mixed';
+}
+
+function parseDifficultyProfileOption(value: string): {
+  readonly difficulty: AvailableDifficultyLevel;
+  readonly profileId: LevelTwoProfileId | undefined;
+} {
+  if (value === 'level-1') {
+    return {difficulty: 1, profileId: undefined};
+  }
+  if (value === 'level-2-ten') {
+    return {difficulty: 2, profileId: '6x6-4-4-2'};
+  }
+  if (value === 'level-2-twelve') {
+    return {difficulty: 2, profileId: '6x6-4-4-4'};
+  }
+  if (value === 'level-2-mixed') {
+    return {difficulty: 2, profileId: undefined};
+  }
+  if (value === 'level-3') {
+    return {difficulty: 3, profileId: undefined};
+  }
+  throw new RangeError('unsupported difficulty/profile option');
 }
 
 function parsePuzzleCountOption(value: string): PuzzleCount {

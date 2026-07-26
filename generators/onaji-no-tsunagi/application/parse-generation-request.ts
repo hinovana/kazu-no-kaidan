@@ -1,11 +1,13 @@
 /**
  * フォームやWorkerから届く未知の値を、domainのGenerationRequestへ厳格変換する。
  *
- * 許可されたseed、難易度、問題数だけを受け入れ、不正入力を明示的な例外にする。
+ * 許可されたseed、難易度、問題数、profileだけを受け入れ、
+ * 不正入力を明示的な例外にする。
  *
  * @packageDocumentation
  */
 
+import {findUniquePathCoverProfileDifficulty} from '../domain/generation/unique-path-cover-profile.ts';
 import type {
   AcceptedDifficultyClassification,
   AvailableDifficultyLevel,
@@ -13,6 +15,7 @@ import type {
   PuzzleCount,
 } from '../domain/types/generation.ts';
 import {ACCEPTABLE_DIFFICULTY_CLASSIFICATIONS} from '../domain/types/generation.ts';
+import type {UniquePathCoverProfileId} from '../domain/types/puzzle.ts';
 
 /**
  * 生成条件のruntime検証で見つかった問題をまとめて保持する例外。
@@ -35,7 +38,7 @@ export class GenerationRequestParseError extends TypeError {
  * 暗黙補正せず、レベル4も未実装として拒否する。
  *
  * @throws `GenerationRequestParseError`
- * object形状、難易度、問題数、seed長のいずれかが契約外の場合。
+ * object形状、難易度、問題数、profile、seed長のいずれかが契約外の場合。
  */
 export function parseGenerationRequest(input: unknown): GenerationRequest {
   if (!isRecord(input)) {
@@ -49,6 +52,7 @@ export function parseGenerationRequest(input: unknown): GenerationRequest {
     : null;
   const availablePuzzleCount = isPuzzleCount(puzzleCount) ? puzzleCount : null;
   const seed = typeof input.seed === 'string' ? input.seed.trim() : '';
+  const profileId = parseProfileId(input.profileId, issues);
   const acceptedDifficultyClassifications =
     parseAcceptedDifficultyClassifications(
       input.acceptedDifficultyClassifications,
@@ -62,6 +66,13 @@ export function parseGenerationRequest(input: unknown): GenerationRequest {
   }
   if (availablePuzzleCount === null) {
     issues.push('問題数は1から4で指定します。');
+  }
+  if (
+    availableDifficulty !== null &&
+    profileId !== undefined &&
+    findUniquePathCoverProfileDifficulty(profileId) !== availableDifficulty
+  ) {
+    issues.push('指定profileと暫定難易度が一致しません。');
   }
   if (seed.length === 0 || seed.length > 200) {
     issues.push('seedは1文字以上200文字以下で指定します。');
@@ -78,10 +89,25 @@ export function parseGenerationRequest(input: unknown): GenerationRequest {
     difficulty: availableDifficulty,
     puzzleCount: availablePuzzleCount,
     seed,
+    ...(profileId === undefined ? {} : {profileId}),
     ...(acceptedDifficultyClassifications === undefined
       ? {}
       : {acceptedDifficultyClassifications}),
   };
+}
+
+function parseProfileId(
+  value: unknown,
+  issues: string[],
+): UniquePathCoverProfileId | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (isUniquePathCoverProfileId(value)) {
+    return value;
+  }
+  issues.push('未対応のprofileが指定されています。');
+  return undefined;
 }
 
 function parseAcceptedDifficultyClassifications(
@@ -145,5 +171,18 @@ function isAcceptedDifficultyClassification(
 ): value is AcceptedDifficultyClassification {
   return ACCEPTABLE_DIFFICULTY_CLASSIFICATIONS.some(
     classification => classification === value,
+  );
+}
+
+function isUniquePathCoverProfileId(
+  value: unknown,
+): value is UniquePathCoverProfileId {
+  return (
+    value === '5x5-2-2-2' ||
+    value === '5x5-4-2-2' ||
+    value === '5x5-4-4-2' ||
+    value === '6x6-4-4-2' ||
+    value === '6x6-4-4-4' ||
+    value === '6x6-6-4-4'
   );
 }

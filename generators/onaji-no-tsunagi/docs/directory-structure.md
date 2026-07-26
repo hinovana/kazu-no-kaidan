@@ -153,7 +153,8 @@ TypeDocの生成物はリポジトリルートの
 生成物を直接編集せず、`npm run docs:onaji-no-tsunagi`で再生成する。
 
 `tests/six-by-six-difficulty-audit.mjs`は、ローカル原本参照JSONを明示的に
-受け取り、profile別の生成分布と原本基準点を比較する。
+受け取り、profile別の生成分布と原本基準点を比較する。`--profile`指定時は
+通常のseed依存profile選択を使わず、指定profileだけを直接生成する。
 `tests/difficulty-audit-policy.mjs`が候補分類と標本選定、
 `tests/difficulty-audit-html.mjs`が人間レビュー用HTMLを担当する。
 原本座標と生成した監査HTML・JSONはGit管理対象にしない。

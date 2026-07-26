@@ -178,7 +178,7 @@ describe('おなじのつなぎ生成UI', () => {
       container.querySelectorAll('select');
     expect(difficultySelect).toBeInstanceOf(HTMLSelectElement);
     expect(puzzleCountSelect).toBeInstanceOf(HTMLSelectElement);
-    await changeSelect(difficultySelect as HTMLSelectElement, '2');
+    await changeSelect(difficultySelect as HTMLSelectElement, 'level-2-mixed');
     await changeSelect(puzzleCountSelect as HTMLSelectElement, '2');
     const checkboxes = [
       ...container.querySelectorAll<HTMLInputElement>(
@@ -210,6 +210,48 @@ describe('おなじのつなぎ生成UI', () => {
     const badges = [...container.querySelectorAll('.ots-classification-badge')];
     expect(badges).toHaveLength(2);
     expect(badges.every(badge => badge.textContent === '原本近傍')).toBe(true);
+  });
+
+  it('レベル2の10端点・12端点・混合を分け、12端点profileを固定する', async () => {
+    await act(async () => {
+      root.render(
+        createElement(WorksheetGeneratorPage, {
+          onRequestPrint: vi.fn(),
+        }),
+      );
+    });
+
+    const difficultySelect = container.querySelector('select');
+    expect(difficultySelect).toBeInstanceOf(HTMLSelectElement);
+    expect(
+      [...(difficultySelect as HTMLSelectElement).options].map(
+        option => option.value,
+      ),
+    ).toEqual([
+      'level-1',
+      'level-2-ten',
+      'level-2-twelve',
+      'level-2-mixed',
+      'level-3',
+    ]);
+    await changeSelect(difficultySelect as HTMLSelectElement, 'level-2-twelve');
+    const checkboxes = [
+      ...container.querySelectorAll<HTMLInputElement>(
+        '.ots-selection-options input',
+      ),
+    ];
+    expect(checkboxes.every(checkbox => checkbox.matches(':disabled'))).toBe(
+      true,
+    );
+    await submitForm(container);
+
+    const request = lastWorker().lastRequest();
+    expect(request.input).toEqual({
+      difficulty: 2,
+      puzzleCount: 2,
+      seed: 'onaji-start',
+      profileId: '6x6-4-4-4',
+    });
   });
 
   it('構造化エラーをconsoleへ記録し、JSON保存操作を表示する', async () => {
