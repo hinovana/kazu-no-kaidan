@@ -6,22 +6,23 @@
  * @packageDocumentation
  */
 
-import { adjacentIndices } from "../grid/adjacency.ts";
-import { cellIndex, indexToCell, manhattanDistance } from "../grid/coordinates.ts";
-import type { Puzzle, Terminal } from "../types/puzzle.ts";
+import {adjacentIndices} from '../grid/adjacency.ts';
+import {
+  cellIndex,
+  indexToCell,
+  manhattanDistance,
+} from '../grid/coordinates.ts';
+import type {Puzzle, Terminal} from '../types/puzzle.ts';
 import type {
   PathSolution,
   Solution,
   SolveResult,
   SolverMetrics,
-} from "../types/solution.ts";
-import { validatePuzzle } from "../validation/validate-puzzle.ts";
-import {
-  listSameSymbolPartners,
-  terminalPairKey,
-} from "./enumerate-pairings.ts";
-import { normalizeSolution, solutionHash } from "./normalize-solution.ts";
-import { isBitSet, isReachable, setBit } from "./residual-reachability.ts";
+} from '../types/solution.ts';
+import {validatePuzzle} from '../validation/validate-puzzle.ts';
+import {listSameSymbolPartners, terminalPairKey} from './enumerate-pairings.ts';
+import {normalizeSolution, solutionHash} from './normalize-solution.ts';
+import {isBitSet, isReachable, setBit} from './residual-reachability.ts';
 import {
   allTerminalsHaveReachablePartners,
   canEnterPathCell,
@@ -29,7 +30,7 @@ import {
   hasEvenSymbolParityInEveryComponent,
   sortTerminals,
   terminalSearchStateKey,
-} from "./search-grid.ts";
+} from './search-grid.ts';
 
 /**
  * 独立solverの探索上限、補助制約、枝刈り設定。
@@ -105,10 +106,15 @@ interface TerminalSelection {
  * @throws `TypeError`
  * Puzzle、指定pair、または辺数制約が不正な場合。
  */
-export function solvePuzzle(puzzle: Puzzle, options: SolverOptions = {}): SolveResult {
+export function solvePuzzle(
+  puzzle: Puzzle,
+  options: SolverOptions = {},
+): SolveResult {
   const validation = validatePuzzle(puzzle);
   if (!validation.valid) {
-    throw new TypeError(validation.issues.map((issue) => issue.message).join("\n"));
+    throw new TypeError(
+      validation.issues.map(issue => issue.message).join('\n'),
+    );
   }
   const requiredPartnerByTerminalId = buildRequiredPartnerMap(
     puzzle,
@@ -146,21 +152,22 @@ export function solvePuzzle(puzzle: Puzzle, options: SolverOptions = {}): SolveR
   const metrics = freezeMetrics(context.metrics);
   if (context.budgetExhausted) {
     return {
-      status: "budget_exhausted",
+      status: 'budget_exhausted',
       partialSolutionCount: context.solutions.size,
       metrics,
     };
   }
-  const canonicalSolution = context.solutions.values().next().value as Solution | undefined;
-  if (canonicalSolution === undefined) {
-    return { status: "unsatisfiable", metrics };
+  const canonicalSolutionResult = context.solutions.values().next();
+  if (canonicalSolutionResult.done) {
+    return {status: 'unsatisfiable', metrics};
   }
+  const canonicalSolution = canonicalSolutionResult.value;
   return {
-    status: "solved",
+    status: 'solved',
     canonicalSolution,
     solutionCount: context.stoppedAtLimit
-      ? { kind: "at-least", count: context.solutions.size }
-      : { kind: "exact", count: context.solutions.size },
+      ? {kind: 'at-least', count: context.solutions.size}
+      : {kind: 'exact', count: context.solutions.size},
     metrics,
   };
 }
@@ -180,8 +187,11 @@ function searchTerminals(
     depth,
   );
   if (remainingTerminals.length === 0) {
-    const solution = normalizeSolution({ paths }, context.puzzle.width);
-    context.solutions.set(solutionHash(solution, context.puzzle.width), solution);
+    const solution = normalizeSolution({paths}, context.puzzle.width);
+    context.solutions.set(
+      solutionHash(solution, context.puzzle.width),
+      solution,
+    );
     context.solutionObserver?.(solution);
     if (context.solutions.size >= context.solutionLimit) {
       context.stoppedAtLimit = true;
@@ -195,8 +205,8 @@ function searchTerminals(
     return false;
   }
   if (
-    context.useComponentParity
-    && !hasEvenSymbolParityInEveryComponent(
+    context.useComponentParity &&
+    !hasEvenSymbolParityInEveryComponent(
       context.puzzle,
       remainingTerminals,
       occupied,
@@ -229,19 +239,21 @@ function searchTerminals(
       break;
     }
     context.metrics.pairingCountTried += 1;
-    const nextRemaining = remainingTerminals.filter((terminal) => (
-      terminal.terminalId !== selection.terminal.terminalId
-      && terminal.terminalId !== partner.terminalId
-    ));
-    found = enumeratePaths(
-      context,
-      selection.terminal,
-      partner,
-      nextRemaining,
-      occupied,
-      paths,
-      depth,
-    ) || found;
+    const nextRemaining = remainingTerminals.filter(
+      terminal =>
+        terminal.terminalId !== selection.terminal.terminalId &&
+        terminal.terminalId !== partner.terminalId,
+    );
+    found =
+      enumeratePaths(
+        context,
+        selection.terminal,
+        partner,
+        nextRemaining,
+        occupied,
+        paths,
+        depth,
+      ) || found;
   }
   if (!found && !shouldStop(context) && context.useFailureMemo) {
     context.failedStates.add(stateKey);
@@ -260,27 +272,33 @@ function selectMostConstrainedTerminal(
       terminal.terminalId,
     );
     const partners = listSameSymbolPartners(terminal, terminals)
-      .filter((candidate) => (
-        requiredPartnerId === undefined
-        || candidate.terminalId === requiredPartnerId
-      ))
-      .filter((candidate) => isReachable({
-        width: context.puzzle.width,
-        height: context.puzzle.height,
-        occupied,
-        terminalIndices: context.terminalIndices,
-      }, cellIndex(terminal, context.puzzle.width), cellIndex(candidate, context.puzzle.width)));
+      .filter(
+        candidate =>
+          requiredPartnerId === undefined ||
+          candidate.terminalId === requiredPartnerId,
+      )
+      .filter(candidate =>
+        isReachable(
+          {
+            width: context.puzzle.width,
+            height: context.puzzle.height,
+            occupied,
+            terminalIndices: context.terminalIndices,
+          },
+          cellIndex(terminal, context.puzzle.width),
+          cellIndex(candidate, context.puzzle.width),
+        ),
+      );
     const freeExitCount = adjacentIndices(
       cellIndex(terminal, context.puzzle.width),
       context.puzzle.width,
       context.puzzle.height,
-    ).filter((index) => !isBitSet(occupied, index)).length;
-    const hasPathEdgeLimit = partners.some((partner) => (
-      context.pathEdgeLimitByPair.has(terminalPairKey(
-        terminal.terminalId,
-        partner.terminalId,
-      ))
-    ));
+    ).filter(index => !isBitSet(occupied, index)).length;
+    const hasPathEdgeLimit = partners.some(partner =>
+      context.pathEdgeLimitByPair.has(
+        terminalPairKey(terminal.terminalId, partner.terminalId),
+      ),
+    );
     const candidate = {
       terminal,
       partners,
@@ -288,25 +306,19 @@ function selectMostConstrainedTerminal(
       hasPathEdgeLimit,
     };
     if (
-      selected === null
-      || (candidate.hasPathEdgeLimit && !selected.hasPathEdgeLimit)
-      || (
-        candidate.hasPathEdgeLimit === selected.hasPathEdgeLimit
-        && candidate.partners.length < selected.partners.length
-      )
-      || (
-        candidate.hasPathEdgeLimit === selected.hasPathEdgeLimit
-        && candidate.partners.length === selected.partners.length
-        && candidate.freeExitCount < selected.freeExitCount
-      )
-      || (
-        candidate.hasPathEdgeLimit === selected.hasPathEdgeLimit
-        && candidate.partners.length === selected.partners.length
-        && candidate.freeExitCount === selected.freeExitCount
-        && candidate.terminal.terminalId.localeCompare(
+      selected === null ||
+      (candidate.hasPathEdgeLimit && !selected.hasPathEdgeLimit) ||
+      (candidate.hasPathEdgeLimit === selected.hasPathEdgeLimit &&
+        candidate.partners.length < selected.partners.length) ||
+      (candidate.hasPathEdgeLimit === selected.hasPathEdgeLimit &&
+        candidate.partners.length === selected.partners.length &&
+        candidate.freeExitCount < selected.freeExitCount) ||
+      (candidate.hasPathEdgeLimit === selected.hasPathEdgeLimit &&
+        candidate.partners.length === selected.partners.length &&
+        candidate.freeExitCount === selected.freeExitCount &&
+        candidate.terminal.terminalId.localeCompare(
           selected.terminal.terminalId,
-        ) < 0
-      )
+        ) < 0)
     ) {
       selected = candidate;
     }
@@ -325,9 +337,10 @@ function enumeratePaths(
 ): boolean {
   const startIndex = cellIndex(first, context.puzzle.width);
   const targetIndex = cellIndex(second, context.puzzle.width);
-  const maximumEdgeCount = context.pathEdgeLimitByPair.get(
-    terminalPairKey(first.terminalId, second.terminalId),
-  ) ?? Number.POSITIVE_INFINITY;
+  const maximumEdgeCount =
+    context.pathEdgeLimitByPair.get(
+      terminalPairKey(first.terminalId, second.terminalId),
+    ) ?? Number.POSITIVE_INFINITY;
   const initialVisited = setBit(0n, startIndex);
   let found = false;
   walk(startIndex, initialVisited, [startIndex]);
@@ -348,16 +361,22 @@ function enumeratePaths(
     }
     if (currentIndex === targetIndex) {
       const nextOccupied = occupied | visited;
-      found = searchTerminals(
-        context,
-        remainingTerminals,
-        nextOccupied,
-        [...completedPaths, {
-          symbol: first.symbol,
-          cells: path.map((index) => indexToCell(index, context.puzzle.width)),
-        }],
-        depth + 1,
-      ) || found;
+      found =
+        searchTerminals(
+          context,
+          remainingTerminals,
+          nextOccupied,
+          [
+            ...completedPaths,
+            {
+              symbol: first.symbol,
+              cells: path.map(index =>
+                indexToCell(index, context.puzzle.width),
+              ),
+            },
+          ],
+          depth + 1,
+        ) || found;
       return;
     }
     if (path.length - 1 >= maximumEdgeCount) {
@@ -370,18 +389,21 @@ function enumeratePaths(
       context.puzzle.width,
       context.puzzle.height,
     )
-      .filter((nextIndex) => canEnterPathCell(
-        context.terminalIndices,
-        nextIndex,
-        targetIndex,
-        occupied,
-        visited,
-      ))
-      .toSorted((left, right) => (
-        distanceToTarget(left, targetIndex, context.puzzle.width)
-          - distanceToTarget(right, targetIndex, context.puzzle.width)
-        || left - right
-      ));
+      .filter(nextIndex =>
+        canEnterPathCell(
+          context.terminalIndices,
+          nextIndex,
+          targetIndex,
+          occupied,
+          visited,
+        ),
+      )
+      .toSorted(
+        (left, right) =>
+          distanceToTarget(left, targetIndex, context.puzzle.width) -
+            distanceToTarget(right, targetIndex, context.puzzle.width) ||
+          left - right,
+      );
 
     if (candidates.length === 0) {
       context.metrics.backtrackCount += 1;
@@ -391,9 +413,9 @@ function enumeratePaths(
       const nextVisited = setBit(visited, nextIndex);
       const nextOccupied = occupied | nextVisited;
       if (
-        nextIndex !== targetIndex
-        && path.length % 3 === 0
-        && !allTerminalsHaveReachablePartners(
+        nextIndex !== targetIndex &&
+        path.length % 3 === 0 &&
+        !allTerminalsHaveReachablePartners(
           context.puzzle,
           context.terminalIndices,
           remainingTerminals,
@@ -430,20 +452,24 @@ function buildRequiredPartnerMap(
   pairs: readonly (readonly [string, string])[],
 ): ReadonlyMap<string, string> {
   const terminalById = new Map(
-    puzzle.terminals.map((terminal) => [terminal.terminalId, terminal] as const),
+    puzzle.terminals.map(terminal => [terminal.terminalId, terminal] as const),
   );
   const result = new Map<string, string>();
   for (const [firstId, secondId] of pairs) {
     const first = terminalById.get(firstId);
     const second = terminalById.get(secondId);
     if (first === undefined || second === undefined) {
-      throw new TypeError("required terminal pair contains an unknown terminal");
+      throw new TypeError(
+        'required terminal pair contains an unknown terminal',
+      );
     }
     if (first.symbol !== second.symbol || firstId === secondId) {
-      throw new TypeError("required terminal pair must contain two terminals of one symbol");
+      throw new TypeError(
+        'required terminal pair must contain two terminals of one symbol',
+      );
     }
     if (result.has(firstId) || result.has(secondId)) {
-      throw new TypeError("required terminal pair reuses a terminal");
+      throw new TypeError('required terminal pair reuses a terminal');
     }
     result.set(firstId, secondId);
     result.set(secondId, firstId);
@@ -459,26 +485,29 @@ function buildPathEdgeLimitMap(
   }[],
 ): ReadonlyMap<string, number> {
   const terminalById = new Map(
-    puzzle.terminals.map((terminal) => [terminal.terminalId, terminal] as const),
+    puzzle.terminals.map(terminal => [terminal.terminalId, terminal] as const),
   );
   const result = new Map<string, number>();
-  for (const { terminalIds: [firstId, secondId], maximumEdgeCount } of limits) {
+  for (const {
+    terminalIds: [firstId, secondId],
+    maximumEdgeCount,
+  } of limits) {
     const first = terminalById.get(firstId);
     const second = terminalById.get(secondId);
     if (first === undefined || second === undefined) {
-      throw new TypeError("path edge limit contains an unknown terminal");
+      throw new TypeError('path edge limit contains an unknown terminal');
     }
     if (first.symbol !== second.symbol || firstId === secondId) {
       throw new TypeError(
-        "path edge limit must contain two terminals of one symbol",
+        'path edge limit must contain two terminals of one symbol',
       );
     }
     if (!Number.isInteger(maximumEdgeCount) || maximumEdgeCount < 1) {
-      throw new TypeError("path edge limit must be a positive integer");
+      throw new TypeError('path edge limit must be a positive integer');
     }
     const key = terminalPairKey(firstId, secondId);
     if (result.has(key)) {
-      throw new TypeError("path edge limit duplicates a terminal pair");
+      throw new TypeError('path edge limit duplicates a terminal pair');
     }
     result.set(key, maximumEdgeCount);
   }
@@ -502,5 +531,5 @@ function createMutableMetrics(): MutableMetrics {
 }
 
 function freezeMetrics(metrics: MutableMetrics): SolverMetrics {
-  return { ...metrics };
+  return {...metrics};
 }

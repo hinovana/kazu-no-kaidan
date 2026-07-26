@@ -6,32 +6,32 @@
  * @packageDocumentation
  */
 
-import { adjacentIndices } from "../grid/adjacency.ts";
+import {adjacentIndices} from '../grid/adjacency.ts';
 import {
   cellIndex,
   indexToCell,
   manhattanDistance,
-} from "../grid/coordinates.ts";
-import type { Puzzle, SymbolId, Terminal } from "../types/puzzle.ts";
+} from '../grid/coordinates.ts';
+import type {Puzzle, SymbolId, Terminal} from '../types/puzzle.ts';
 import type {
   OptimizeSolutionResult,
   PathSolution,
   Solution,
   SolutionCost,
-} from "../types/solution.ts";
+} from '../types/solution.ts';
 import {
   calculateSolutionCost,
   compareSolutionCost,
-} from "../validation/analyze-solution-geometry.ts";
-import { validatePuzzle } from "../validation/validate-puzzle.ts";
-import { validateSolution } from "../validation/validate-solution.ts";
-import { listSameSymbolPartners } from "./enumerate-pairings.ts";
-import { normalizeSolution } from "./normalize-solution.ts";
+} from '../validation/analyze-solution-geometry.ts';
+import {validatePuzzle} from '../validation/validate-puzzle.ts';
+import {validateSolution} from '../validation/validate-solution.ts';
+import {listSameSymbolPartners} from './enumerate-pairings.ts';
+import {normalizeSolution} from './normalize-solution.ts';
 import {
   isReachable,
   setBit,
   shortestPathDistance,
-} from "./residual-reachability.ts";
+} from './residual-reachability.ts';
 import {
   allTerminalsHaveReachablePartners,
   canEnterPathCell,
@@ -39,7 +39,7 @@ import {
   hasEvenSymbolParityInEveryComponent,
   sortTerminals,
   terminalSearchStateKey,
-} from "./search-grid.ts";
+} from './search-grid.ts';
 
 /** cost最小化solverの探索設定。 */
 export interface OptimizeSolutionOptions {
@@ -90,23 +90,20 @@ export function optimizeSolution(
   const puzzleValidation = validatePuzzle(puzzle);
   if (!puzzleValidation.valid) {
     throw new TypeError(
-      puzzleValidation.issues.map((issue) => issue.message).join("\n"),
+      puzzleValidation.issues.map(issue => issue.message).join('\n'),
     );
   }
   const plantedValidation = validateSolution(puzzle, plantedSolution);
   if (!plantedValidation.valid) {
     throw new TypeError(
-      plantedValidation.issues.map((issue) => issue.message).join("\n"),
+      plantedValidation.issues.map(issue => issue.message).join('\n'),
     );
   }
   const normalizedPlanted = normalizeSolution(plantedSolution, puzzle.width);
   const context: OptimizerContext = {
     puzzle,
     terminalIndices: createTerminalIndexSet(puzzle),
-    stateBudget: Math.max(
-      1,
-      Math.floor(options.stateBudget ?? 2_000_000),
-    ),
+    stateBudget: Math.max(1, Math.floor(options.stateBudget ?? 2_000_000)),
     matchingLowerBoundMemo: new Map(),
     completedPrefixByState: new Map(),
     exploredStateCount: 0,
@@ -121,7 +118,7 @@ export function optimizeSolution(
 
   if (context.budgetExhausted) {
     return {
-      status: "budget_exhausted",
+      status: 'budget_exhausted',
       incumbent: context.bestSolution,
       incumbentCost: context.bestCost,
       lowerBound,
@@ -130,12 +127,12 @@ export function optimizeSolution(
   }
   if (!context.foundSolution) {
     return {
-      status: "unsatisfiable",
+      status: 'unsatisfiable',
       exploredStateCount: context.exploredStateCount,
     };
   }
   return {
-    status: "optimal",
+    status: 'optimal',
     solution: context.bestSolution,
     cost: context.bestCost,
     exploredStateCount: context.exploredStateCount,
@@ -157,30 +154,34 @@ function searchTerminals(
     context.budgetExhausted = true;
     return;
   }
-  if (!canStillImprove(
-    prefix,
-    minimumMatchingDistance(context, remainingTerminals, occupied),
-    context.bestCost,
-  )) {
+  if (
+    !canStillImprove(
+      prefix,
+      minimumMatchingDistance(context, remainingTerminals, occupied),
+      context.bestCost,
+    )
+  ) {
     return;
   }
   if (remainingTerminals.length === 0) {
-    considerCompleteSolution(context, { paths });
+    considerCompleteSolution(context, {paths});
     return;
   }
-  if (!hasEvenSymbolParityInEveryComponent(
-    context.puzzle,
-    remainingTerminals,
-    occupied,
-  )) {
+  if (
+    !hasEvenSymbolParityInEveryComponent(
+      context.puzzle,
+      remainingTerminals,
+      occupied,
+    )
+  ) {
     return;
   }
 
   const stateKey = terminalSearchStateKey(occupied, remainingTerminals);
   const completedPrefix = context.completedPrefixByState.get(stateKey);
   if (
-    completedPrefix !== undefined
-    && comparePrimaryPrefix(completedPrefix, prefix) < 0
+    completedPrefix !== undefined &&
+    comparePrimaryPrefix(completedPrefix, prefix) < 0
   ) {
     return;
   }
@@ -194,10 +195,11 @@ function searchTerminals(
   }
 
   for (const partner of selection.partners) {
-    const nextRemaining = remainingTerminals.filter((terminal) => (
-      terminal.terminalId !== selection.terminal.terminalId
-      && terminal.terminalId !== partner.terminalId
-    ));
+    const nextRemaining = remainingTerminals.filter(
+      terminal =>
+        terminal.terminalId !== selection.terminal.terminalId &&
+        terminal.terminalId !== partner.terminalId,
+    );
     enumeratePaths(
       context,
       selection.terminal,
@@ -260,11 +262,13 @@ function enumeratePaths(
       indexToCell(currentIndex, context.puzzle.width),
       second,
     );
-    if (!canStillImprove(
-      optimisticPrefix,
-      distanceToTarget + remainingLowerBound,
-      context.bestCost,
-    )) {
+    if (
+      !canStillImprove(
+        optimisticPrefix,
+        distanceToTarget + remainingLowerBound,
+        context.bestCost,
+      )
+    ) {
       return;
     }
     if (currentIndex === targetIndex) {
@@ -272,12 +276,13 @@ function enumeratePaths(
         context,
         remainingTerminals,
         occupied | visited,
-        [...completedPaths, {
-          symbol: first.symbol,
-          cells: path.map((index) => (
-            indexToCell(index, context.puzzle.width)
-          )),
-        }],
+        [
+          ...completedPaths,
+          {
+            symbol: first.symbol,
+            cells: path.map(index => indexToCell(index, context.puzzle.width)),
+          },
+        ],
         optimisticPrefix,
       );
       return;
@@ -288,29 +293,29 @@ function enumeratePaths(
       context.puzzle.width,
       context.puzzle.height,
     )
-      .filter((nextIndex) => canEnterPathCell(
-        context.terminalIndices,
-        nextIndex,
-        targetIndex,
-        occupied,
-        visited,
-      ))
-      .toSorted((left, right) => (
-        manhattanDistance(
-          indexToCell(left, context.puzzle.width),
-          second,
-        ) - manhattanDistance(
-          indexToCell(right, context.puzzle.width),
-          second,
-        )
-        || left - right
-      ));
+      .filter(nextIndex =>
+        canEnterPathCell(
+          context.terminalIndices,
+          nextIndex,
+          targetIndex,
+          occupied,
+          visited,
+        ),
+      )
+      .toSorted(
+        (left, right) =>
+          manhattanDistance(indexToCell(left, context.puzzle.width), second) -
+            manhattanDistance(
+              indexToCell(right, context.puzzle.width),
+              second,
+            ) || left - right,
+      );
     for (const nextIndex of candidates) {
       const nextVisited = setBit(visited, nextIndex);
       if (
-        nextIndex !== targetIndex
-        && path.length % 3 === 0
-        && !allTerminalsHaveReachablePartners(
+        nextIndex !== targetIndex &&
+        path.length % 3 === 0 &&
+        !allTerminalsHaveReachablePartners(
           context.puzzle,
           context.terminalIndices,
           remainingTerminals,
@@ -324,11 +329,8 @@ function enumeratePaths(
         nextVisited,
         [...path, nextIndex],
         pathTurnCount + newTurnCount(path, nextIndex, context.puzzle.width),
-        pathUnitBayCount + newUnitBayCount(
-          path,
-          nextIndex,
-          context.puzzle.width,
-        ),
+        pathUnitBayCount +
+          newUnitBayCount(path, nextIndex, context.puzzle.width),
       );
       if (context.budgetExhausted) {
         return;
@@ -366,24 +368,26 @@ function selectMostConstrainedTerminal(
 ): TerminalSelection | null {
   let selected: TerminalSelection | null = null;
   for (const terminal of terminals) {
-    const partners = listSameSymbolPartners(terminal, terminals)
-      .filter((candidate) => isReachable({
-        width: context.puzzle.width,
-        height: context.puzzle.height,
-        occupied,
-        terminalIndices: context.terminalIndices,
-      }, cellIndex(terminal, context.puzzle.width), cellIndex(candidate, context.puzzle.width)));
+    const partners = listSameSymbolPartners(terminal, terminals).filter(
+      candidate =>
+        isReachable(
+          {
+            width: context.puzzle.width,
+            height: context.puzzle.height,
+            occupied,
+            terminalIndices: context.terminalIndices,
+          },
+          cellIndex(terminal, context.puzzle.width),
+          cellIndex(candidate, context.puzzle.width),
+        ),
+    );
     if (
-      selected === null
-      || partners.length < selected.partners.length
-      || (
-        partners.length === selected.partners.length
-        && terminal.terminalId.localeCompare(
-          selected.terminal.terminalId,
-        ) < 0
-      )
+      selected === null ||
+      partners.length < selected.partners.length ||
+      (partners.length === selected.partners.length &&
+        terminal.terminalId.localeCompare(selected.terminal.terminalId) < 0)
     ) {
-      selected = { terminal, partners };
+      selected = {terminal, partners};
     }
   }
   return selected;
@@ -395,9 +399,9 @@ function minimumMatchingDistance(
   occupied: bigint,
 ): number {
   const key = `all:${occupied.toString(16)}:${terminals
-    .map((terminal) => terminal.terminalId)
+    .map(terminal => terminal.terminalId)
     .toSorted()
-    .join(",")}`;
+    .join(',')}`;
   const cached = context.matchingLowerBoundMemo.get(key);
   if (cached !== undefined) {
     return cached;
@@ -422,9 +426,9 @@ function minimumSymbolMatchingDistance(
   occupied: bigint,
 ): number {
   const memoKey = `symbol:${occupied.toString(16)}:${terminals
-    .map((terminal) => terminal.terminalId)
+    .map(terminal => terminal.terminalId)
     .toSorted()
-    .join(",")}`;
+    .join(',')}`;
   const cached = context.matchingLowerBoundMemo.get(memoKey);
   if (cached !== undefined) {
     return cached;
@@ -434,21 +438,23 @@ function minimumSymbolMatchingDistance(
     return 0;
   }
   let minimum = Number.POSITIVE_INFINITY;
-  for (let partnerIndex = 1; partnerIndex < terminals.length; partnerIndex += 1) {
+  for (
+    let partnerIndex = 1;
+    partnerIndex < terminals.length;
+    partnerIndex += 1
+  ) {
     const partner = terminals[partnerIndex];
     if (partner === undefined) {
       continue;
     }
     minimum = Math.min(
       minimum,
-      shortestResidualDistance(context, first, partner, occupied)
-        + minimumSymbolMatchingDistance(
-        context,
-        terminals.filter((_, index) => (
-          index !== 0 && index !== partnerIndex
-        )),
-        occupied,
-      ),
+      shortestResidualDistance(context, first, partner, occupied) +
+        minimumSymbolMatchingDistance(
+          context,
+          terminals.toSpliced(partnerIndex, 1).slice(1),
+          occupied,
+        ),
     );
   }
   context.matchingLowerBoundMemo.set(memoKey, minimum);
@@ -461,13 +467,18 @@ function shortestResidualDistance(
   second: Terminal,
   occupied: bigint,
 ): number {
-  return shortestPathDistance({
-    width: context.puzzle.width,
-    height: context.puzzle.height,
-    occupied,
-    terminalIndices: context.terminalIndices,
-  }, cellIndex(first, context.puzzle.width), cellIndex(second, context.puzzle.width))
-    ?? Number.POSITIVE_INFINITY;
+  return (
+    shortestPathDistance(
+      {
+        width: context.puzzle.width,
+        height: context.puzzle.height,
+        occupied,
+        terminalIndices: context.terminalIndices,
+      },
+      cellIndex(first, context.puzzle.width),
+      cellIndex(second, context.puzzle.width),
+    ) ?? Number.POSITIVE_INFINITY
+  );
 }
 
 function canStillImprove(
@@ -517,32 +528,26 @@ function newUnitBayCount(
     : 0;
 }
 
-function direction(
-  fromIndex: number,
-  toIndex: number,
-  width: number,
-): string {
+function direction(fromIndex: number, toIndex: number, width: number): string {
   const from = indexToCell(fromIndex, width);
   const to = indexToCell(toIndex, width);
   return `${to.row - from.row},${to.column - from.column}`;
 }
 
-function comparePrimaryCost(
-  left: SolutionCost,
-  right: SolutionCost,
-): number {
-  return left.totalEdgeCount - right.totalEdgeCount
-    || left.unitBayCount - right.unitBayCount
-    || left.totalTurnCount - right.totalTurnCount;
+function comparePrimaryCost(left: SolutionCost, right: SolutionCost): number {
+  return (
+    left.totalEdgeCount - right.totalEdgeCount ||
+    left.unitBayCount - right.unitBayCount ||
+    left.totalTurnCount - right.totalTurnCount
+  );
 }
 
-function comparePrimaryPrefix(
-  left: PrefixCost,
-  right: PrefixCost,
-): number {
-  return left.totalEdgeCount - right.totalEdgeCount
-    || left.unitBayCount - right.unitBayCount
-    || left.totalTurnCount - right.totalTurnCount;
+function comparePrimaryPrefix(left: PrefixCost, right: PrefixCost): number {
+  return (
+    left.totalEdgeCount - right.totalEdgeCount ||
+    left.unitBayCount - right.unitBayCount ||
+    left.totalTurnCount - right.totalTurnCount
+  );
 }
 
 function emptyPrefix(): PrefixCost {

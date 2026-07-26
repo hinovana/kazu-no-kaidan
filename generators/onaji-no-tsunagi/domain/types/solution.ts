@@ -6,7 +6,7 @@
  * @packageDocumentation
  */
 
-import type { Cell, SymbolId } from "./puzzle.ts";
+import type {Cell, SymbolId} from './puzzle.ts';
 
 /**
  * 同じ記号の二端点を結ぶ、向きを持つセル列。
@@ -69,8 +69,8 @@ export interface SolutionGeometryAnalysis {
  * 下限である。どちらも探索予算超過を表さない。
  */
 export type SolutionCount =
-  | { readonly kind: "exact"; readonly count: number }
-  | { readonly kind: "at-least"; readonly count: number };
+  | {readonly kind: 'exact'; readonly count: number}
+  | {readonly kind: 'at-least'; readonly count: number};
 
 /** 独立solverの探索量とsoundな枝刈りの適用回数。 */
 export interface SolverMetrics {
@@ -91,17 +91,17 @@ export interface SolverMetrics {
  */
 export type SolveResult =
   | {
-      readonly status: "solved";
+      readonly status: 'solved';
       readonly canonicalSolution: Solution;
       readonly solutionCount: SolutionCount;
       readonly metrics: SolverMetrics;
     }
   | {
-      readonly status: "unsatisfiable";
+      readonly status: 'unsatisfiable';
       readonly metrics: SolverMetrics;
     }
   | {
-      readonly status: "budget_exhausted";
+      readonly status: 'budget_exhausted';
       readonly partialSolutionCount: number;
       readonly metrics: SolverMetrics;
     };
@@ -114,17 +114,17 @@ export type SolveResult =
  */
 export type OptimizeSolutionResult =
   | {
-      readonly status: "optimal";
+      readonly status: 'optimal';
       readonly solution: Solution;
       readonly cost: SolutionCost;
       readonly exploredStateCount: number;
     }
   | {
-      readonly status: "unsatisfiable";
+      readonly status: 'unsatisfiable';
       readonly exploredStateCount: number;
     }
   | {
-      readonly status: "budget_exhausted";
+      readonly status: 'budget_exhausted';
       readonly incumbent: Solution;
       readonly incumbentCost: SolutionCost;
       readonly lowerBound: number;

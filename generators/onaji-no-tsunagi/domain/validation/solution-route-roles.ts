@@ -4,11 +4,11 @@
  * @packageDocumentation
  */
 
-import { cellKey } from "../grid/coordinates.ts";
-import { terminalPairKey } from "../solver/enumerate-pairings.ts";
-import type { Puzzle } from "../types/puzzle.ts";
-import type { Solution } from "../types/solution.ts";
-import type { RouteRoles } from "../types/worksheet.ts";
+import {cellKey} from '../grid/coordinates.ts';
+import {terminalPairKey} from '../solver/enumerate-pairings.ts';
+import type {Puzzle} from '../types/puzzle.ts';
+import type {Solution} from '../types/solution.ts';
+import type {RouteRoles} from '../types/worksheet.ts';
 
 /**
  * 解の端点pairが、solution-first構成時の全経路役割pairを保つか判定する。
@@ -21,22 +21,19 @@ export function doesSolutionPreserveRouteRoles(
   roles: RouteRoles,
 ): boolean {
   const terminalByCell = new Map(
-    puzzle.terminals.map((terminal) => [
-      cellKey(terminal),
-      terminal,
-    ] as const),
+    puzzle.terminals.map(terminal => [cellKey(terminal), terminal] as const),
   );
   const actualPairs = new Set(
-    solution.paths.map((path) => {
+    solution.paths.map(path => {
       const firstCell = path.cells[0];
       const secondCell = path.cells.at(-1);
       if (firstCell === undefined || secondCell === undefined) {
-        return "";
+        return '';
       }
       const first = terminalByCell.get(cellKey(firstCell));
       const second = terminalByCell.get(cellKey(secondCell));
       return first === undefined || second === undefined
-        ? ""
+        ? ''
         : terminalPairKey(first.terminalId, second.terminalId);
     }),
   );
@@ -44,5 +41,5 @@ export function doesSolutionPreserveRouteRoles(
     roles.spineTerminalIds,
     roles.threadTerminalIds,
     ...roles.scaffoldTerminalIdPairs,
-  ].every((pair) => actualPairs.has(terminalPairKey(...pair)));
+  ].every(pair => actualPairs.has(terminalPairKey(...pair)));
 }

@@ -20,8 +20,8 @@ export type DifficultyLevel = 1 | 2 | 3 | 4;
  */
 export interface DifficultyAnalysis {
   readonly analyzerVersion:
-    | "onaji-no-tsunagi-difficulty.v3.3"
-    | "onaji-no-tsunagi-difficulty.v3.4-draft";
+    | 'onaji-no-tsunagi-difficulty.v3.3'
+    | 'onaji-no-tsunagi-difficulty.v3.4-draft';
   /** 利用者が生成条件として指定した構造帯。 */
   readonly requestedLevel: DifficultyLevel;
   /** 盤面profileから決定した未校正の構造帯。 */

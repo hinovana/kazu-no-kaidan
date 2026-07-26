@@ -76,7 +76,7 @@ export function adjacentPathCellIndices(
     column > 0 ? index - 1 : -1,
     column + 1 < width ? index + 1 : -1,
     row + 1 < height ? index + width : -1,
-  ].filter((candidate) => candidate >= 0);
+  ].filter(candidate => candidate >= 0);
 }
 
 /**

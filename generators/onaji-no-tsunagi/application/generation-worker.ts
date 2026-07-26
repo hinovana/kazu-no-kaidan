@@ -6,20 +6,20 @@
  * @packageDocumentation
  */
 
-import type { GenerationWorkerResponse } from "./generation-worker-contract.ts";
-import { generationErrorMessage } from "./generation-error-message.ts";
-import { generateWorksheetUseCase } from "./generate-worksheet-use-case.ts";
+import type {GenerationWorkerResponse} from './generation-worker-contract.ts';
+import {generationErrorMessage} from './generation-error-message.ts';
+import {generateWorksheetUseCase} from './generate-worksheet-use-case.ts';
 
-self.addEventListener("message", (event: MessageEvent<unknown>) => {
+self.addEventListener('message', (event: MessageEvent<unknown>) => {
   let response: GenerationWorkerResponse;
   try {
     response = {
-      status: "ready",
+      status: 'ready',
       worksheet: generateWorksheetUseCase(event.data),
     };
   } catch (error: unknown) {
     response = {
-      status: "error",
+      status: 'error',
       message: generationErrorMessage(error),
     };
   }

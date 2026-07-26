@@ -7,33 +7,33 @@
  * @packageDocumentation
  */
 
-import type { SeededRandom } from "./random.ts";
+import type {SeededRandom} from './random.ts';
 import type {
   PathCandidate,
   PathCandidateSource,
-} from "./path-candidate-source.ts";
-import type { UniquePathCoverProfile } from "./unique-path-cover-profile.ts";
+} from './path-candidate-source.ts';
+import type {UniquePathCoverProfile} from './unique-path-cover-profile.ts';
 import {
   adjacentPathCellIndices,
   bitForPathCell,
   countPathCells,
   firstPathCellInMask,
   fullPathCoverMask,
-} from "./path-cover-grid.ts";
+} from './path-cover-grid.ts';
 
 /** exact-cover探索の成功、構成不能、予算超過を区別する結果。 @internal */
 export type PathCoverResult =
   | {
-      readonly status: "built";
+      readonly status: 'built';
       readonly paths: readonly PathCandidate[];
       readonly constructionStateCount: number;
     }
   | {
-      readonly status: "not_constructed";
+      readonly status: 'not_constructed';
       readonly constructionStateCount: number;
     }
   | {
-      readonly status: "budget_exhausted";
+      readonly status: 'budget_exhausted';
       readonly constructionStateCount: number;
     };
 
@@ -70,13 +70,13 @@ export function selectPathCover(
   );
   if (found) {
     return {
-      status: "built",
+      status: 'built',
       paths: selectedPaths,
       constructionStateCount,
     };
   }
   return {
-    status: budgetExhausted ? "budget_exhausted" : "not_constructed",
+    status: budgetExhausted ? 'budget_exhausted' : 'not_constructed',
     constructionStateCount,
   };
 
@@ -90,11 +90,7 @@ export function selectPathCover(
     if (remainingLengths.length === 0) {
       return remainingMask === 0n;
     }
-    if (!canFillRemainingCells(
-      remainingMask,
-      remainingLengths,
-      profile,
-    )) {
+    if (!canFillRemainingCells(remainingMask, remainingLengths, profile)) {
       return false;
     }
 
@@ -104,15 +100,16 @@ export function selectPathCover(
       source,
       profile.width === 5,
     );
-    if (selectedOption === undefined || selectedOption.candidates.length === 0) {
+    if (
+      selectedOption === undefined ||
+      selectedOption.candidates.length === 0
+    ) {
       return false;
     }
-    const nextLengths = remainingLengths.filter(
-      (_, index) => index !== selectedOption.index,
-    );
+    const nextLengths = remainingLengths.toSpliced(selectedOption.index, 1);
     if (nextLengths.length === 0) {
       const exactCandidates = selectedOption.candidates.filter(
-        (candidate) => candidate.occupiedMask === remainingMask,
+        candidate => candidate.occupiedMask === remainingMask,
       );
       const lastPath = selectRandom(exactCandidates, random);
       if (lastPath === undefined) {
@@ -161,10 +158,11 @@ function chooseNextLength(
   if (preserveLegacyOrder) {
     return options[0];
   }
-  return options.toSorted((left, right) => (
-    left.candidates.length - right.candidates.length
-    || left.index - right.index
-  ))[0];
+  return options.toSorted(
+    (left, right) =>
+      left.candidates.length - right.candidates.length ||
+      left.index - right.index,
+  )[0];
 }
 
 function canFillRemainingCells(
@@ -179,11 +177,14 @@ function canFillRemainingCells(
   if (countPathCells(remainingMask) !== requiredCellCount) {
     return false;
   }
-  return profile.width === 5 || componentsCanStillBeCovered(
-    remainingMask,
-    remainingLengths,
-    profile.width,
-    profile.height,
+  return (
+    profile.width === 5 ||
+    componentsCanStillBeCovered(
+      remainingMask,
+      remainingLengths,
+      profile.width,
+      profile.height,
+    )
   );
 }
 
@@ -221,7 +222,7 @@ function componentsCanStillBeCovered(
     return false;
   }
   const minimumLength = Math.min(...remainingLengths);
-  return componentSizes.every((size) => size >= minimumLength);
+  return componentSizes.every(size => size >= minimumLength);
 }
 
 function selectRandom<T>(
@@ -233,8 +234,6 @@ function selectRandom<T>(
     : values[random.integer(0, values.length - 1)];
 }
 
-function notConstructed(
-  constructionStateCount: number,
-): PathCoverResult {
-  return { status: "not_constructed", constructionStateCount };
+function notConstructed(constructionStateCount: number): PathCoverResult {
+  return {status: 'not_constructed', constructionStateCount};
 }

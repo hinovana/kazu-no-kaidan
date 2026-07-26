@@ -7,12 +7,12 @@
  * @packageDocumentation
  */
 
-import type { AvailableDifficultyLevel } from "../types/generation.ts";
+import type {AvailableDifficultyLevel} from '../types/generation.ts';
 import type {
   TerminalMultiplicityPattern,
   UniquePathCoverProfileId,
-} from "../types/puzzle.ts";
-import { createSeededRandom } from "./random.ts";
+} from '../types/puzzle.ts';
+import {createSeededRandom} from './random.ts';
 
 /**
  * solution-first構成と後段の品質検査で共有する、版付き盤面profile。
@@ -43,11 +43,11 @@ export interface UniquePathCoverProfile {
 }
 
 const FIVE_BY_FIVE_PROFILES = {
-  "5x5-2-2-2": {
-    profileId: "5x5-2-2-2",
+  '5x5-2-2-2': {
+    profileId: '5x5-2-2-2',
     width: 5,
     height: 5,
-    terminalPattern: "2-2-2",
+    terminalPattern: '2-2-2',
     terminalCount: 6,
     pathCount: 3,
     symbolPathCounts: [1, 1, 1],
@@ -73,11 +73,11 @@ const FIVE_BY_FIVE_PROFILES = {
     maximumValidityStates: 500_000,
     maximumProofStates: 500_000,
   },
-  "5x5-4-2-2": {
-    profileId: "5x5-4-2-2",
+  '5x5-4-2-2': {
+    profileId: '5x5-4-2-2',
     width: 5,
     height: 5,
-    terminalPattern: "4-2-2",
+    terminalPattern: '4-2-2',
     terminalCount: 8,
     pathCount: 4,
     symbolPathCounts: [2, 1, 1],
@@ -101,11 +101,11 @@ const FIVE_BY_FIVE_PROFILES = {
     maximumValidityStates: 500_000,
     maximumProofStates: 500_000,
   },
-  "5x5-4-4-2": {
-    profileId: "5x5-4-4-2",
+  '5x5-4-4-2': {
+    profileId: '5x5-4-4-2',
     width: 5,
     height: 5,
-    terminalPattern: "4-4-2",
+    terminalPattern: '4-4-2',
     terminalCount: 10,
     pathCount: 5,
     symbolPathCounts: [2, 2, 1],
@@ -128,16 +128,14 @@ const FIVE_BY_FIVE_PROFILES = {
     maximumValidityStates: 500_000,
     maximumProofStates: 500_000,
   },
-} as const satisfies Readonly<
-  Record<string, UniquePathCoverProfile>
->;
+} as const satisfies Readonly<Record<string, UniquePathCoverProfile>>;
 
 const SIX_BY_SIX_PROFILES = {
-  "6x6-4-4-2": {
-    profileId: "6x6-4-4-2",
+  '6x6-4-4-2': {
+    profileId: '6x6-4-4-2',
     width: 6,
     height: 6,
-    terminalPattern: "4-4-2",
+    terminalPattern: '4-4-2',
     terminalCount: 10,
     pathCount: 5,
     symbolPathCounts: [2, 2, 1],
@@ -159,11 +157,11 @@ const SIX_BY_SIX_PROFILES = {
     maximumValidityStates: 50_000,
     maximumProofStates: 50_000,
   },
-  "6x6-4-4-4": {
-    profileId: "6x6-4-4-4",
+  '6x6-4-4-4': {
+    profileId: '6x6-4-4-4',
     width: 6,
     height: 6,
-    terminalPattern: "4-4-4",
+    terminalPattern: '4-4-4',
     terminalCount: 12,
     pathCount: 6,
     symbolPathCounts: [2, 2, 2],
@@ -185,11 +183,11 @@ const SIX_BY_SIX_PROFILES = {
     maximumValidityStates: 30_000,
     maximumProofStates: 30_000,
   },
-  "6x6-6-4-4": {
-    profileId: "6x6-6-4-4",
+  '6x6-6-4-4': {
+    profileId: '6x6-6-4-4',
     width: 6,
     height: 6,
-    terminalPattern: "6-4-4",
+    terminalPattern: '6-4-4',
     terminalCount: 14,
     pathCount: 7,
     symbolPathCounts: [3, 2, 2],
@@ -211,9 +209,7 @@ const SIX_BY_SIX_PROFILES = {
     maximumValidityStates: 10_000,
     maximumProofStates: 10_000,
   },
-} as const satisfies Readonly<
-  Record<string, UniquePathCoverProfile>
->;
+} as const satisfies Readonly<Record<string, UniquePathCoverProfile>>;
 
 const UNIQUE_PATH_COVER_PROFILES = {
   ...FIVE_BY_FIVE_PROFILES,
@@ -225,30 +221,21 @@ const UNIQUE_PATH_COVER_PROFILES = {
 const FIVE_BY_FIVE_PROFILE_SEQUENCES: Readonly<
   Record<number, readonly UniquePathCoverProfileId[]>
 > = {
-  2: ["5x5-4-2-2", "5x5-4-4-2"],
-  3: ["5x5-2-2-2", "5x5-4-2-2", "5x5-4-4-2"],
-  4: ["5x5-2-2-2", "5x5-4-2-2", "5x5-4-2-2", "5x5-4-4-2"],
+  2: ['5x5-4-2-2', '5x5-4-4-2'],
+  3: ['5x5-2-2-2', '5x5-4-2-2', '5x5-4-4-2'],
+  4: ['5x5-2-2-2', '5x5-4-2-2', '5x5-4-2-2', '5x5-4-4-2'],
 };
 
 const SIX_BY_SIX_LEVEL_TWO_PROFILE_SEQUENCES: Readonly<
   Record<number, readonly UniquePathCoverProfileId[]>
 > = {
-  2: ["6x6-4-4-2", "6x6-4-4-4"],
-  3: ["6x6-4-4-2", "6x6-4-4-4", "6x6-4-4-4"],
-  4: [
-    "6x6-4-4-2",
-    "6x6-4-4-4",
-    "6x6-4-4-2",
-    "6x6-4-4-4",
-  ],
+  2: ['6x6-4-4-2', '6x6-4-4-4'],
+  3: ['6x6-4-4-2', '6x6-4-4-4', '6x6-4-4-4'],
+  4: ['6x6-4-4-2', '6x6-4-4-4', '6x6-4-4-2', '6x6-4-4-4'],
 };
 
-const SINGLE_FIVE_BY_FIVE_PROFILE_CHOICES:
-readonly UniquePathCoverProfileId[] = [
-  "5x5-2-2-2",
-  "5x5-4-2-2",
-  "5x5-4-4-2",
-];
+const SINGLE_FIVE_BY_FIVE_PROFILE_CHOICES: readonly UniquePathCoverProfileId[] =
+  ['5x5-2-2-2', '5x5-4-2-2', '5x5-4-4-2'];
 
 /**
  * profile IDに対応する読取専用の構成・品質gateを返す。
@@ -279,20 +266,16 @@ export function chooseUniquePathCoverProfileId(
   puzzleCount: number,
 ): UniquePathCoverProfileId {
   if (difficulty === 1) {
-    return chooseFiveByFiveProfileId(
-      requestSeed,
-      puzzleIndex,
-      puzzleCount,
-    );
+    return chooseFiveByFiveProfileId(requestSeed, puzzleIndex, puzzleCount);
   }
   if (difficulty === 2) {
     return chooseLevelTwoProfileId(requestSeed, puzzleIndex, puzzleCount);
   }
   if (difficulty === 3) {
     assertPuzzleIndexIsInWorksheet(puzzleIndex, puzzleCount);
-    return "6x6-6-4-4";
+    return '6x6-6-4-4';
   }
-  throw new RangeError("unsupported difficulty");
+  throw new RangeError('unsupported difficulty');
 }
 
 function chooseFiveByFiveProfileId(
@@ -310,9 +293,11 @@ function chooseFiveByFiveProfileId(
   }
   assertSinglePuzzleRequest(puzzleIndex, puzzleCount);
   const random = createSeededRandom(`${requestSeed}::terminal-pattern`);
-  return SINGLE_FIVE_BY_FIVE_PROFILE_CHOICES[
-    random.integer(0, SINGLE_FIVE_BY_FIVE_PROFILE_CHOICES.length - 1)
-  ] ?? "5x5-2-2-2";
+  return (
+    SINGLE_FIVE_BY_FIVE_PROFILE_CHOICES[
+      random.integer(0, SINGLE_FIVE_BY_FIVE_PROFILE_CHOICES.length - 1)
+    ] ?? '5x5-2-2-2'
+  );
 }
 
 function chooseLevelTwoProfileId(
@@ -330,9 +315,7 @@ function chooseLevelTwoProfileId(
   }
   assertSinglePuzzleRequest(puzzleIndex, puzzleCount);
   const random = createSeededRandom(`${requestSeed}::terminal-profile`);
-  return random.integer(0, 1) === 0
-    ? "6x6-4-4-2"
-    : "6x6-4-4-4";
+  return random.integer(0, 1) === 0 ? '6x6-4-4-2' : '6x6-4-4-4';
 }
 
 function selectProfileFromSequence(
@@ -346,7 +329,7 @@ function selectProfileFromSequence(
   }
   const selected = sequence[puzzleIndex];
   if (selected === undefined) {
-    throw new RangeError("puzzle index is outside the worksheet");
+    throw new RangeError('puzzle index is outside the worksheet');
   }
   return selected;
 }
@@ -356,7 +339,7 @@ function assertSinglePuzzleRequest(
   puzzleCount: number,
 ): void {
   if (puzzleCount !== 1 || puzzleIndex !== 0) {
-    throw new RangeError("unsupported worksheet puzzle count");
+    throw new RangeError('unsupported worksheet puzzle count');
   }
 }
 
@@ -365,6 +348,6 @@ function assertPuzzleIndexIsInWorksheet(
   puzzleCount: number,
 ): void {
   if (puzzleIndex < 0 || puzzleIndex >= puzzleCount) {
-    throw new RangeError("puzzle index is outside the worksheet");
+    throw new RangeError('puzzle index is outside the worksheet');
   }
 }

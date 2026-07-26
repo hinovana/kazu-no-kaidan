@@ -17,15 +17,11 @@ export function readRecord(
   path: string,
   errors: string[],
 ): Record<string, unknown> {
-  if (
-    typeof source !== "object"
-    || source === null
-    || Array.isArray(source)
-  ) {
+  if (!isRecord(source)) {
     errors.push(`${path}: オブジェクトでなければなりません。`);
     return {};
   }
-  return source as Record<string, unknown>;
+  return source;
 }
 
 /**
@@ -55,9 +51,9 @@ export function readNonEmptyString(
   path: string,
   errors: string[],
 ): string {
-  if (typeof source !== "string" || source.trim().length === 0) {
+  if (typeof source !== 'string' || source.trim().length === 0) {
     errors.push(`${path}: 空でない文字列でなければなりません。`);
-    return "";
+    return '';
   }
   return source;
 }
@@ -75,14 +71,13 @@ export function readInteger(
   maximum = Number.MAX_SAFE_INTEGER,
 ): number {
   if (
-    !Number.isInteger(source)
-    || typeof source !== "number"
-    || source < minimum
-    || source > maximum
+    !Number.isInteger(source) ||
+    typeof source !== 'number' ||
+    source < minimum ||
+    source > maximum
   ) {
-    const upperBound = maximum === Number.MAX_SAFE_INTEGER
-      ? ""
-      : `${maximum}以下`;
+    const upperBound =
+      maximum === Number.MAX_SAFE_INTEGER ? '' : `${maximum}以下`;
     errors.push(`${path}: ${minimum}以上${upperBound}の整数が必要です。`);
     return minimum;
   }
@@ -114,18 +109,15 @@ export function readNullableInteger(
  */
 export function readEnum<const Value extends string>(
   source: unknown,
-  values: readonly Value[],
+  values: readonly [Value, ...Value[]],
   path: string,
   errors: string[],
 ): Value {
-  if (
-    typeof source !== "string"
-    || !values.includes(source as Value)
-  ) {
-    errors.push(`${path}: ${values.join(" / ")}のいずれかが必要です。`);
-    return values[0] as Value;
+  if (typeof source !== 'string' || !isAllowedValue(source, values)) {
+    errors.push(`${path}: ${values.join(' / ')}のいずれかが必要です。`);
+    return values[0];
   }
-  return source as Value;
+  return source;
 }
 
 /**
@@ -159,7 +151,9 @@ export function checkKeys(
   const expected = new Set(expectedKeys);
   for (const key of Object.keys(record)) {
     if (!expected.has(key)) {
-      errors.push(`${path}.${key}: 未定義の項目です。入力ミスを確認してください。`);
+      errors.push(
+        `${path}.${key}: 未定義の項目です。入力ミスを確認してください。`,
+      );
     }
   }
   for (const key of expectedKeys) {
@@ -167,4 +161,17 @@ export function checkKeys(
       errors.push(`${path}.${key}: 必須項目です。`);
     }
   }
+}
+
+function isRecord(source: unknown): source is Record<string, unknown> {
+  return (
+    typeof source === 'object' && source !== null && !Array.isArray(source)
+  );
+}
+
+function isAllowedValue<Value extends string>(
+  source: string,
+  values: readonly Value[],
+): source is Value {
+  return values.some(value => value === source);
 }

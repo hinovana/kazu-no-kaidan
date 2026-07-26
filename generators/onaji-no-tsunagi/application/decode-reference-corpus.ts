@@ -13,12 +13,10 @@ import type {
   ReferenceProblemSource,
   ReferenceSourceDocument,
   TranscriptionStatus,
-} from "../domain/types/reference-corpus.ts";
-import {
-  REFERENCE_SYMBOLS,
-} from "../domain/types/reference-corpus.ts";
-import type { Puzzle, SymbolId, Terminal } from "../domain/types/puzzle.ts";
-import { validatePuzzle } from "../domain/validation/validate-puzzle.ts";
+} from '../domain/types/reference-corpus.ts';
+import {REFERENCE_SYMBOLS} from '../domain/types/reference-corpus.ts';
+import type {Puzzle, Terminal} from '../domain/types/puzzle.ts';
+import {validatePuzzle} from '../domain/validation/validate-puzzle.ts';
 import {
   checkKeys,
   readArray,
@@ -28,7 +26,7 @@ import {
   readNonEmptyString,
   readNullableInteger,
   readRecord,
-} from "./strict-json-reader.ts";
+} from './strict-json-reader.ts';
 
 /**
  * 原本参照JSONを厳格にデコードした結果。
@@ -36,18 +34,18 @@ import {
  * `ok: false`では、検出できた構造・整合性エラーを可能な限りまとめて返す。
  */
 export type ReferenceCorpusDecodeResult =
-  | { readonly ok: true; readonly corpus: ReferenceCorpus }
-  | { readonly ok: false; readonly errors: readonly string[] };
+  | {readonly ok: true; readonly corpus: ReferenceCorpus}
+  | {readonly ok: false; readonly errors: readonly string[]};
 
-const SCHEMA_VERSION = "onaji-no-tsunagi.source-corpus.v1";
+const SCHEMA_VERSION = 'onaji-no-tsunagi.source-corpus.v1';
 const PROBLEM_KINDS = [
-  "tutorial-example",
-  "numbered-problem",
-  "challenge",
+  'tutorial-example',
+  'numbered-problem',
+  'challenge',
 ] as const satisfies readonly ReferenceProblemKind[];
 const TRANSCRIPTION_STATUSES = [
-  "draft",
-  "double-checked",
+  'draft',
+  'double-checked',
 ] as const satisfies readonly TranscriptionStatus[];
 
 /**
@@ -65,53 +63,51 @@ export function decodeReferenceCorpusJson(
 ): ReferenceCorpusDecodeResult {
   let source: unknown;
   try {
-    source = JSON.parse(sourceText) as unknown;
+    source = JSON.parse(sourceText);
   } catch (error: unknown) {
     return {
       ok: false,
       errors: [
         `JSONとして読み込めません: ${
-          error instanceof Error ? error.message : "構文エラー"
+          error instanceof Error ? error.message : '構文エラー'
         }`,
       ],
     };
   }
 
   const errors: string[] = [];
-  const root = readRecord(source, "$", errors);
+  const root = readRecord(source, '$', errors);
   checkKeys(
     root,
-    ["schemaVersion", "sourceDocument", "coordinateSystem", "problems"],
-    "$",
+    ['schemaVersion', 'sourceDocument', 'coordinateSystem', 'problems'],
+    '$',
     errors,
   );
 
   const schemaVersion = readLiteral(
     root.schemaVersion,
     SCHEMA_VERSION,
-    "$.schemaVersion",
+    '$.schemaVersion',
     errors,
   );
   const sourceDocument = decodeSourceDocument(
     root.sourceDocument,
-    "$.sourceDocument",
+    '$.sourceDocument',
     errors,
   );
   const coordinateSystem = decodeCoordinateSystem(
     root.coordinateSystem,
-    "$.coordinateSystem",
+    '$.coordinateSystem',
     errors,
   );
-  const problemValues = readArray(root.problems, "$.problems", errors);
-  const problems = problemValues.map((problem, index) => decodeProblem(
-    problem,
-    `$.problems[${index}]`,
-    errors,
-  ));
+  const problemValues = readArray(root.problems, '$.problems', errors);
+  const problems = problemValues.map((problem, index) =>
+    decodeProblem(problem, `$.problems[${index}]`, errors),
+  );
   validateCorpusConsistency(problems, sourceDocument, errors);
 
   if (errors.length > 0) {
-    return { ok: false, errors };
+    return {ok: false, errors};
   }
 
   return {
@@ -131,7 +127,7 @@ function validateCorpusConsistency(
   errors: string[],
 ): void {
   if (problems.length === 0) {
-    errors.push("$.problems: 1問以上必要です。");
+    errors.push('$.problems: 1問以上必要です。');
   }
 
   const problemIds = new Set<string>();
@@ -139,12 +135,7 @@ function validateCorpusConsistency(
   for (const [index, problem] of problems.entries()) {
     const path = `$.problems[${index}]`;
     reportDuplicateProblemId(problem, path, problemIds, errors);
-    reportDuplicateSourceLocation(
-      problem,
-      path,
-      sourceLocations,
-      errors,
-    );
+    reportDuplicateSourceLocation(problem, path, sourceLocations, errors);
     validateSourcePageRange(problem, path, sourceDocument, errors);
     validateTranscriptionSource(problem, path, sourceDocument, errors);
     appendPuzzleValidationErrors(problem, path, errors);
@@ -173,7 +164,7 @@ function reportDuplicateSourceLocation(
     problem.source.bookPage,
     problem.source.label,
     problem.source.kind,
-  ].join(":");
+  ].join(':');
   if (sourceLocations.has(sourceLocation)) {
     errors.push(`${path}.source: 同じ出典位置が重複しています。`);
   }
@@ -188,8 +179,8 @@ function validateSourcePageRange(
 ): void {
   const [firstBookPage, lastBookPage] = sourceDocument.bookPageRange;
   if (
-    problem.source.bookPage < firstBookPage
-    || problem.source.bookPage > lastBookPage
+    problem.source.bookPage < firstBookPage ||
+    problem.source.bookPage > lastBookPage
   ) {
     errors.push(`${path}.source.bookPage: 原本ページ範囲外です。`);
   }
@@ -204,10 +195,8 @@ function validateTranscriptionSource(
   sourceDocument: ReferenceSourceDocument,
   errors: string[],
 ): void {
-  const checkedSha256 = (
-    problem.transcription.checkedAgainstSourceSha256
-  );
-  if (problem.transcription.status === "draft") {
+  const checkedSha256 = problem.transcription.checkedAgainstSourceSha256;
+  if (problem.transcription.status === 'draft') {
     if (checkedSha256 !== null) {
       errors.push(
         `${path}.transcription.checkedAgainstSourceSha256: draftではnullにします。`,
@@ -245,11 +234,9 @@ function appendPuzzleValidationErrors(
  * @remarks
  * solver入力へ変換するだけで、解数や転記の正確性は保証しない。
  */
-export function referenceProblemToPuzzle(
-  problem: ReferenceProblem,
-): Puzzle {
+export function referenceProblemToPuzzle(problem: ReferenceProblem): Puzzle {
   return {
-    schemaVersion: "onaji-no-tsunagi.puzzle.v1",
+    schemaVersion: 'onaji-no-tsunagi.puzzle.v1',
     puzzleId: problem.id,
     width: problem.board.width,
     height: problem.board.height,
@@ -265,7 +252,7 @@ function decodeSourceDocument(
   const record = readRecord(source, path, errors);
   checkKeys(
     record,
-    ["id", "sha256", "bookPageRange", "pdfPageCount"],
+    ['id', 'sha256', 'bookPageRange', 'pdfPageCount'],
     path,
     errors,
   );
@@ -283,12 +270,7 @@ function decodeSourceDocument(
     errors,
     1,
   );
-  const end = readInteger(
-    pageRange[1],
-    `${path}.bookPageRange[1]`,
-    errors,
-    1,
-  );
+  const end = readInteger(pageRange[1], `${path}.bookPageRange[1]`, errors, 1);
   if (start > end) {
     errors.push(`${path}.bookPageRange: 開始ページは終了ページ以下にします。`);
   }
@@ -310,11 +292,11 @@ function decodeCoordinateSystem(
   source: unknown,
   path: string,
   errors: string[],
-): ReferenceCorpus["coordinateSystem"] {
+): ReferenceCorpus['coordinateSystem'] {
   const record = readRecord(source, path, errors);
-  checkKeys(record, ["origin", "indexBase"], path, errors);
+  checkKeys(record, ['origin', 'indexBase'], path, errors);
   return {
-    origin: readLiteral(record.origin, "top-left", `${path}.origin`, errors),
+    origin: readLiteral(record.origin, 'top-left', `${path}.origin`, errors),
     indexBase: readLiteral(record.indexBase, 0, `${path}.indexBase`, errors),
   };
 }
@@ -327,7 +309,7 @@ function decodeProblem(
   const record = readRecord(source, path, errors);
   checkKeys(
     record,
-    ["id", "source", "board", "terminals", "transcription"],
+    ['id', 'source', 'board', 'terminals', 'transcription'],
     path,
     errors,
   );
@@ -343,11 +325,9 @@ function decodeProblem(
     `${path}.terminals`,
     errors,
   );
-  const terminals = terminalValues.map((terminal, index) => decodeTerminal(
-    terminal,
-    `${path}.terminals[${index}]`,
-    errors,
-  ));
+  const terminals = terminalValues.map((terminal, index) =>
+    decodeTerminal(terminal, `${path}.terminals[${index}]`, errors),
+  );
   const transcription = decodeTranscription(
     record.transcription,
     `${path}.transcription`,
@@ -371,7 +351,7 @@ function decodeProblemSource(
   const record = readRecord(source, path, errors);
   checkKeys(
     record,
-    ["bookPage", "pdfPage", "label", "kind", "printedDifficulty"],
+    ['bookPage', 'pdfPage', 'label', 'kind', 'printedDifficulty'],
     path,
     errors,
   );
@@ -379,12 +359,7 @@ function decodeProblemSource(
     bookPage: readInteger(record.bookPage, `${path}.bookPage`, errors, 1),
     pdfPage: readInteger(record.pdfPage, `${path}.pdfPage`, errors, 1),
     label: readNonEmptyString(record.label, `${path}.label`, errors),
-    kind: readEnum(
-      record.kind,
-      PROBLEM_KINDS,
-      `${path}.kind`,
-      errors,
-    ),
+    kind: readEnum(record.kind, PROBLEM_KINDS, `${path}.kind`, errors),
     printedDifficulty: readNullableInteger(
       record.printedDifficulty,
       `${path}.printedDifficulty`,
@@ -399,9 +374,9 @@ function decodeBoard(
   source: unknown,
   path: string,
   errors: string[],
-): ReferenceProblem["board"] {
+): ReferenceProblem['board'] {
   const record = readRecord(source, path, errors);
-  checkKeys(record, ["width", "height"], path, errors);
+  checkKeys(record, ['width', 'height'], path, errors);
   return {
     width: readInteger(record.width, `${path}.width`, errors, 2, 9),
     height: readInteger(record.height, `${path}.height`, errors, 2, 9),
@@ -414,12 +389,7 @@ function decodeTerminal(
   errors: string[],
 ): Terminal {
   const record = readRecord(source, path, errors);
-  checkKeys(
-    record,
-    ["terminalId", "symbol", "row", "column"],
-    path,
-    errors,
-  );
+  checkKeys(record, ['terminalId', 'symbol', 'row', 'column'], path, errors);
   return {
     terminalId: readNonEmptyString(
       record.terminalId,
@@ -431,7 +401,7 @@ function decodeTerminal(
       REFERENCE_SYMBOLS,
       `${path}.symbol`,
       errors,
-    ) as SymbolId,
+    ),
     row: readInteger(record.row, `${path}.row`, errors, 0),
     column: readInteger(record.column, `${path}.column`, errors, 0),
   };
@@ -441,14 +411,9 @@ function decodeTranscription(
   source: unknown,
   path: string,
   errors: string[],
-): ReferenceProblem["transcription"] {
+): ReferenceProblem['transcription'] {
   const record = readRecord(source, path, errors);
-  checkKeys(
-    record,
-    ["status", "checkedAgainstSourceSha256"],
-    path,
-    errors,
-  );
+  checkKeys(record, ['status', 'checkedAgainstSourceSha256'], path, errors);
   return {
     status: readEnum(
       record.status,
@@ -472,7 +437,7 @@ function readNullableSha256(
   if (source === null) {
     return null;
   }
-  if (typeof source !== "string" || !/^[a-f0-9]{64}$/u.test(source)) {
+  if (typeof source !== 'string' || !/^[a-f0-9]{64}$/u.test(source)) {
     errors.push(`${path}: nullまたは64文字の小文字SHA-256が必要です。`);
     return null;
   }

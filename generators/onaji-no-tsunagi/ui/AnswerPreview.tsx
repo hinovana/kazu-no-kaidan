@@ -4,9 +4,9 @@
  * @packageDocumentation
  */
 
-import type { Worksheet } from "../domain/types/worksheet.ts";
-import { PuzzleBoard } from "./PuzzleBoard.tsx";
-import { DifficultyStars, SheetHeader } from "./WorksheetPreview.tsx";
+import type {Worksheet} from '../domain/types/worksheet.ts';
+import {PuzzleBoard} from './PuzzleBoard.tsx';
+import {DifficultyStars, SheetHeader} from './WorksheetPreview.tsx';
 
 /**
  * canonical solutionだけを描画する答案用紙。
@@ -21,7 +21,7 @@ export function AnswerPreview({
   readonly hidden: boolean;
 }) {
   const large = worksheet.request.difficulty >= 2;
-  const hiddenClass = hidden ? " ots-answer-screen-hidden" : "";
+  const hiddenClass = hidden ? ' ots-answer-screen-hidden' : '';
   if (large) {
     return (
       <>
@@ -92,7 +92,7 @@ function AnswerCard({
   index,
   level,
 }: {
-  readonly generated: Worksheet["puzzles"][number];
+  readonly generated: Worksheet['puzzles'][number];
   readonly index: number;
   readonly level: 1 | 2 | 3 | 4;
 }) {

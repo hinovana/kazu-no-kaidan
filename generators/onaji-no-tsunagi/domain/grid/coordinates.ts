@@ -4,7 +4,7 @@
  * @packageDocumentation
  */
 
-import type { Cell, Puzzle } from "../types/puzzle.ts";
+import type {Cell, Puzzle} from '../types/puzzle.ts';
 
 /** 0始まり座標をMap・Setで使う`"row,column"`形式へ変換する。 */
 export function cellKey(cell: Cell): string {
@@ -25,13 +25,18 @@ export function indexToCell(index: number, width: number): Cell {
 }
 
 /** 座標が整数であり、盤面の0始まり範囲内にあるかを判定する。 */
-export function isCellInBounds(cell: Cell, puzzle: Pick<Puzzle, "width" | "height">): boolean {
-  return Number.isInteger(cell.row)
-    && Number.isInteger(cell.column)
-    && cell.row >= 0
-    && cell.row < puzzle.height
-    && cell.column >= 0
-    && cell.column < puzzle.width;
+export function isCellInBounds(
+  cell: Cell,
+  puzzle: Pick<Puzzle, 'width' | 'height'>,
+): boolean {
+  return (
+    Number.isInteger(cell.row) &&
+    Number.isInteger(cell.column) &&
+    cell.row >= 0 &&
+    cell.row < puzzle.height &&
+    cell.column >= 0 &&
+    cell.column < puzzle.width
+  );
 }
 
 /** 上下左右の最短距離に相当するManhattan距離を返す。 */

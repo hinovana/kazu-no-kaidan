@@ -4,19 +4,19 @@
  * @packageDocumentation
  */
 
-import type { DifficultyAnalysis } from "./difficulty.ts";
-import type { CandidateRejection, GenerationRequest } from "./generation.ts";
+import type {DifficultyAnalysis} from './difficulty.ts';
+import type {CandidateRejection, GenerationRequest} from './generation.ts';
 import type {
   Puzzle,
   TerminalMultiplicityPattern,
   UniquePathCoverProfileId,
-} from "./puzzle.ts";
+} from './puzzle.ts';
 import type {
   Solution,
   SolutionCost,
   SolutionCoverage,
   SolutionGeometryAnalysis,
-} from "./solution.ts";
+} from './solution.ts';
 
 interface EntrySymbolGroup {
   readonly terminalIds: readonly string[];
@@ -30,23 +30,20 @@ interface EntrySymbolGroup {
  */
 export interface UniquePathCoverEntryAnalysis {
   readonly analysisVersion:
-    | "onaji-no-tsunagi-entry.v3.3"
-    | "onaji-no-tsunagi-entry.v3.4-draft";
-  readonly pattern: "unique_path_cover";
+    'onaji-no-tsunagi-entry.v3.3' | 'onaji-no-tsunagi-entry.v3.4-draft';
+  readonly pattern: 'unique_path_cover';
   readonly terminalPattern: TerminalMultiplicityPattern;
   readonly symbolGroups: readonly EntrySymbolGroup[];
   readonly pairingChoiceCount: number;
   readonly forcedExitTerminalIds: readonly string[];
   readonly maximumLineConcentration: number;
   readonly naturalHypothesisCount: number;
-  readonly machineStatus: "entry_candidate";
+  readonly machineStatus: 'entry_candidate';
 }
 
 /** Worksheetへ保存する機械的な相互作用証拠の種類。 */
 export type InteractionMotifKind =
-  | "forced_exit"
-  | "pairing_choice"
-  | "unique_solution";
+  'forced_exit' | 'pairing_choice' | 'unique_solution';
 
 /**
  * 局所制約または完全探索から作った機械証拠。
@@ -58,9 +55,8 @@ export interface InteractionWitness {
   readonly involvedTerminalIds: readonly string[];
   readonly temptingConstraint: Readonly<Record<string, unknown>>;
   readonly consequence:
-    | "remaining_pair_unreachable"
-    | "alternative_solution_unsatisfiable";
-  readonly proofStatus: "proven";
+    'remaining_pair_unreachable' | 'alternative_solution_unsatisfiable';
+  readonly proofStatus: 'proven';
   readonly exploredStateCount: number;
 }
 
@@ -78,7 +74,7 @@ export interface RouteRoles {
 /** 植え込み解と最適解の整合性について保存する証拠。 */
 export interface GenerationWitnessAnalysis {
   readonly plantedInflationEdgeCount: number;
-  readonly rolePreservationStatus: "proven";
+  readonly rolePreservationStatus: 'proven';
 }
 
 /** 一つの技術gateの識別子、合否、診断値。 */
@@ -101,18 +97,15 @@ export interface MachineCheckReport {
 /** 同一Worksheetを再現するための版とrequest seed。 */
 export interface GenerationProvenance {
   readonly generatorVersion:
-    | "onaji-no-tsunagi-generator.v3.3"
-    | "onaji-no-tsunagi-generator.v3.4-draft";
+    'onaji-no-tsunagi-generator.v3.3' | 'onaji-no-tsunagi-generator.v3.4-draft';
   readonly algorithmSpecVersion:
-    | "onaji-no-tsunagi-spec.v3.3"
-    | "onaji-no-tsunagi-spec.v3.4-draft";
-  readonly solverVersion: "onaji-no-tsunagi-solver.v3.1";
+    'onaji-no-tsunagi-spec.v3.3' | 'onaji-no-tsunagi-spec.v3.4-draft';
+  readonly solverVersion: 'onaji-no-tsunagi-solver.v3.1';
   readonly analyzerVersion:
-    | "onaji-no-tsunagi-difficulty.v3.3"
-    | "onaji-no-tsunagi-difficulty.v3.4-draft";
+    | 'onaji-no-tsunagi-difficulty.v3.3'
+    | 'onaji-no-tsunagi-difficulty.v3.4-draft';
   readonly profileVersion:
-    | "onaji-no-tsunagi-profiles.v3.3"
-    | "onaji-no-tsunagi-profiles.v3.4-draft";
+    'onaji-no-tsunagi-profiles.v3.3' | 'onaji-no-tsunagi-profiles.v3.4-draft';
   readonly seed: string;
 }
 
@@ -138,7 +131,7 @@ export interface GeneratedPuzzle {
   readonly canonicalSolution: Solution;
   readonly answerCoverage: SolutionCoverage;
   readonly solutionCount: {
-    readonly kind: "exact";
+    readonly kind: 'exact';
     readonly count: 1;
   };
   readonly solutionCost: SolutionCost;
@@ -149,11 +142,11 @@ export interface GeneratedPuzzle {
   readonly generationWitness: GenerationWitnessAnalysis;
   readonly difficulty: DifficultyAnalysis;
   readonly qualityProof: {
-    readonly status: "optimal";
+    readonly status: 'optimal';
     readonly exploredStateCount: number;
   };
   readonly uniquenessProof: {
-    readonly status: "proven";
+    readonly status: 'proven';
     readonly exploredStateCount: number;
   };
   readonly provenance: PuzzleProvenance;
@@ -168,13 +161,12 @@ export interface GeneratedPuzzle {
  */
 export interface Worksheet {
   readonly schemaVersion:
-    | "onaji-no-tsunagi.worksheet.v3.3"
-    | "onaji-no-tsunagi.worksheet.v3.4-draft";
+    'onaji-no-tsunagi.worksheet.v3.3' | 'onaji-no-tsunagi.worksheet.v3.4-draft';
   readonly worksheetId: string;
-  readonly usageClass: "development_preview";
+  readonly usageClass: 'development_preview';
   readonly childUsePermitted: false;
   readonly request: GenerationRequest;
   readonly puzzles: readonly GeneratedPuzzle[];
-  readonly machineChecks: MachineCheckReport & { readonly allPassed: true };
+  readonly machineChecks: MachineCheckReport & {readonly allPassed: true};
   readonly provenance: GenerationProvenance;
 }

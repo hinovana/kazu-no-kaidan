@@ -4,13 +4,13 @@
  * @packageDocumentation
  */
 
-import type { Worksheet } from "../domain/types/worksheet.ts";
-import { PuzzleBoard } from "./PuzzleBoard.tsx";
+import type {Worksheet} from '../domain/types/worksheet.ts';
+import {PuzzleBoard} from './PuzzleBoard.tsx';
 
 /**
  * 解答線を含まない問題用紙を、難易度に応じたA4 page構成で描画する。
  */
-export function WorksheetPreview({ worksheet }: { readonly worksheet: Worksheet }) {
+export function WorksheetPreview({worksheet}: {readonly worksheet: Worksheet}) {
   const large = worksheet.request.difficulty >= 2;
   if (large) {
     return (
@@ -44,7 +44,10 @@ export function WorksheetPreview({ worksheet }: { readonly worksheet: Worksheet 
   }
 
   return (
-    <section className="ots-sheet ots-problem-sheet" aria-labelledby="ots-problem-heading">
+    <section
+      className="ots-sheet ots-problem-sheet"
+      aria-labelledby="ots-problem-heading"
+    >
       <SheetHeader
         headingId="ots-problem-heading"
         title="おなじのつなぎ"
@@ -85,7 +88,7 @@ function ProblemCard({
   index,
   level,
 }: {
-  readonly generated: Worksheet["puzzles"][number];
+  readonly generated: Worksheet['puzzles'][number];
   readonly index: number;
   readonly level: 1 | 2 | 3 | 4;
 }) {
@@ -118,8 +121,10 @@ export function SheetHeader({
         <h2 id={headingId}>{title}</h2>
       </div>
       <div className="ots-student-fields" aria-label="名前と日付の記入欄">
-        <span>なまえ</span><i />
-        <span>ひづけ</span><i />
+        <span>なまえ</span>
+        <i />
+        <span>ひづけ</span>
+        <i />
       </div>
       <p className="ots-sheet-seed">seed: {shortSeed(seed)}</p>
     </header>
@@ -129,11 +134,13 @@ export function SheetHeader({
 /**
  * 未校正の構造帯を4段階の星とaccessibility labelで表示する。
  */
-export function DifficultyStars({ level }: { readonly level: 1 | 2 | 3 | 4 }) {
+export function DifficultyStars({level}: {readonly level: 1 | 2 | 3 | 4}) {
   return (
     <span className="ots-stars" aria-label={`暫定難易度${level}`}>
-      {Array.from({ length: 4 }, (_, index) => (
-        <span aria-hidden="true" key={index}>{index < level ? "★" : "☆"}</span>
+      {indexSequence(4).map(index => (
+        <span aria-hidden="true" key={index}>
+          {index < level ? '★' : '☆'}
+        </span>
       ))}
     </span>
   );
@@ -141,4 +148,8 @@ export function DifficultyStars({ level }: { readonly level: 1 | 2 | 3 | 4 }) {
 
 function shortSeed(seed: string): string {
   return seed.length <= 24 ? seed : `${seed.slice(0, 21)}...`;
+}
+
+function indexSequence(length: number): readonly number[] {
+  return [...Array.from({length}).keys()];
 }

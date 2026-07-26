@@ -39,8 +39,12 @@ export function createSeededRandom(seed: string): SeededRandom {
   return {
     next,
     integer(minimum, maximumInclusive) {
-      if (!Number.isInteger(minimum) || !Number.isInteger(maximumInclusive) || maximumInclusive < minimum) {
-        throw new RangeError("invalid integer range");
+      if (
+        !Number.isInteger(minimum) ||
+        !Number.isInteger(maximumInclusive) ||
+        maximumInclusive < minimum
+      ) {
+        throw new RangeError('invalid integer range');
       }
       return minimum + Math.floor(next() * (maximumInclusive - minimum + 1));
     },
@@ -66,7 +70,7 @@ export function createSeededRandom(seed: string): SeededRandom {
  * 衝突耐性や改ざん検知を目的とした暗号学的hashではない。
  */
 export function stableHash(value: string): string {
-  return hashStringToUint32(value).toString(16).padStart(8, "0");
+  return hashStringToUint32(value).toString(16).padStart(8, '0');
 }
 
 function hashStringToUint32(value: string): number {

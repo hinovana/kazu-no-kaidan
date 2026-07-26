@@ -6,19 +6,23 @@
  * @packageDocumentation
  */
 
-import type { Worksheet } from "../domain/types/worksheet.ts";
+import type {Worksheet} from '../domain/types/worksheet.ts';
 
 /**
  * 機械gateと生成来歴を開発者向けに表示する、印刷対象外の診断panel。
  *
  * 自動検査と、人間レビュー・難易度校正の未実施状態を区別して表示する。
  */
-export function DeveloperDiagnostics({ worksheet }: { readonly worksheet: Worksheet }) {
+export function DeveloperDiagnostics({
+  worksheet,
+}: {
+  readonly worksheet: Worksheet;
+}) {
   return (
     <details className="ots-diagnostics screen-only">
       <summary>開発診断</summary>
       <p>
-        自動検査: {worksheet.machineChecks.allPassed ? "全件通過" : "失敗"} /
+        自動検査: {worksheet.machineChecks.allPassed ? '全件通過' : '失敗'} /
         人間レビュー: 未実施 / 難易度校正: 未実施
       </p>
       <div className="ots-diagnostic-grid">
@@ -26,33 +30,49 @@ export function DeveloperDiagnostics({ worksheet }: { readonly worksheet: Worksh
           <section key={generated.puzzle.puzzleId}>
             <h3>問題 {index + 1}</h3>
             <dl>
-              <div><dt>盤面</dt><dd>{generated.puzzle.width}×{generated.puzzle.height}</dd></div>
+              <div>
+                <dt>盤面</dt>
+                <dd>
+                  {generated.puzzle.width}×{generated.puzzle.height}
+                </dd>
+              </div>
               <div>
                 <dt>端点構成</dt>
                 <dd>
-                  {generated.puzzle.terminals.length}個
-                  （{generated.provenance.terminalPattern}）
+                  {generated.puzzle.terminals.length}個 （
+                  {generated.provenance.terminalPattern}）
                 </dd>
               </div>
-              <div><dt>profile</dt><dd>{generated.provenance.profileId}</dd></div>
-              <div><dt>経路数</dt><dd>{generated.canonicalSolution.paths.length}</dd></div>
+              <div>
+                <dt>profile</dt>
+                <dd>{generated.provenance.profileId}</dd>
+              </div>
+              <div>
+                <dt>経路数</dt>
+                <dd>{generated.canonicalSolution.paths.length}</dd>
+              </div>
               <div>
                 <dt>経路長</dt>
-                <dd>{generated.geometry.paths.map((path) => path.edgeCount + 1).join(" / ")}</dd>
+                <dd>
+                  {generated.geometry.paths
+                    .map(path => path.edgeCount + 1)
+                    .join(' / ')}
+                </dd>
               </div>
               <div>
                 <dt>唯一解の使用マス</dt>
                 <dd>
-                  {generated.answerCoverage.usedCellCount}/{generated.answerCoverage.totalCellCount}
-                  （{Math.round(generated.answerCoverage.coverageRatio * 100)}%）
+                  {generated.answerCoverage.usedCellCount}/
+                  {generated.answerCoverage.totalCellCount}（
+                  {Math.round(generated.answerCoverage.coverageRatio * 100)}%）
                 </dd>
               </div>
               <div>
                 <dt>最適cost</dt>
                 <dd>
                   {generated.solutionCost.totalEdgeCount}辺 /
-                  {generated.solutionCost.totalTurnCount}曲がり /
-                  U字{generated.solutionCost.unitBayCount}
+                  {generated.solutionCost.totalTurnCount}曲がり / U字
+                  {generated.solutionCost.unitBayCount}
                 </dd>
               </div>
               <div>
@@ -63,7 +83,10 @@ export function DeveloperDiagnostics({ worksheet }: { readonly worksheet: Worksh
                 <dt>唯一性証明状態</dt>
                 <dd>{generated.uniquenessProof.exploredStateCount}</dd>
               </div>
-              <div><dt>取っ掛かり</dt><dd>{generated.entry.machineStatus}</dd></div>
+              <div>
+                <dt>取っ掛かり</dt>
+                <dd>{generated.entry.machineStatus}</dd>
+              </div>
               <div>
                 <dt>初期仮説指標</dt>
                 <dd>{generated.entry.naturalHypothesisCount}通り</dd>
@@ -92,13 +115,30 @@ export function DeveloperDiagnostics({ worksheet }: { readonly worksheet: Worksh
               </div>
               <div>
                 <dt>植え込み膨張</dt>
-                <dd>{generated.generationWitness.plantedInflationEdgeCount}辺</dd>
+                <dd>
+                  {generated.generationWitness.plantedInflationEdgeCount}辺
+                </dd>
               </div>
-              <div><dt>探索状態</dt><dd>{generated.difficulty.exploredStateCount}</dd></div>
-              <div><dt>構成状態</dt><dd>{generated.provenance.constructionStateCount}</dd></div>
-              <div><dt>撤回</dt><dd>{generated.difficulty.backtrackCount}</dd></div>
-              <div><dt>最大判断深さ</dt><dd>{generated.difficulty.maximumDecisionDepth}</dd></div>
-              <div><dt>ペア候補指標</dt><dd>{generated.difficulty.pairingChoiceCount}</dd></div>
+              <div>
+                <dt>探索状態</dt>
+                <dd>{generated.difficulty.exploredStateCount}</dd>
+              </div>
+              <div>
+                <dt>構成状態</dt>
+                <dd>{generated.provenance.constructionStateCount}</dd>
+              </div>
+              <div>
+                <dt>撤回</dt>
+                <dd>{generated.difficulty.backtrackCount}</dd>
+              </div>
+              <div>
+                <dt>最大判断深さ</dt>
+                <dd>{generated.difficulty.maximumDecisionDepth}</dd>
+              </div>
+              <div>
+                <dt>ペア候補指標</dt>
+                <dd>{generated.difficulty.pairingChoiceCount}</dd>
+              </div>
               <div>
                 <dt>到達不能枝の除外</dt>
                 <dd>{generated.difficulty.residualReachabilityPruneCount}</dd>
@@ -115,10 +155,14 @@ export function DeveloperDiagnostics({ worksheet }: { readonly worksheet: Worksh
                 <dt>採用candidate</dt>
                 <dd>
                   {generated.provenance.candidateIndex}
-                  （先行棄却{generated.provenance.precedingRejections.length}件）
+                  （先行棄却{generated.provenance.precedingRejections.length}
+                  件）
                 </dd>
               </div>
-              <div><dt>topology</dt><dd>{generated.provenance.topologyHash}</dd></div>
+              <div>
+                <dt>topology</dt>
+                <dd>{generated.provenance.topologyHash}</dd>
+              </div>
             </dl>
           </section>
         ))}

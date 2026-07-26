@@ -6,13 +6,11 @@
  * @packageDocumentation
  */
 
-import type { SymbolId, Terminal } from "./puzzle.ts";
+import type {SymbolId, Terminal} from './puzzle.ts';
 
 /** 原本上での問題の役割。 */
 export type ReferenceProblemKind =
-  | "tutorial-example"
-  | "numbered-problem"
-  | "challenge";
+  'tutorial-example' | 'numbered-problem' | 'challenge';
 
 /**
  * 原本転記の照合状態。
@@ -20,7 +18,7 @@ export type ReferenceProblemKind =
  * `double-checked`は、登録SHA-256の原本を使った二重の目視照合まで完了した
  * 状態を表す。
  */
-export type TranscriptionStatus = "draft" | "double-checked";
+export type TranscriptionStatus = 'draft' | 'double-checked';
 
 /** 転記元PDFを同定し、書籍ページとPDFページの対応範囲を保持する情報。 */
 export interface ReferenceSourceDocument {
@@ -65,10 +63,10 @@ export interface ReferenceProblem {
  * 生成fixture、seed、問題templateとして利用してはならない。
  */
 export interface ReferenceCorpus {
-  readonly schemaVersion: "onaji-no-tsunagi.source-corpus.v1";
+  readonly schemaVersion: 'onaji-no-tsunagi.source-corpus.v1';
   readonly sourceDocument: ReferenceSourceDocument;
   readonly coordinateSystem: {
-    readonly origin: "top-left";
+    readonly origin: 'top-left';
     readonly indexBase: 0;
   };
   readonly problems: readonly ReferenceProblem[];
@@ -76,7 +74,7 @@ export interface ReferenceCorpus {
 
 /** 原本参照schemaで受け入れる記号の固定集合。 */
 export const REFERENCE_SYMBOLS = [
-  "circle",
-  "triangle",
-  "square",
+  'circle',
+  'triangle',
+  'square',
 ] as const satisfies readonly SymbolId[];

@@ -4,9 +4,9 @@
  * @packageDocumentation
  */
 
-import { cellKey } from "../grid/coordinates.ts";
-import type { Puzzle } from "../types/puzzle.ts";
-import type { Solution, SolutionCoverage } from "../types/solution.ts";
+import {cellKey} from '../grid/coordinates.ts';
+import type {Puzzle} from '../types/puzzle.ts';
+import type {Solution, SolutionCoverage} from '../types/solution.ts';
 
 /**
  * 解答経路が使用する一意なセル数と盤面比率を集計する。
@@ -14,11 +14,11 @@ import type { Solution, SolutionCoverage } from "../types/solution.ts";
  * `coverageRatio`は小数第3位へ丸める。解の有効性は別途validatorで確認する。
  */
 export function analyzeSolutionCoverage(
-  puzzle: Pick<Puzzle, "width" | "height">,
+  puzzle: Pick<Puzzle, 'width' | 'height'>,
   solution: Solution,
 ): SolutionCoverage {
   const usedCells = new Set(
-    solution.paths.flatMap((path) => path.cells.map(cellKey)),
+    solution.paths.flatMap(path => path.cells.map(cellKey)),
   );
   const totalCellCount = puzzle.width * puzzle.height;
   return {

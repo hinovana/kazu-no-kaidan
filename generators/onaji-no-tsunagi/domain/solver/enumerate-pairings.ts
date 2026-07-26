@@ -6,8 +6,8 @@
  * @packageDocumentation
  */
 
-import { manhattanDistance } from "../grid/coordinates.ts";
-import type { Terminal } from "../types/puzzle.ts";
+import {manhattanDistance} from '../grid/coordinates.ts';
+import type {Terminal} from '../types/puzzle.ts';
 
 /**
  * 指定端点と同じ記号の未指定partner候補を決定的な順序で返す。
@@ -20,15 +20,17 @@ export function listSameSymbolPartners(
   terminals: readonly Terminal[],
 ): readonly Terminal[] {
   return terminals
-    .filter((candidate) => (
-      candidate.symbol === terminal.symbol
-      && candidate.terminalId !== terminal.terminalId
-    ))
-    .toSorted((left, right) => (
-      manhattanDistance(terminal, left)
-        - manhattanDistance(terminal, right)
-      || left.terminalId.localeCompare(right.terminalId)
-    ));
+    .filter(
+      candidate =>
+        candidate.symbol === terminal.symbol &&
+        candidate.terminalId !== terminal.terminalId,
+    )
+    .toSorted(
+      (left, right) =>
+        manhattanDistance(terminal, left) -
+          manhattanDistance(terminal, right) ||
+        left.terminalId.localeCompare(right.terminalId),
+    );
 }
 
 /**
@@ -52,15 +54,10 @@ export function orderedTerminalIds(
   first: string,
   second: string,
 ): readonly [string, string] {
-  return first.localeCompare(second) <= 0
-    ? [first, second]
-    : [second, first];
+  return first.localeCompare(second) <= 0 ? [first, second] : [second, first];
 }
 
 /** 向きを区別しないterminal pairのMap・Set用keyを作る。 */
-export function terminalPairKey(
-  first: string,
-  second: string,
-): string {
-  return orderedTerminalIds(first, second).join("|");
+export function terminalPairKey(first: string, second: string): string {
+  return orderedTerminalIds(first, second).join('|');
 }

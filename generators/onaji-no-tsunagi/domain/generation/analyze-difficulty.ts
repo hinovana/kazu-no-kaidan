@@ -6,10 +6,10 @@
  * @packageDocumentation
  */
 
-import { countPerfectMatchings } from "../solver/enumerate-pairings.ts";
-import type { DifficultyAnalysis, DifficultyLevel } from "../types/difficulty.ts";
-import type { Puzzle, SymbolId } from "../types/puzzle.ts";
-import type { SolverMetrics } from "../types/solution.ts";
+import {countPerfectMatchings} from '../solver/enumerate-pairings.ts';
+import type {DifficultyAnalysis, DifficultyLevel} from '../types/difficulty.ts';
+import type {Puzzle, SymbolId} from '../types/puzzle.ts';
+import type {SolverMetrics} from '../types/solution.ts';
 
 /**
  * 盤面profileの構造帯とsolver診断値を`DifficultyAnalysis`へまとめる。
@@ -24,21 +24,18 @@ export function analyzeDifficulty(
   metrics: SolverMetrics,
 ): DifficultyAnalysis {
   return {
-    analyzerVersion: puzzle.width === 5
-      ? "onaji-no-tsunagi-difficulty.v3.3"
-      : "onaji-no-tsunagi-difficulty.v3.4-draft",
+    analyzerVersion:
+      puzzle.width === 5
+        ? 'onaji-no-tsunagi-difficulty.v3.3'
+        : 'onaji-no-tsunagi-difficulty.v3.4-draft',
     requestedLevel,
-    measuredBand: puzzle.width === 5
-      ? 1
-      : puzzle.terminals.length === 14
-        ? 3
-        : 2,
+    measuredBand:
+      puzzle.width === 5 ? 1 : puzzle.terminals.length === 14 ? 3 : 2,
     exploredStateCount: metrics.exploredStateCount,
     backtrackCount: metrics.backtrackCount,
     maximumDecisionDepth: metrics.maximumDecisionDepth,
     pairingChoiceCount: countPairingChoices(puzzle),
-    residualReachabilityPruneCount:
-      metrics.residualReachabilityPruneCount,
+    residualReachabilityPruneCount: metrics.residualReachabilityPruneCount,
     componentParityPruneCount: metrics.componentParityPruneCount,
     memoizedFailurePruneCount: metrics.memoizedFailurePruneCount,
   };

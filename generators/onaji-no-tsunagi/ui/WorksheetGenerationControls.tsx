@@ -10,7 +10,7 @@
 import type {
   AvailableDifficultyLevel,
   PuzzleCount,
-} from "../domain/types/generation.ts";
+} from '../domain/types/generation.ts';
 
 /** Worksheet生成フォームで編集する値。 @internal */
 export interface WorksheetGenerationForm {
@@ -44,7 +44,7 @@ export function WorksheetGenerationControls({
   return (
     <form
       className="ots-control-panel screen-only"
-      onSubmit={(event) => {
+      onSubmit={event => {
         event.preventDefault();
         void onGenerate();
       }}
@@ -54,12 +54,12 @@ export function WorksheetGenerationControls({
           暫定難易度
           <select
             value={form.difficulty}
-            onChange={(event) => onChange({
-              ...form,
-              difficulty: Number(
-                event.target.value,
-              ) as AvailableDifficultyLevel,
-            })}
+            onChange={event =>
+              onChange({
+                ...form,
+                difficulty: parseDifficultyOption(event.target.value),
+              })
+            }
           >
             <option value={1}>★☆☆☆ レベル1（5×5・6/8/10個・唯一解）</option>
             <option value={2}>★★☆☆ レベル2（6×6・10/12個・唯一解）</option>
@@ -70,13 +70,17 @@ export function WorksheetGenerationControls({
           問題数
           <select
             value={form.puzzleCount}
-            onChange={(event) => onChange({
-              ...form,
-              puzzleCount: Number(event.target.value) as PuzzleCount,
-            })}
+            onChange={event =>
+              onChange({
+                ...form,
+                puzzleCount: parsePuzzleCountOption(event.target.value),
+              })
+            }
           >
-            {[1, 2, 3, 4].map((count) => (
-              <option value={count} key={count}>{count}問</option>
+            {[1, 2, 3, 4].map(count => (
+              <option value={count} key={count}>
+                {count}問
+              </option>
             ))}
           </select>
         </label>
@@ -85,16 +89,18 @@ export function WorksheetGenerationControls({
           <input
             value={form.seed}
             maxLength={200}
-            onChange={(event) => onChange({
-              ...form,
-              seed: event.target.value,
-            })}
+            onChange={event =>
+              onChange({
+                ...form,
+                seed: event.target.value,
+              })
+            }
           />
         </label>
         <button
           className="ots-secondary-button"
           type="button"
-          onClick={() => onChange({ ...form, seed: createRandomSeed() })}
+          onClick={() => onChange({...form, seed: createRandomSeed()})}
         >
           ランダムseed
         </button>
@@ -109,7 +115,7 @@ export function WorksheetGenerationControls({
           type="submit"
           disabled={generating}
         >
-          {generating ? "作っています…" : "この条件でつくる"}
+          {generating ? '作っています…' : 'この条件でつくる'}
         </button>
         {hasWorksheet ? (
           <>
@@ -118,7 +124,7 @@ export function WorksheetGenerationControls({
               type="button"
               onClick={onToggleAnswers}
             >
-              {showAnswers ? "答えを隠す" : "答えを表示"}
+              {showAnswers ? '答えを隠す' : '答えを表示'}
             </button>
             <button
               className="ots-secondary-button"
@@ -137,5 +143,34 @@ export function WorksheetGenerationControls({
 function createRandomSeed(): string {
   const values = new Uint32Array(2);
   globalThis.crypto.getRandomValues(values);
-  return `onaji-${[...values].map((value) => value.toString(36)).join("-")}`;
+  return `onaji-${[...values].map(value => value.toString(36)).join('-')}`;
+}
+
+function parseDifficultyOption(value: string): AvailableDifficultyLevel {
+  if (value === '1') {
+    return 1;
+  }
+  if (value === '2') {
+    return 2;
+  }
+  if (value === '3') {
+    return 3;
+  }
+  throw new RangeError('unsupported difficulty option');
+}
+
+function parsePuzzleCountOption(value: string): PuzzleCount {
+  if (value === '1') {
+    return 1;
+  }
+  if (value === '2') {
+    return 2;
+  }
+  if (value === '3') {
+    return 3;
+  }
+  if (value === '4') {
+    return 4;
+  }
+  throw new RangeError('unsupported puzzle count option');
 }

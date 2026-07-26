@@ -12,6 +12,8 @@
     "serve:ai": "node generators/kokugo-no-tane/server/ai-proxy.ts",
     "build:kokugo-no-tane:vocabulary-db": "node generators/kokugo-no-tane/scripts/import-vocabulary.mjs && node generators/kokugo-no-tane/scripts/build-vocabulary-db.mjs && node generators/kokugo-no-tane/scripts/validate-vocabulary-db.mjs && node generators/kokugo-no-tane/scripts/build-generator-vocabulary-projection.mjs",
     "docs:onaji-no-tsunagi": "typedoc --options generators/onaji-no-tsunagi/typedoc.json",
+    "fix:onaji-no-tsunagi": "gts fix \"generators/onaji-no-tsunagi/**/*.{ts,tsx}\"",
+    "lint:onaji-no-tsunagi": "gts lint \"generators/onaji-no-tsunagi/**/*.{ts,tsx}\"",
     "typecheck": "tsc -p tsconfig.app.json && npm run typecheck:kokugo-no-tane && npm run typecheck:onaji-no-tsunagi",
     "typecheck:kokugo-no-tane": "tsc -p generators/kokugo-no-tane/tsconfig.json && tsc -p generators/kokugo-no-tane/tsconfig.server.json",
     "typecheck:onaji-no-tsunagi": "tsc -p generators/onaji-no-tsunagi/tsconfig.json",
@@ -32,6 +34,7 @@
     "@types/node": "26.1.1",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
+    "gts": "7.0.0",
     "typedoc": "0.28.20",
     "typescript": "5.9.3",
     "vite": "8.1.5"

@@ -4,7 +4,7 @@
  * @packageDocumentation
  */
 
-import type { DifficultyLevel } from "./difficulty.ts";
+import type {DifficultyLevel} from './difficulty.ts';
 
 /** 現在generatorが受け入れる難易度。レベル4は未実装のため含まない。 */
 export type AvailableDifficultyLevel = Extract<DifficultyLevel, 1 | 2 | 3>;
@@ -27,16 +27,16 @@ export interface GenerationRequest {
  * 候補をWorksheetへ採用しなかった、機械的かつ再現可能な理由。
  */
 export type CandidateRejectionReason =
-  | "route_plan_not_constructed"
-  | "construction_state_budget_exhausted"
-  | "duplicate_topology_in_worksheet"
-  | "validity_solver_budget_exhausted"
-  | "quality_optimizer_budget_exhausted"
-  | "planted_solution_not_optimal"
-  | "entry_structure_missing"
-  | "geometry_gate_failed"
-  | "difficulty_band_mismatch"
-  | "solution_not_unique";
+  | 'route_plan_not_constructed'
+  | 'construction_state_budget_exhausted'
+  | 'duplicate_topology_in_worksheet'
+  | 'validity_solver_budget_exhausted'
+  | 'quality_optimizer_budget_exhausted'
+  | 'planted_solution_not_optimal'
+  | 'entry_structure_missing'
+  | 'geometry_gate_failed'
+  | 'difficulty_band_mismatch'
+  | 'solution_not_unique';
 
 /** 採用候補より前に調べた一候補の棄却記録。 */
 export interface CandidateRejection {
@@ -52,11 +52,11 @@ export interface CandidateRejection {
  */
 export type GenerationError =
   | {
-      readonly code: "GENERATION_BUDGET_EXHAUSTED";
+      readonly code: 'GENERATION_BUDGET_EXHAUSTED';
       readonly attemptedCandidates: number;
       readonly rejections: readonly CandidateRejection[];
     }
   | {
-      readonly code: "INTERNAL_INVARIANT_BROKEN";
+      readonly code: 'INTERNAL_INVARIANT_BROKEN';
       readonly checkId: string;
     };

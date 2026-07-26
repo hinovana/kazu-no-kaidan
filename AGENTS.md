@@ -40,6 +40,13 @@
 - 共通化は意味と変更理由が同じ処理に限る。見た目が似ているだけのドメインルールを一つにまとめない。
 - コメントはコードの動作を言い直すためではなく、採用理由、保証範囲、非自明な制約、別案を採らなかった理由を残すために使う。
 
+### TypeScriptコーディング規約
+
+- TypeScriptコードは、[Google TypeScript Style Guide](https://google.github.io/styleguide/tsguide.html) を基本規約として採用する。新規コードと変更する既存コードは、同ガイドの可読性、型の利用、命名、制御構造、コメントに関する規約に従う。
+- この `AGENTS.md`、配下の `AGENTS.md`、対象教材の `SPEC.md` に、Google TypeScript Style Guideより具体的または厳しい規約がある場合は、リポジトリ側の規約を優先する。
+- Google社内のツールや実行環境に固有の規約はそのまま持ち込まず、このリポジトリのTypeScript、ESLint、ビルド環境に適用できる範囲で採用する。
+- 規約への適合だけを目的として、依頼範囲外の既存コードを一括整形または書き換えない。
+
 ### JSDoc・TSDoc
 
 - JavaScriptではJSDoc、TypeScriptではTSDoc互換の `/** ... */` を使う。説明文は原則として日本語とし、識別子と技術用語はコードと同じ表記を使う。

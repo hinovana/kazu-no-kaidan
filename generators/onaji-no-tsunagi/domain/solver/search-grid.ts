@@ -4,22 +4,15 @@
  * @packageDocumentation
  */
 
-import { adjacentIndices } from "../grid/adjacency.ts";
-import { cellIndex } from "../grid/coordinates.ts";
-import type { Puzzle, Terminal } from "../types/puzzle.ts";
-import {
-  isBitSet,
-  isReachable,
-} from "./residual-reachability.ts";
+import {adjacentIndices} from '../grid/adjacency.ts';
+import {cellIndex} from '../grid/coordinates.ts';
+import type {Puzzle, Terminal} from '../types/puzzle.ts';
+import {isBitSet, isReachable} from './residual-reachability.ts';
 
 /** Puzzleの全端点セルをrow-major indexのSetへ変換する。 */
-export function createTerminalIndexSet(
-  puzzle: Puzzle,
-): ReadonlySet<number> {
+export function createTerminalIndexSet(puzzle: Puzzle): ReadonlySet<number> {
   return new Set(
-    puzzle.terminals.map((terminal) => (
-      cellIndex(terminal, puzzle.width)
-    )),
+    puzzle.terminals.map(terminal => cellIndex(terminal, puzzle.width)),
   );
 }
 
@@ -32,10 +25,11 @@ export function sortTerminals(
   terminals: readonly Terminal[],
   width: number,
 ): readonly Terminal[] {
-  return terminals.toSorted((left, right) => (
-    cellIndex(left, width) - cellIndex(right, width)
-    || left.terminalId.localeCompare(right.terminalId)
-  ));
+  return terminals.toSorted(
+    (left, right) =>
+      cellIndex(left, width) - cellIndex(right, width) ||
+      left.terminalId.localeCompare(right.terminalId),
+  );
 }
 
 /**
@@ -46,9 +40,9 @@ export function terminalSearchStateKey(
   remainingTerminals: readonly Terminal[],
 ): string {
   return `${occupied.toString(16)}|${remainingTerminals
-    .map((terminal) => terminal.terminalId)
+    .map(terminal => terminal.terminalId)
     .toSorted()
-    .join(",")}`;
+    .join(',')}`;
 }
 
 /**
@@ -81,9 +75,7 @@ export function hasEvenSymbolParityInEveryComponent(
   terminals: readonly Terminal[],
   occupied: bigint,
 ): boolean {
-  const componentByIndex = new Int16Array(
-    puzzle.width * puzzle.height,
-  );
+  const componentByIndex = new Int16Array(puzzle.width * puzzle.height);
   componentByIndex.fill(-1);
   let component = 0;
   for (let index = 0; index < componentByIndex.length; index += 1) {
@@ -103,8 +95,8 @@ export function hasEvenSymbolParityInEveryComponent(
         puzzle.height,
       )) {
         if (
-          componentByIndex[neighbor] === -1
-          && !isBitSet(occupied, neighbor)
+          componentByIndex[neighbor] === -1 &&
+          !isBitSet(occupied, neighbor)
         ) {
           componentByIndex[neighbor] = component;
           queue.push(neighbor);
@@ -115,14 +107,11 @@ export function hasEvenSymbolParityInEveryComponent(
   }
   const counts = new Map<string, number>();
   for (const terminal of terminals) {
-    const componentId = componentByIndex[cellIndex(
-      terminal,
-      puzzle.width,
-    )];
+    const componentId = componentByIndex[cellIndex(terminal, puzzle.width)];
     const key = `${componentId}:${terminal.symbol}`;
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
-  return [...counts.values()].every((count) => count % 2 === 0);
+  return [...counts.values()].every(count => count % 2 === 0);
 }
 
 /**
@@ -145,22 +134,21 @@ export function allTerminalsHaveReachablePartners(
     occupied,
     terminalIndices,
   };
-  return terminals.every((terminal) => {
+  return terminals.every(terminal => {
     const requiredPartnerId = requiredPartnerByTerminalId?.get(
       terminal.terminalId,
     );
-    return terminals.some((candidate) => (
-      candidate.terminalId !== terminal.terminalId
-      && candidate.symbol === terminal.symbol
-      && (
-        requiredPartnerId === undefined
-        || candidate.terminalId === requiredPartnerId
-      )
-      && isReachable(
-        grid,
-        cellIndex(terminal, puzzle.width),
-        cellIndex(candidate, puzzle.width),
-      )
-    ));
+    return terminals.some(
+      candidate =>
+        candidate.terminalId !== terminal.terminalId &&
+        candidate.symbol === terminal.symbol &&
+        (requiredPartnerId === undefined ||
+          candidate.terminalId === requiredPartnerId) &&
+        isReachable(
+          grid,
+          cellIndex(terminal, puzzle.width),
+          cellIndex(candidate, puzzle.width),
+        ),
+    );
   });
 }

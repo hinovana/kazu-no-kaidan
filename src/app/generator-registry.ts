@@ -31,6 +31,8 @@ export const generatorRegistry = [
     title: "おなじのつなぎ",
     description: "5×5の6/8/10個のマークを2個ずつつなぐ、ペアリングを含めて唯一解確認済み・人間レビュー前の算数パズルです。",
     path: "/generators/onaji-no-tsunagi",
-    load: async () => (await import("../../generators/onaji-no-tsunagi/module.tsx")).default,
+    load: async () =>
+      (await import("../../generators/onaji-no-tsunagi/module.tsx"))
+        .generatorModule,
   },
 ] as const satisfies readonly GeneratorEntry[];

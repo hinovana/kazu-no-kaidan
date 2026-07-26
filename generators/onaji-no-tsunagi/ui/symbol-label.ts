@@ -4,13 +4,13 @@
  * @packageDocumentation
  */
 
-import type { SymbolId } from "../domain/types/puzzle.ts";
+import type {SymbolId} from '../domain/types/puzzle.ts';
 
 /** domainの記号IDを画面・accessibility表示用の日本語名へ変換する。 */
 export function symbolLabel(symbol: SymbolId): string {
   return {
-    circle: "丸",
-    triangle: "三角",
-    square: "四角",
+    circle: '丸',
+    triangle: '三角',
+    square: '四角',
   }[symbol];
 }

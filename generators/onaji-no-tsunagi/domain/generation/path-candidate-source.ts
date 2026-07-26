@@ -7,12 +7,12 @@
  * @packageDocumentation
  */
 
-import type { UniquePathCoverProfile } from "./unique-path-cover-profile.ts";
+import type {UniquePathCoverProfile} from './unique-path-cover-profile.ts';
 import {
   adjacentPathCellIndices,
   bitForPathCell,
   directionBetweenPathCells,
-} from "./path-cover-grid.ts";
+} from './path-cover-grid.ts';
 
 /** exact-cover探索へ渡す、占有mask付きの単純経路候補。 @internal */
 export interface PathCandidate {
@@ -47,7 +47,7 @@ export function getPathCandidateSource(
     profile.width,
     profile.height,
     profile.maximumPathTurnCount,
-  ].join("x");
+  ].join('x');
   const cachedSource = candidateSourceByGeometry.get(geometryKey);
   if (cachedSource !== undefined) {
     return cachedSource;
@@ -67,11 +67,7 @@ function createLazyPathCandidateSource(
   maximumTurnCount: number,
 ): PathCandidateSource {
   if (width === 5 && height === 5) {
-    return createFiveByFiveCandidateSource(
-      width,
-      height,
-      maximumTurnCount,
-    );
+    return createFiveByFiveCandidateSource(width, height, maximumTurnCount);
   }
   return createCandidatesByRequestedLengthSource(
     width,
@@ -86,8 +82,7 @@ function createFiveByFiveCandidateSource(
   maximumTurnCount: number,
 ): PathCandidateSource {
   let candidatesByLength:
-    | ReadonlyMap<number, readonly PathCandidate[]>
-    | undefined;
+    ReadonlyMap<number, readonly PathCandidate[]> | undefined;
   return {
     candidatesFor(length, remainingMask) {
       candidatesByLength ??= enumerateLowTurnPathsByLength(
@@ -109,10 +104,7 @@ function createCandidatesByRequestedLengthSource(
   height: number,
   maximumTurnCount: number,
 ): PathCandidateSource {
-  const candidatesByLength = new Map<
-    number,
-    readonly PathCandidate[]
-  >();
+  const candidatesByLength = new Map<number, readonly PathCandidate[]>();
   return {
     candidatesFor(length, remainingMask) {
       let candidates = candidatesByLength.get(length);
@@ -134,9 +126,10 @@ function candidatesContainedInMask(
   candidates: readonly PathCandidate[],
   remainingMask: bigint,
 ): readonly PathCandidate[] {
-  return candidates.filter((candidate) => (
-    (candidate.occupiedMask & remainingMask) === candidate.occupiedMask
-  ));
+  return candidates.filter(
+    candidate =>
+      (candidate.occupiedMask & remainingMask) === candidate.occupiedMask,
+  );
 }
 
 function enumerateLowTurnPathsByLength(
@@ -173,10 +166,10 @@ function enumerateLowTurnPathsByLength(
     }
     const nextMask = occupiedMask | bitForPathCell(current);
     if (cells.length >= 2) {
-      candidateBySignature.set(
-        canonicalPathSignature(cells),
-        { cells: [...cells], occupiedMask: nextMask },
-      );
+      candidateBySignature.set(canonicalPathSignature(cells), {
+        cells: [...cells],
+        occupiedMask: nextMask,
+      });
     }
     if (cells.length - 1 >= maximumEdgeCount) {
       return;
@@ -226,10 +219,10 @@ function enumerateLowTurnPathsOfLength(
     const nextMask = occupiedMask | bitForPathCell(current);
     if (cells.length === targetLength) {
       if (!hasUnitBay(cells, width)) {
-        candidateBySignature.set(
-          canonicalPathSignature(cells),
-          { cells: [...cells], occupiedMask: nextMask },
-        );
+        candidateBySignature.set(canonicalPathSignature(cells), {
+          cells: [...cells],
+          occupiedMask: nextMask,
+        });
       }
       return;
     }
@@ -253,8 +246,8 @@ function enumerateLowTurnPathsOfLength(
 }
 
 function canonicalPathSignature(cells: readonly number[]): string {
-  const forward = cells.join(".");
-  const reverse = [...cells].reverse().join(".");
+  const forward = cells.join('.');
+  const reverse = [...cells].reverse().join('.');
   return forward.localeCompare(reverse) <= 0 ? forward : reverse;
 }
 
@@ -289,13 +282,9 @@ function availableNextPathSteps(
       continue;
     }
     const direction = directionBetweenPathCells(current, cellIndex, width);
-    const nextTurnCount = countTurn(
-      previousDirection,
-      direction,
-      turnCount,
-    );
+    const nextTurnCount = countTurn(previousDirection, direction, turnCount);
     if (nextTurnCount <= maximumTurnCount) {
-      steps.push({ cellIndex, direction, turnCount: nextTurnCount });
+      steps.push({cellIndex, direction, turnCount: nextTurnCount});
     }
   }
   return steps;
@@ -306,12 +295,11 @@ function hasUnitBay(cells: readonly number[], width: number): boolean {
     const first = cells[index - 3];
     const last = cells[index];
     if (
-      first !== undefined
-      && last !== undefined
-      && (
-        Math.abs(Math.floor(first / width) - Math.floor(last / width))
-        + Math.abs((first % width) - (last % width))
-      ) === 1
+      first !== undefined &&
+      last !== undefined &&
+      Math.abs(Math.floor(first / width) - Math.floor(last / width)) +
+        Math.abs((first % width) - (last % width)) ===
+        1
     ) {
       return true;
     }

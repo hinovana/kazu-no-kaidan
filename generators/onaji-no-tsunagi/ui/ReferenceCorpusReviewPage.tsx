@@ -6,33 +6,30 @@
  * @packageDocumentation
  */
 
-import {
-  useState,
-  type ChangeEvent,
-} from "react";
+import {useState, type ChangeEvent} from 'react';
 import {
   decodeReferenceCorpusJson,
   referenceProblemToPuzzle,
   type ReferenceCorpusDecodeResult,
-} from "../application/decode-reference-corpus.ts";
+} from '../application/decode-reference-corpus.ts';
 import type {
   ReferenceCorpus,
   ReferenceProblem,
-} from "../domain/types/reference-corpus.ts";
-import type { SymbolId } from "../domain/types/puzzle.ts";
-import exampleCorpusText from "../reference/example-source-corpus.json?raw";
-import { PuzzleBoard } from "./PuzzleBoard.tsx";
-import { symbolLabel } from "./symbol-label.ts";
+} from '../domain/types/reference-corpus.ts';
+import type {SymbolId} from '../domain/types/puzzle.ts';
+import exampleCorpusText from '../reference/example-source-corpus.json?raw';
+import {PuzzleBoard} from './PuzzleBoard.tsx';
+import {symbolLabel} from './symbol-label.ts';
 
 type ReviewState =
-  | { readonly status: "empty" }
+  | {readonly status: 'empty'}
   | {
-      readonly status: "invalid";
+      readonly status: 'invalid';
       readonly fileName: string;
       readonly errors: readonly string[];
     }
   | {
-      readonly status: "ready";
+      readonly status: 'ready';
       readonly fileName: string;
       readonly corpus: ReferenceCorpus;
     };
@@ -41,17 +38,17 @@ const MAX_FILE_SIZE = 2_000_000;
 const MAX_PDF_FILE_SIZE = 100_000_000;
 
 type PdfCheckState =
-  | { readonly status: "empty" }
-  | { readonly status: "checking"; readonly fileName: string }
+  | {readonly status: 'empty'}
+  | {readonly status: 'checking'; readonly fileName: string}
   | {
-      readonly status: "checked";
+      readonly status: 'checked';
       readonly fileName: string;
       readonly actualSha256: string;
       readonly expectedSha256: string | null;
       readonly matches: boolean | null;
     }
   | {
-      readonly status: "error";
+      readonly status: 'error';
       readonly fileName: string;
       readonly message: string;
     };
@@ -64,10 +61,10 @@ type PdfCheckState =
  */
 export function ReferenceCorpusReviewPage() {
   const [reviewState, setReviewState] = useState<ReviewState>({
-    status: "empty",
+    status: 'empty',
   });
   const [pdfCheck, setPdfCheck] = useState<PdfCheckState>({
-    status: "empty",
+    status: 'empty',
   });
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -77,9 +74,9 @@ export function ReferenceCorpusReviewPage() {
     }
     if (file.size > MAX_FILE_SIZE) {
       setReviewState({
-        status: "invalid",
+        status: 'invalid',
         fileName: file.name,
-        errors: ["JSONは2MB以下にしてください。"],
+        errors: ['JSONは2MB以下にしてください。'],
       });
       return;
     }
@@ -89,46 +86,45 @@ export function ReferenceCorpusReviewPage() {
   function loadText(fileName: string, sourceText: string) {
     const result = decodeReferenceCorpusJson(sourceText);
     setReviewState(resultToState(fileName, result));
-    setPdfCheck({ status: "empty" });
+    setPdfCheck({status: 'empty'});
   }
 
   async function handlePdfChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (file === undefined || reviewState.status !== "ready") {
+    if (file === undefined || reviewState.status !== 'ready') {
       return;
     }
     if (file.size > MAX_PDF_FILE_SIZE) {
       setPdfCheck({
-        status: "error",
+        status: 'error',
         fileName: file.name,
-        message: "PDFは100MB以下にしてください。",
+        message: 'PDFは100MB以下にしてください。',
       });
       return;
     }
-    setPdfCheck({ status: "checking", fileName: file.name });
+    setPdfCheck({status: 'checking', fileName: file.name});
     try {
       const digest = await globalThis.crypto.subtle.digest(
-        "SHA-256",
+        'SHA-256',
         await file.arrayBuffer(),
       );
       const actualSha256 = [...new Uint8Array(digest)]
-        .map((value) => value.toString(16).padStart(2, "0"))
-        .join("");
+        .map(value => value.toString(16).padStart(2, '0'))
+        .join('');
       const expectedSha256 = reviewState.corpus.sourceDocument.sha256;
       setPdfCheck({
-        status: "checked",
+        status: 'checked',
         fileName: file.name,
         actualSha256,
         expectedSha256,
-        matches: expectedSha256 === null
-          ? null
-          : expectedSha256 === actualSha256,
+        matches:
+          expectedSha256 === null ? null : expectedSha256 === actualSha256,
       });
     } catch {
       setPdfCheck({
-        status: "error",
+        status: 'error',
         fileName: file.name,
-        message: "PDFのSHA-256を計算できませんでした。",
+        message: 'PDFのSHA-256を計算できませんでした。',
       });
     }
   }
@@ -136,10 +132,7 @@ export function ReferenceCorpusReviewPage() {
   return (
     <main className="onaji-page ots-reference-review">
       <header className="ots-page-header screen-only">
-        <a
-          className="ots-back-link"
-          href="#/generators/onaji-no-tsunagi"
-        >
+        <a className="ots-back-link" href="#/generators/onaji-no-tsunagi">
           ← おなじのつなぎへ戻る
         </a>
         <p className="ots-page-kicker">原本転記の人間確認</p>
@@ -170,16 +163,15 @@ export function ReferenceCorpusReviewPage() {
           <input
             type="file"
             accept=".json,application/json"
-            onChange={(event) => void handleFileChange(event)}
+            onChange={event => void handleFileChange(event)}
           />
         </label>
         <button
           className="ots-secondary-button"
           type="button"
-          onClick={() => loadText(
-            "example-source-corpus.json（架空例）",
-            exampleCorpusText,
-          )}
+          onClick={() =>
+            loadText('example-source-corpus.json（架空例）', exampleCorpusText)
+          }
         >
           架空の形式見本を表示
         </button>
@@ -188,7 +180,7 @@ export function ReferenceCorpusReviewPage() {
         </p>
       </section>
 
-      {reviewState.status === "ready" ? (
+      {reviewState.status === 'ready' ? (
         <SourcePdfCheck
           corpus={reviewState.corpus}
           pdfCheck={pdfCheck}
@@ -196,14 +188,14 @@ export function ReferenceCorpusReviewPage() {
         />
       ) : null}
 
-      {reviewState.status === "empty" ? (
+      {reviewState.status === 'empty' ? (
         <section className="ots-empty-state" aria-live="polite">
           <h2>JSONはまだ読み込まれていません</h2>
           <p>ファイルを選ぶと、全問題を盤面として一覧表示します。</p>
         </section>
       ) : null}
 
-      {reviewState.status === "invalid" ? (
+      {reviewState.status === 'invalid' ? (
         <section className="ots-error" role="alert">
           <h2>{reviewState.fileName} を読み込めません</h2>
           <p>{reviewState.errors.length}件の問題があります。</p>
@@ -215,7 +207,7 @@ export function ReferenceCorpusReviewPage() {
         </section>
       ) : null}
 
-      {reviewState.status === "ready" ? (
+      {reviewState.status === 'ready' ? (
         <ReferenceCorpusView
           fileName={reviewState.fileName}
           corpus={reviewState.corpus}
@@ -249,7 +241,7 @@ function SourcePdfCheck({
         <input
           type="file"
           accept=".pdf,application/pdf"
-          onChange={(event) => void onPdfChange(event)}
+          onChange={event => void onPdfChange(event)}
         />
       </label>
       <PdfCheckResult
@@ -267,23 +259,29 @@ function PdfCheckResult({
   readonly expectedSha256: string | null;
   readonly pdfCheck: PdfCheckState;
 }) {
-  if (pdfCheck.status === "empty") {
+  if (pdfCheck.status === 'empty') {
     return (
       <p className="ots-pdf-check-result ots-pdf-check-result--waiting">
-        JSON登録値: <code>{expectedSha256 ?? "未登録"}</code>
+        JSON登録値: <code>{expectedSha256 ?? '未登録'}</code>
       </p>
     );
   }
-  if (pdfCheck.status === "checking") {
+  if (pdfCheck.status === 'checking') {
     return (
-      <p className="ots-pdf-check-result ots-pdf-check-result--waiting" aria-live="polite">
+      <p
+        className="ots-pdf-check-result ots-pdf-check-result--waiting"
+        aria-live="polite"
+      >
         {pdfCheck.fileName} のSHA-256を計算しています…
       </p>
     );
   }
-  if (pdfCheck.status === "error") {
+  if (pdfCheck.status === 'error') {
     return (
-      <p className="ots-pdf-check-result ots-pdf-check-result--mismatch" role="alert">
+      <p
+        className="ots-pdf-check-result ots-pdf-check-result--mismatch"
+        role="alert"
+      >
         {pdfCheck.fileName}: {pdfCheck.message}
       </p>
     );
@@ -299,13 +297,13 @@ function PdfCheckResult({
   }
   return (
     <div
-      className={`ots-pdf-check-result ots-pdf-check-result--${pdfCheck.matches ? "match" : "mismatch"}`}
-      role={pdfCheck.matches ? "status" : "alert"}
+      className={`ots-pdf-check-result ots-pdf-check-result--${pdfCheck.matches ? 'match' : 'mismatch'}`}
+      role={pdfCheck.matches ? 'status' : 'alert'}
     >
       <strong>
         {pdfCheck.matches
-          ? "JSONと同じ原本PDFです"
-          : "JSONが指す原本PDFと一致しません"}
+          ? 'JSONと同じ原本PDFです'
+          : 'JSONが指す原本PDFと一致しません'}
       </strong>
       <span>{pdfCheck.fileName}</span>
       <code>{pdfCheck.actualSha256}</code>
@@ -321,7 +319,7 @@ function ReferenceCorpusView({
   readonly corpus: ReferenceCorpus;
 }) {
   const doubleCheckedCount = corpus.problems.filter(
-    (problem) => problem.transcription.status === "double-checked",
+    problem => problem.transcription.status === 'double-checked',
   ).length;
   return (
     <div className="ots-reference-results">
@@ -337,7 +335,7 @@ function ReferenceCorpusView({
         <div>
           <span>原本SHA-256</span>
           <strong className="ots-reference-hash">
-            {corpus.sourceDocument.sha256 ?? "未登録"}
+            {corpus.sourceDocument.sha256 ?? '未登録'}
           </strong>
         </div>
         <div>
@@ -346,14 +344,16 @@ function ReferenceCorpusView({
         </div>
         <div>
           <span>二重確認済み</span>
-          <strong>{doubleCheckedCount}/{corpus.problems.length}問</strong>
+          <strong>
+            {doubleCheckedCount}/{corpus.problems.length}問
+          </strong>
         </div>
       </section>
       <p className="ots-reference-warning">
         デコード成功は原本との一致を意味しません。各カードを原本PDFの指定ページと目視照合してください。
       </p>
       <div className="ots-reference-grid">
-        {corpus.problems.map((problem) => (
+        {corpus.problems.map(problem => (
           <ReferenceProblemCard problem={problem} key={problem.id} />
         ))}
       </div>
@@ -361,16 +361,12 @@ function ReferenceCorpusView({
   );
 }
 
-function ReferenceProblemCard({
-  problem,
-}: {
-  readonly problem: ReferenceProblem;
-}) {
+function ReferenceProblemCard({problem}: {readonly problem: ReferenceProblem}) {
   const counts = symbolCounts(problem);
   const sourceKind = {
-    "tutorial-example": "例題",
-    "numbered-problem": "問題",
-    challenge: "難問",
+    'tutorial-example': '例題',
+    'numbered-problem': '問題',
+    challenge: '難問',
   }[problem.source.kind];
   return (
     <article
@@ -380,22 +376,27 @@ function ReferenceProblemCard({
       <header>
         <div>
           <p className="ots-reference-source">
-            書籍p.{problem.source.bookPage}／PDF {problem.source.pdfPage}ページ目
+            書籍p.{problem.source.bookPage}／PDF {problem.source.pdfPage}
+            ページ目
           </p>
-          <h2>{sourceKind} {problem.source.label}</h2>
+          <h2>
+            {sourceKind} {problem.source.label}
+          </h2>
         </div>
         <span
           className={`ots-transcription-status ots-transcription-status--${problem.transcription.status}`}
         >
-          {problem.transcription.status === "double-checked"
-            ? "二重確認済み"
-            : "転記確認前"}
+          {problem.transcription.status === 'double-checked'
+            ? '二重確認済み'
+            : '転記確認前'}
         </span>
       </header>
       <dl className="ots-reference-facts">
         <div>
           <dt>盤面</dt>
-          <dd>{problem.board.width}×{problem.board.height}</dd>
+          <dd>
+            {problem.board.width}×{problem.board.height}
+          </dd>
         </div>
         <div>
           <dt>記号</dt>
@@ -409,7 +410,7 @@ function ReferenceProblemCard({
         </div>
         <div>
           <dt>原本レベル</dt>
-          <dd>{problem.source.printedDifficulty ?? "記載なし"}</dd>
+          <dd>{problem.source.printedDifficulty ?? '記載なし'}</dd>
         </div>
       </dl>
       <PuzzleBoard
@@ -431,13 +432,15 @@ function ReferenceProblemCard({
             </tr>
           </thead>
           <tbody>
-            {problem.terminals.map((terminal) => (
+            {problem.terminals.map(terminal => (
               <tr key={terminal.terminalId}>
                 <td>{terminal.terminalId}</td>
                 <td>{symbolLabel(terminal.symbol)}</td>
                 <td>{terminal.row}</td>
                 <td>{terminal.column}</td>
-                <td>{terminal.row + 1}行{terminal.column + 1}列</td>
+                <td>
+                  {terminal.row + 1}行{terminal.column + 1}列
+                </td>
               </tr>
             ))}
           </tbody>
@@ -465,6 +468,6 @@ function resultToState(
   result: ReferenceCorpusDecodeResult,
 ): ReviewState {
   return result.ok
-    ? { status: "ready", fileName, corpus: result.corpus }
-    : { status: "invalid", fileName, errors: result.errors };
+    ? {status: 'ready', fileName, corpus: result.corpus}
+    : {status: 'invalid', fileName, errors: result.errors};
 }

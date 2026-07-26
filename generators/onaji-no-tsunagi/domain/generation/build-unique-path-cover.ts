@@ -8,33 +8,30 @@
  * @packageDocumentation
  */
 
-import { indexToCell } from "../grid/coordinates.ts";
-import type { AvailableDifficultyLevel } from "../types/generation.ts";
-import type { UniquePathCoverProfileId } from "../types/puzzle.ts";
+import {indexToCell} from '../grid/coordinates.ts';
+import type {AvailableDifficultyLevel} from '../types/generation.ts';
+import type {UniquePathCoverProfileId} from '../types/puzzle.ts';
 import {
   materializePathPlan,
   type MaterializedPathPlan,
   type PlannedPath,
   type RouteRole,
-} from "./materialize-path-plan.ts";
-import { getPathCandidateSource } from "./path-candidate-source.ts";
+} from './materialize-path-plan.ts';
+import {getPathCandidateSource} from './path-candidate-source.ts';
 import {
   assignFiveByFivePathSymbols,
   assignSixBySixPathSymbols,
   countPathSymbolAssignments,
-} from "./path-symbol-assignment.ts";
-import { type SeededRandom } from "./random.ts";
+} from './path-symbol-assignment.ts';
+import {type SeededRandom} from './random.ts';
 import {
   chooseUniquePathCoverProfileId,
   findUniquePathCoverProfile,
   type UniquePathCoverProfile,
-} from "./unique-path-cover-profile.ts";
-import {
-  selectPathCover,
-  type PathCoverResult,
-} from "./select-path-cover.ts";
+} from './unique-path-cover-profile.ts';
+import {selectPathCover, type PathCoverResult} from './select-path-cover.ts';
 
-export type { UniquePathCoverProfile } from "./unique-path-cover-profile.ts";
+export type {UniquePathCoverProfile} from './unique-path-cover-profile.ts';
 
 /**
  * exact-cover構成の結果。
@@ -44,17 +41,17 @@ export type { UniquePathCoverProfile } from "./unique-path-cover-profile.ts";
  */
 type BuildUniquePathCoverResult =
   | {
-      readonly status: "built";
+      readonly status: 'built';
       readonly plan: MaterializedPathPlan;
       readonly constructionStateCount: number;
       readonly pathLengthProfile: readonly number[];
     }
   | {
-      readonly status: "not_constructed";
+      readonly status: 'not_constructed';
       readonly constructionStateCount: number;
     }
   | {
-      readonly status: "budget_exhausted";
+      readonly status: 'budget_exhausted';
       readonly constructionStateCount: number;
     };
 
@@ -132,40 +129,37 @@ export function buildUniquePathCover(
   options: BuildUniquePathCoverOptions = {},
 ): BuildUniquePathCoverResult {
   const profile = findUniquePathCoverProfile(profileId);
-  const routeCover = buildOrReuseRouteCover(
-    routeSeed,
-    random,
-    profile,
-  );
+  const routeCover = buildOrReuseRouteCover(routeSeed, random, profile);
   if (!hasExpectedPathLengths(routeCover.lengths, profile)) {
-    return { status: "not_constructed", constructionStateCount: 0 };
+    return {status: 'not_constructed', constructionStateCount: 0};
   }
-  if (routeCover.result.status !== "built") {
+  if (routeCover.result.status !== 'built') {
     return routeCover.result;
   }
 
-  const symbols = profile.width === 5
-    ? assignFiveByFivePathSymbols(random, profile.symbolPathCounts)
-    : assignSixBySixPathSymbols(
-        routeSeed,
-        profile.symbolPathCounts,
-        options.symbolAssignmentVariant ?? 0,
-      );
+  const symbols =
+    profile.width === 5
+      ? assignFiveByFivePathSymbols(random, profile.symbolPathCounts)
+      : assignSixBySixPathSymbols(
+          routeSeed,
+          profile.symbolPathCounts,
+          options.symbolAssignmentVariant ?? 0,
+        );
   if (symbols.length !== profile.pathCount) {
-    throw new TypeError("terminal profile does not match its path count");
+    throw new TypeError('terminal profile does not match its path count');
   }
 
   const paths: readonly PlannedPath[] = routeCover.result.paths.map(
     (candidate, index) => ({
       role: routeRoleForPathIndex(index),
-      symbol: symbols[index] ?? "circle",
-      cells: candidate.cells.map((cellIndex) => (
-        indexToCell(cellIndex, profile.width)
-      )),
+      symbol: symbols[index] ?? 'circle',
+      cells: candidate.cells.map(cellIndex =>
+        indexToCell(cellIndex, profile.width),
+      ),
     }),
   );
   return {
-    status: "built",
+    status: 'built',
     plan: materializePathPlan(
       paths,
       profile.width,
@@ -186,16 +180,14 @@ function buildOrReuseRouteCover(
   readonly result: PathCoverResult;
 } {
   const cacheKey = `${profile.profileId}|${routeSeed}`;
-  if (
-    profile.width === 6
-    && lastSixBySixRouteCover?.cacheKey === cacheKey
-  ) {
+  if (profile.width === 6 && lastSixBySixRouteCover?.cacheKey === cacheKey) {
     return lastSixBySixRouteCover;
   }
 
-  const lengths = profile.pathLengthProfiles[
-    random.integer(0, profile.pathLengthProfiles.length - 1)
-  ] ?? [];
+  const lengths =
+    profile.pathLengthProfiles[
+      random.integer(0, profile.pathLengthProfiles.length - 1)
+    ] ?? [];
   const result = selectPathCover(
     lengths,
     random,
@@ -203,9 +195,9 @@ function buildOrReuseRouteCover(
     getPathCandidateSource(profile),
   );
   if (profile.width === 6) {
-    lastSixBySixRouteCover = { cacheKey, lengths, result };
+    lastSixBySixRouteCover = {cacheKey, lengths, result};
   }
-  return { lengths, result };
+  return {lengths, result};
 }
 
 function hasExpectedPathLengths(
@@ -213,16 +205,18 @@ function hasExpectedPathLengths(
   profile: UniquePathCoverProfile,
 ): boolean {
   const cellCount = profile.width * profile.height;
-  return lengths.length === profile.pathCount
-    && lengths.reduce((sum, length) => sum + length, 0) === cellCount;
+  return (
+    lengths.length === profile.pathCount &&
+    lengths.reduce((sum, length) => sum + length, 0) === cellCount
+  );
 }
 
 function routeRoleForPathIndex(index: number): RouteRole {
   if (index === 0) {
-    return "thread";
+    return 'thread';
   }
   if (index === 1) {
-    return "spine";
+    return 'spine';
   }
-  return "scaffold";
+  return 'scaffold';
 }

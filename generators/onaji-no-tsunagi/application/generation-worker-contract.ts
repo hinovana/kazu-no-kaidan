@@ -4,7 +4,7 @@
  * @packageDocumentation
  */
 
-import type { Worksheet } from "../domain/types/worksheet.ts";
+import type {Worksheet} from '../domain/types/worksheet.ts';
 
 /**
  * 生成WorkerからReact UIへ返す、構造化clone可能な応答。
@@ -13,10 +13,10 @@ import type { Worksheet } from "../domain/types/worksheet.ts";
  */
 export type GenerationWorkerResponse =
   | {
-      readonly status: "ready";
+      readonly status: 'ready';
       readonly worksheet: Worksheet;
     }
   | {
-      readonly status: "error";
+      readonly status: 'error';
       readonly message: string;
     };

@@ -6,14 +6,12 @@
  * @packageDocumentation
  */
 
-import type { LoadedGeneratorModule } from "../../src/app/generator-module.ts";
-import { OnajiNoTsunagiPage } from "./ui/OnajiNoTsunagiPage.tsx";
-import "./styles.css";
+import type {LoadedGeneratorModule} from '../../src/app/generator-module.ts';
+import {OnajiNoTsunagiPage} from './ui/OnajiNoTsunagiPage.tsx';
+import './styles.css';
 
 /** SPA registryへ渡す「おなじのつなぎ」の遅延読込module。 */
-const generatorModule = {
+export const generatorModule = {
   /** SPA hostが教材routeで描画するpage component。 */
   Page: OnajiNoTsunagiPage,
 } satisfies LoadedGeneratorModule;
-
-export default generatorModule;

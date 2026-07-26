@@ -7,12 +7,12 @@
  * @packageDocumentation
  */
 
-import type { SymbolId } from "../types/puzzle.ts";
-import { createSeededRandom, type SeededRandom } from "./random.ts";
+import type {SymbolId} from '../types/puzzle.ts';
+import {createSeededRandom, type SeededRandom} from './random.ts';
 
 type SymbolPathCounts = readonly [number, number, number];
 
-const SYMBOLS: readonly SymbolId[] = ["circle", "square", "triangle"];
+const SYMBOLS: readonly SymbolId[] = ['circle', 'square', 'triangle'];
 const assignmentsByPathCounts = new Map<
   string,
   readonly (readonly number[])[]
@@ -39,12 +39,11 @@ export function assignFiveByFivePathSymbols(
   pathCounts: SymbolPathCounts,
 ): readonly SymbolId[] {
   return random.shuffle(
-    random.shuffle(SYMBOLS).flatMap((symbol, symbolIndex) => (
-      Array.from(
-        { length: pathCounts[symbolIndex] ?? 0 },
-        () => symbol,
-      )
-    )),
+    random
+      .shuffle(SYMBOLS)
+      .flatMap((symbol, symbolIndex) =>
+        Array.from({length: pathCounts[symbolIndex] ?? 0}, () => symbol),
+      ),
   );
 }
 
@@ -68,29 +67,27 @@ export function assignSixBySixPathSymbols(
     random.integer(1, assignments.length),
     assignments.length,
   );
-  const assignment = assignments[
-    (offset + variant * step) % assignments.length
-  ] ?? [];
-  const symbolOrder = createSeededRandom(
-    `${routeSeed}::symbol-labels`,
-  ).shuffle(SYMBOLS);
-  return assignment.map((groupIndex) => (
-    symbolOrder[groupIndex] ?? "circle"
-  ));
+  const assignment =
+    assignments[(offset + variant * step) % assignments.length] ?? [];
+  const symbolOrder = createSeededRandom(`${routeSeed}::symbol-labels`).shuffle(
+    SYMBOLS,
+  );
+  return assignment.map(groupIndex => symbolOrder[groupIndex] ?? 'circle');
 }
 
 function enumerateSymbolAssignments(
   pathCounts: SymbolPathCounts,
 ): readonly (readonly number[])[] {
-  const cacheKey = pathCounts.join("-");
+  const cacheKey = pathCounts.join('-');
   const cachedAssignments = assignmentsByPathCounts.get(cacheKey);
   if (cachedAssignments !== undefined) {
     return cachedAssignments;
   }
 
   const pathCount = pathCounts.reduce((sum, count) => sum + count, 0);
+  const pathIndices = [...Array.from({length: pathCount}).keys()];
   const assignments: number[][] = [];
-  assignGroup(0, Array.from({ length: pathCount }, (_, index) => index), []);
+  assignGroup(0, pathIndices, []);
   assignmentsByPathCounts.set(cacheKey, assignments);
   return assignments;
 
@@ -104,25 +101,20 @@ function enumerateSymbolAssignments(
       assignments.push(createAssignment(pathCount, groups));
       return;
     }
-    for (const selectedIndices of combinations(
-      remainingIndices,
-      groupSize,
-    )) {
+    for (const selectedIndices of combinations(remainingIndices, groupSize)) {
       const previousGroup = groups[groupIndex - 1];
-      const previousGroupHasSameSize = (
-        pathCounts[groupIndex - 1] === groupSize
-      );
+      const previousGroupHasSameSize = pathCounts[groupIndex - 1] === groupSize;
       if (
-        previousGroup !== undefined
-        && previousGroupHasSameSize
-        && compareNumberArrays(previousGroup, selectedIndices) >= 0
+        previousGroup !== undefined &&
+        previousGroupHasSameSize &&
+        compareNumberArrays(previousGroup, selectedIndices) >= 0
       ) {
         continue;
       }
       const selectedIndexSet = new Set(selectedIndices);
       assignGroup(
         groupIndex + 1,
-        remainingIndices.filter((index) => !selectedIndexSet.has(index)),
+        remainingIndices.filter(index => !selectedIndexSet.has(index)),
         [...groups, selectedIndices],
       );
     }
@@ -133,7 +125,7 @@ function createAssignment(
   pathCount: number,
   groups: readonly (readonly number[])[],
 ): number[] {
-  const assignment = Array.from({ length: pathCount }, () => -1);
+  const assignment = Array.from({length: pathCount}, () => -1);
   groups.forEach((indices, groupIndex) => {
     for (const pathIndex of indices) {
       assignment[pathIndex] = groupIndex;
@@ -156,11 +148,7 @@ function combinations(
       return;
     }
     const needed = size - selected.length;
-    for (
-      let index = start;
-      index <= values.length - needed;
-      index += 1
-    ) {
+    for (let index = start; index <= values.length - needed; index += 1) {
       const value = values[index];
       if (value !== undefined) {
         choose(index + 1, [...selected, value]);
