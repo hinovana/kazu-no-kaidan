@@ -19,6 +19,16 @@ import {
 } from "../domain/types/reference-corpus.ts";
 import type { Puzzle, SymbolId, Terminal } from "../domain/types/puzzle.ts";
 import { validatePuzzle } from "../domain/validation/validate-puzzle.ts";
+import {
+  checkKeys,
+  readArray,
+  readEnum,
+  readInteger,
+  readLiteral,
+  readNonEmptyString,
+  readNullableInteger,
+  readRecord,
+} from "./strict-json-reader.ts";
 
 /**
  * 原本参照JSONを厳格にデコードした結果。
@@ -98,67 +108,7 @@ export function decodeReferenceCorpusJson(
     `$.problems[${index}]`,
     errors,
   ));
-
-  if (problems.length === 0) {
-    errors.push("$.problems: 1問以上必要です。");
-  }
-
-  const problemIds = new Set<string>();
-  const sourceLocations = new Set<string>();
-  for (const [index, problem] of problems.entries()) {
-    const path = `$.problems[${index}]`;
-    if (problemIds.has(problem.id)) {
-      errors.push(`${path}.id: 問題IDが重複しています: ${problem.id}`);
-    }
-    problemIds.add(problem.id);
-
-    const sourceLocation = [
-      problem.source.bookPage,
-      problem.source.label,
-      problem.source.kind,
-    ].join(":");
-    if (sourceLocations.has(sourceLocation)) {
-      errors.push(`${path}.source: 同じ出典位置が重複しています。`);
-    }
-    sourceLocations.add(sourceLocation);
-
-    if (
-      problem.source.bookPage < sourceDocument.bookPageRange[0]
-      || problem.source.bookPage > sourceDocument.bookPageRange[1]
-    ) {
-      errors.push(`${path}.source.bookPage: 原本ページ範囲外です。`);
-    }
-    if (problem.source.pdfPage > sourceDocument.pdfPageCount) {
-      errors.push(`${path}.source.pdfPage: PDFページ数を超えています。`);
-    }
-    if (problem.transcription.status === "double-checked") {
-      if (sourceDocument.sha256 === null) {
-        errors.push(
-          `${path}.transcription: 二重確認には原本PDFのSHA-256が必要です。`,
-        );
-      } else if (
-        problem.transcription.checkedAgainstSourceSha256
-        !== sourceDocument.sha256
-      ) {
-        errors.push(
-          `${path}.transcription.checkedAgainstSourceSha256: 原本PDFのSHA-256と一致しません。`,
-        );
-      }
-    } else if (
-      problem.transcription.checkedAgainstSourceSha256 !== null
-    ) {
-      errors.push(
-        `${path}.transcription.checkedAgainstSourceSha256: draftではnullにします。`,
-      );
-    }
-
-    const validation = validatePuzzle(referenceProblemToPuzzle(problem));
-    if (!validation.valid) {
-      for (const issue of validation.issues) {
-        errors.push(`${path}: ${issue.message}`);
-      }
-    }
-  }
+  validateCorpusConsistency(problems, sourceDocument, errors);
 
   if (errors.length > 0) {
     return { ok: false, errors };
@@ -173,6 +123,120 @@ export function decodeReferenceCorpusJson(
       problems,
     },
   };
+}
+
+function validateCorpusConsistency(
+  problems: readonly ReferenceProblem[],
+  sourceDocument: ReferenceSourceDocument,
+  errors: string[],
+): void {
+  if (problems.length === 0) {
+    errors.push("$.problems: 1問以上必要です。");
+  }
+
+  const problemIds = new Set<string>();
+  const sourceLocations = new Set<string>();
+  for (const [index, problem] of problems.entries()) {
+    const path = `$.problems[${index}]`;
+    reportDuplicateProblemId(problem, path, problemIds, errors);
+    reportDuplicateSourceLocation(
+      problem,
+      path,
+      sourceLocations,
+      errors,
+    );
+    validateSourcePageRange(problem, path, sourceDocument, errors);
+    validateTranscriptionSource(problem, path, sourceDocument, errors);
+    appendPuzzleValidationErrors(problem, path, errors);
+  }
+}
+
+function reportDuplicateProblemId(
+  problem: ReferenceProblem,
+  path: string,
+  problemIds: Set<string>,
+  errors: string[],
+): void {
+  if (problemIds.has(problem.id)) {
+    errors.push(`${path}.id: 問題IDが重複しています: ${problem.id}`);
+  }
+  problemIds.add(problem.id);
+}
+
+function reportDuplicateSourceLocation(
+  problem: ReferenceProblem,
+  path: string,
+  sourceLocations: Set<string>,
+  errors: string[],
+): void {
+  const sourceLocation = [
+    problem.source.bookPage,
+    problem.source.label,
+    problem.source.kind,
+  ].join(":");
+  if (sourceLocations.has(sourceLocation)) {
+    errors.push(`${path}.source: 同じ出典位置が重複しています。`);
+  }
+  sourceLocations.add(sourceLocation);
+}
+
+function validateSourcePageRange(
+  problem: ReferenceProblem,
+  path: string,
+  sourceDocument: ReferenceSourceDocument,
+  errors: string[],
+): void {
+  const [firstBookPage, lastBookPage] = sourceDocument.bookPageRange;
+  if (
+    problem.source.bookPage < firstBookPage
+    || problem.source.bookPage > lastBookPage
+  ) {
+    errors.push(`${path}.source.bookPage: 原本ページ範囲外です。`);
+  }
+  if (problem.source.pdfPage > sourceDocument.pdfPageCount) {
+    errors.push(`${path}.source.pdfPage: PDFページ数を超えています。`);
+  }
+}
+
+function validateTranscriptionSource(
+  problem: ReferenceProblem,
+  path: string,
+  sourceDocument: ReferenceSourceDocument,
+  errors: string[],
+): void {
+  const checkedSha256 = (
+    problem.transcription.checkedAgainstSourceSha256
+  );
+  if (problem.transcription.status === "draft") {
+    if (checkedSha256 !== null) {
+      errors.push(
+        `${path}.transcription.checkedAgainstSourceSha256: draftではnullにします。`,
+      );
+    }
+    return;
+  }
+  if (sourceDocument.sha256 === null) {
+    errors.push(
+      `${path}.transcription: 二重確認には原本PDFのSHA-256が必要です。`,
+    );
+  } else if (checkedSha256 !== sourceDocument.sha256) {
+    errors.push(
+      `${path}.transcription.checkedAgainstSourceSha256: 原本PDFのSHA-256と一致しません。`,
+    );
+  }
+}
+
+function appendPuzzleValidationErrors(
+  problem: ReferenceProblem,
+  path: string,
+  errors: string[],
+): void {
+  const validation = validatePuzzle(referenceProblemToPuzzle(problem));
+  if (!validation.valid) {
+    for (const issue of validation.issues) {
+      errors.push(`${path}: ${issue.message}`);
+    }
+  }
 }
 
 /**
@@ -400,46 +464,6 @@ function decodeTranscription(
   };
 }
 
-function readRecord(
-  source: unknown,
-  path: string,
-  errors: string[],
-): Record<string, unknown> {
-  if (
-    typeof source !== "object"
-    || source === null
-    || Array.isArray(source)
-  ) {
-    errors.push(`${path}: オブジェクトでなければなりません。`);
-    return {};
-  }
-  return source as Record<string, unknown>;
-}
-
-function readArray(
-  source: unknown,
-  path: string,
-  errors: string[],
-): readonly unknown[] {
-  if (!Array.isArray(source)) {
-    errors.push(`${path}: 配列でなければなりません。`);
-    return [];
-  }
-  return source;
-}
-
-function readNonEmptyString(
-  source: unknown,
-  path: string,
-  errors: string[],
-): string {
-  if (typeof source !== "string" || source.trim().length === 0) {
-    errors.push(`${path}: 空でない文字列でなければなりません。`);
-    return "";
-  }
-  return source;
-}
-
 function readNullableSha256(
   source: unknown,
   path: string,
@@ -453,85 +477,4 @@ function readNullableSha256(
     return null;
   }
   return source;
-}
-
-function readInteger(
-  source: unknown,
-  path: string,
-  errors: string[],
-  minimum: number,
-  maximum = Number.MAX_SAFE_INTEGER,
-): number {
-  if (
-    !Number.isInteger(source)
-    || typeof source !== "number"
-    || source < minimum
-    || source > maximum
-  ) {
-    errors.push(
-      `${path}: ${minimum}以上${maximum === Number.MAX_SAFE_INTEGER ? "" : `${maximum}以下`}の整数が必要です。`,
-    );
-    return minimum;
-  }
-  return source;
-}
-
-function readNullableInteger(
-  source: unknown,
-  path: string,
-  errors: string[],
-  minimum: number,
-  maximum: number,
-): number | null {
-  if (source === null) {
-    return null;
-  }
-  return readInteger(source, path, errors, minimum, maximum);
-}
-
-function readEnum<const Value extends string>(
-  source: unknown,
-  values: readonly Value[],
-  path: string,
-  errors: string[],
-): Value {
-  if (
-    typeof source !== "string"
-    || !values.includes(source as Value)
-  ) {
-    errors.push(`${path}: ${values.join(" / ")}のいずれかが必要です。`);
-    return values[0] as Value;
-  }
-  return source as Value;
-}
-
-function readLiteral<const Value extends string | number>(
-  source: unknown,
-  expected: Value,
-  path: string,
-  errors: string[],
-): Value {
-  if (source !== expected) {
-    errors.push(`${path}: ${JSON.stringify(expected)}でなければなりません。`);
-  }
-  return expected;
-}
-
-function checkKeys(
-  record: Record<string, unknown>,
-  expectedKeys: readonly string[],
-  path: string,
-  errors: string[],
-) {
-  const expected = new Set(expectedKeys);
-  for (const key of Object.keys(record)) {
-    if (!expected.has(key)) {
-      errors.push(`${path}.${key}: 未定義の項目です。入力ミスを確認してください。`);
-    }
-  }
-  for (const key of expectedKeys) {
-    if (!(key in record)) {
-      errors.push(`${path}.${key}: 必須項目です。`);
-    }
-  }
 }

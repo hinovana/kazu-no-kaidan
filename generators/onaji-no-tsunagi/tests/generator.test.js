@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import {
   getUniquePathCoverProfile,
   selectUniquePathCoverProfileId,
@@ -15,6 +16,11 @@ const request = {
 const first = generateWorksheet(request);
 const second = generateWorksheet(request);
 assert.deepEqual(second, first, "5x5 generation must be reproducible");
+assert.equal(
+  worksheetHash(first),
+  "f64d217ec5df34e261f9f248ff30aa396c89d126c34ed03fa78062d5ffed3fa1",
+  "v3.3 output must not change without a version update",
+);
 assert.equal(first.schemaVersion, "onaji-no-tsunagi.worksheet.v3.3");
 assert.equal(
   first.provenance.generatorVersion,
@@ -145,6 +151,11 @@ const levelTwoRequest = {
 };
 const levelTwo = generateWorksheet(levelTwoRequest);
 assert.deepEqual(generateWorksheet(levelTwoRequest), levelTwo);
+assert.equal(
+  worksheetHash(levelTwo),
+  "021775c3e198bc6da6281946925d8048b7b732dc54f0f2d079dd6c16a678f6fa",
+  "v3.4 draft level 2 output must remain stable",
+);
 assert.deepEqual(
   levelTwo.puzzles.map((generated) => generated.provenance.profileId),
   [
@@ -162,6 +173,11 @@ const levelThreeRequest = {
 };
 const levelThree = generateWorksheet(levelThreeRequest);
 assert.deepEqual(generateWorksheet(levelThreeRequest), levelThree);
+assert.equal(
+  worksheetHash(levelThree),
+  "1cca583ca28d5d671ffeee0125b49fe5fbea4f9f550e4eb76a761a54c6ff79e8",
+  "v3.4 draft level 3 output must remain stable",
+);
 assert.deepEqual(
   levelThree.puzzles.map((generated) => generated.provenance.profileId),
   ["6x6-6-4-4", "6x6-6-4-4"],
@@ -218,5 +234,11 @@ assert.deepEqual(
   )),
   [[4, 4, 6], [4, 4, 6]],
 );
+
+function worksheetHash(worksheet) {
+  return createHash("sha256")
+    .update(JSON.stringify(worksheet))
+    .digest("hex");
+}
 
 console.log("onaji-no-tsunagi v3.4 5x5/6x6 generator tests passed");

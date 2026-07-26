@@ -6,40 +6,23 @@
  * @packageDocumentation
  */
 
-import {
-  useEffect,
-  useRef,
-  useState,
-  type FormEvent,
-} from "react";
+import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { GeneratorModuleProps } from "../../../src/app/generator-module.ts";
-import type {
-  GenerationWorkerResponse,
-} from "../application/generation-worker-contract.ts";
-import type {
-  AvailableDifficultyLevel,
-  PuzzleCount,
-} from "../domain/types/generation.ts";
-import type { Worksheet } from "../domain/types/worksheet.ts";
+import {
+  useWorksheetGeneration,
+  type WorksheetGenerationState,
+} from "./use-worksheet-generation.ts";
 import { AnswerPreview } from "./AnswerPreview.tsx";
 import { DeveloperDiagnostics } from "./DeveloperDiagnostics.tsx";
 import { ReferenceCorpusReviewPage } from "./ReferenceCorpusReviewPage.tsx";
+import {
+  WorksheetGenerationControls,
+  type WorksheetGenerationForm,
+} from "./WorksheetGenerationControls.tsx";
 import { WorksheetPreview } from "./WorksheetPreview.tsx";
 
-interface FormState {
-  readonly difficulty: AvailableDifficultyLevel;
-  readonly puzzleCount: PuzzleCount;
-  readonly seed: string;
-}
-
-type PageState =
-  | { readonly status: "idle" }
-  | { readonly status: "generating" }
-  | { readonly status: "ready"; readonly worksheet: Worksheet }
-  | { readonly status: "error"; readonly message: string };
-
-const INITIAL_FORM: FormState = {
+const INITIAL_FORM: WorksheetGenerationForm = {
   difficulty: 1,
   puzzleCount: 2,
   seed: "onaji-start",
@@ -61,38 +44,9 @@ export function OnajiNoTsunagiPage({ onRequestPrint }: GeneratorModuleProps) {
 function WorksheetGeneratorPage({
   onRequestPrint,
 }: GeneratorModuleProps) {
-  const [form, setForm] = useState<FormState>(INITIAL_FORM);
-  const [pageState, setPageState] = useState<PageState>({ status: "idle" });
+  const [form, setForm] = useState<WorksheetGenerationForm>(INITIAL_FORM);
   const [showAnswers, setShowAnswers] = useState(false);
-  const activeWorker = useRef<Worker | null>(null);
-
-  useEffect(() => () => {
-    activeWorker.current?.terminate();
-  }, []);
-
-  async function handleGenerate(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setPageState({ status: "generating" });
-    setShowAnswers(false);
-    try {
-      const worksheet = await generateWorksheetInWorker(
-        form,
-        (worker) => {
-          activeWorker.current = worker;
-        },
-      );
-      setPageState({ status: "ready", worksheet });
-    } catch (error: unknown) {
-      setPageState({
-        status: "error",
-        message: error instanceof Error
-          ? error.message
-          : "不明なエラーです。",
-      });
-    } finally {
-      activeWorker.current = null;
-    }
-  }
+  const generation = useWorksheetGeneration();
 
   function handlePrint() {
     if (showAnswers) {
@@ -132,137 +86,63 @@ function WorksheetGeneratorPage({
         <span>難易度は未校正／児童利用・学力判定不可</span>
       </aside>
 
-      <form className="ots-control-panel screen-only" onSubmit={(event) => void handleGenerate(event)}>
-        <div className="ots-control-grid">
-          <label>
-            暫定難易度
-            <select
-              value={form.difficulty}
-              onChange={(event) => setForm({
-                ...form,
-                difficulty: Number(
-                  event.target.value,
-                ) as AvailableDifficultyLevel,
-              })}
-            >
-              <option value={1}>★☆☆☆ レベル1（5×5・6/8/10個・唯一解）</option>
-              <option value={2}>★★☆☆ レベル2（6×6・10/12個・唯一解）</option>
-              <option value={3}>★★★☆ レベル3（6×6・14個・唯一解）</option>
-            </select>
-          </label>
-          <label>
-            問題数
-            <select
-              value={form.puzzleCount}
-              onChange={(event) => setForm({
-                ...form,
-                puzzleCount: Number(event.target.value) as PuzzleCount,
-              })}
-            >
-              {[1, 2, 3, 4].map((count) => (
-                <option value={count} key={count}>{count}問</option>
-              ))}
-            </select>
-          </label>
-          <label className="ots-seed-field">
-            seed
-            <input
-              value={form.seed}
-              maxLength={200}
-              onChange={(event) => setForm({ ...form, seed: event.target.value })}
-            />
-          </label>
-          <button
-            className="ots-secondary-button"
-            type="button"
-            onClick={() => setForm({ ...form, seed: createRandomSeed() })}
-          >
-            ランダムseed
-          </button>
-        </div>
-        <p className="ots-control-note">
-          生成した問題は、同じ形が4個以上ある場合のペアリングも含め、
-          答えが1通りだけであることを完全探索で確認します。
-        </p>
-        <div className="ots-action-row">
-          <button className="ots-primary-button" type="submit" disabled={pageState.status === "generating"}>
-            {pageState.status === "generating" ? "作っています…" : "この条件でつくる"}
-          </button>
-          {pageState.status === "ready" ? (
-            <>
-              <button
-                className="ots-secondary-button"
-                type="button"
-                onClick={() => setShowAnswers((current) => !current)}
-              >
-                {showAnswers ? "答えを隠す" : "答えを表示"}
-              </button>
-              <button className="ots-secondary-button" type="button" onClick={handlePrint}>
-                印刷
-              </button>
-            </>
-          ) : null}
-        </div>
-      </form>
+      <WorksheetGenerationControls
+        form={form}
+        generating={generation.state.status === "generating"}
+        hasWorksheet={generation.state.status === "ready"}
+        showAnswers={showAnswers}
+        onChange={setForm}
+        onGenerate={async () => {
+          setShowAnswers(false);
+          await generation.generate(form);
+        }}
+        onToggleAnswers={() => setShowAnswers((current) => !current)}
+        onPrint={handlePrint}
+      />
 
-      {pageState.status === "idle" ? (
-        <section className="ots-empty-state screen-only">
-          <h2>生成条件を選んでください</h2>
-          <p>「この条件でつくる」を押すまで生成しません。</p>
-        </section>
-      ) : null}
-      {pageState.status === "generating" ? (
-        <p className="ots-status screen-only" aria-live="polite">問題を検査しながら作っています…</p>
-      ) : null}
-      {pageState.status === "error" ? (
-        <section className="ots-error screen-only" role="alert">
-          <h2>問題を生成できませんでした</h2>
-          <p>{pageState.message}</p>
-        </section>
-      ) : null}
-      {pageState.status === "ready" ? (
-        <div className="ots-preview-stack">
-          <WorksheetPreview worksheet={pageState.worksheet} />
-          <AnswerPreview worksheet={pageState.worksheet} hidden={!showAnswers} />
-          <DeveloperDiagnostics worksheet={pageState.worksheet} />
-        </div>
-      ) : null}
+      <GenerationResult
+        state={generation.state}
+        showAnswers={showAnswers}
+      />
     </main>
   );
 }
 
-function createRandomSeed(): string {
-  const values = new Uint32Array(2);
-  globalThis.crypto.getRandomValues(values);
-  return `onaji-${[...values].map((value) => value.toString(36)).join("-")}`;
-}
-
-function generateWorksheetInWorker(
-  input: unknown,
-  onCreated: (worker: Worker) => void,
-): Promise<Worksheet> {
-  return new Promise((resolve, reject) => {
-    const worker = new Worker(
-      new URL("../application/generation-worker.ts", import.meta.url),
-      { type: "module" },
+function GenerationResult({
+  state,
+  showAnswers,
+}: {
+  readonly state: WorksheetGenerationState;
+  readonly showAnswers: boolean;
+}) {
+  if (state.status === "idle") {
+    return (
+      <section className="ots-empty-state screen-only">
+        <h2>生成条件を選んでください</h2>
+        <p>「この条件でつくる」を押すまで生成しません。</p>
+      </section>
     );
-    onCreated(worker);
-    worker.addEventListener("message", (
-      event: MessageEvent<GenerationWorkerResponse>,
-    ) => {
-      worker.terminate();
-      if (event.data.status === "ready") {
-        resolve(event.data.worksheet);
-      } else {
-        reject(new Error(event.data.message));
-      }
-    }, { once: true });
-    worker.addEventListener("error", () => {
-      worker.terminate();
-      reject(new Error(
-        "生成処理を開始できませんでした。ページを再読み込みしてください。",
-      ));
-    }, { once: true });
-    worker.postMessage(input);
-  });
+  }
+  if (state.status === "generating") {
+    return (
+      <p className="ots-status screen-only" aria-live="polite">
+        問題を検査しながら作っています…
+      </p>
+    );
+  }
+  if (state.status === "error") {
+    return (
+      <section className="ots-error screen-only" role="alert">
+        <h2>問題を生成できませんでした</h2>
+        <p>{state.message}</p>
+      </section>
+    );
+  }
+  return (
+    <div className="ots-preview-stack">
+      <WorksheetPreview worksheet={state.worksheet} />
+      <AnswerPreview worksheet={state.worksheet} hidden={!showAnswers} />
+      <DeveloperDiagnostics worksheet={state.worksheet} />
+    </div>
+  );
 }

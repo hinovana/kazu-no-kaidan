@@ -57,6 +57,31 @@ const DRAFT_VERSIONS = {
   profileVersion: "onaji-no-tsunagi-profiles.v3.4-draft",
 } as const;
 
+type GeneratorVersions = typeof STABLE_VERSIONS | typeof DRAFT_VERSIONS;
+
+interface GenerationProgress {
+  totalAttempts: number;
+  readonly allRejections: CandidateRejection[];
+}
+
+interface CandidateIdentity {
+  readonly candidateIndex: number;
+  readonly routeSeed: string;
+  readonly puzzleSeed: string;
+  readonly symbolAssignmentVariant: number;
+}
+
+type CandidateEvaluation =
+  | {
+      readonly status: "accepted";
+      readonly generatedPuzzle: GeneratedPuzzle;
+    }
+  | {
+      readonly status: "rejected";
+      readonly reason: CandidateRejectionReason;
+      readonly skipRemainingSymbolAssignments: boolean;
+    };
+
 /**
  * Worksheet生成を続行できないdomain error。
  *
@@ -90,244 +115,23 @@ export function generateWorksheet(request: GenerationRequest): Worksheet {
     ? STABLE_VERSIONS
     : DRAFT_VERSIONS;
   const puzzles: GeneratedPuzzle[] = [];
-  let totalAttempts = 0;
-  const allRejections: CandidateRejection[] = [];
+  const progress: GenerationProgress = {
+    totalAttempts: 0,
+    allRejections: [],
+  };
 
   for (
     let puzzleIndex = 0;
     puzzleIndex < request.puzzleCount;
     puzzleIndex += 1
   ) {
-    const puzzleRejections: CandidateRejection[] = [];
-    let generated: GeneratedPuzzle | null = null;
-    const profileId = selectUniquePathCoverProfileId(
-      request.difficulty,
-      request.seed,
+    puzzles.push(generatePuzzle(
+      request,
+      versions,
       puzzleIndex,
-      request.puzzleCount,
-    );
-    const terminalProfile = getUniquePathCoverProfile(profileId);
-    const terminalPattern = terminalProfile.terminalPattern;
-    const symbolAssignmentVariantCount = terminalProfile.width === 6
-      ? getSymbolAssignmentVariantCount(profileId)
-      : 1;
-    for (
-      let candidateIndex = 0;
-      candidateIndex < terminalProfile.maximumCandidateCount;
-      candidateIndex += 1
-    ) {
-      totalAttempts += 1;
-      const routeCandidateIndex = Math.floor(
-        candidateIndex / symbolAssignmentVariantCount,
-      );
-      const symbolAssignmentVariant = (
-        candidateIndex % symbolAssignmentVariantCount
-      );
-      const routeSeed = [
-        request.seed,
-        versions.generatorVersion,
-        `puzzle-${puzzleIndex + 1}`,
-        request.difficulty === 1
-          ? `terminals-${terminalPattern}`
-          : `profile-${profileId}`,
-        `candidate-${routeCandidateIndex}`,
-      ].join("::");
-      const puzzleSeed = terminalProfile.width === 5
-        ? routeSeed
-        : `${routeSeed}::symbol-${symbolAssignmentVariant}`;
-      const random = createSeededRandom(routeSeed);
-      const buildResult = buildUniquePathCover(
-        routeSeed,
-        random,
-        profileId,
-        {
-          symbolAssignmentVariant,
-          materializedPuzzleSeed: puzzleSeed,
-        },
-      );
-      if (buildResult.status === "budget_exhausted") {
-        reject("construction_state_budget_exhausted");
-        skipRemainingSymbolAssignments();
-        continue;
-      }
-      if (buildResult.status === "not_constructed") {
-        reject("route_plan_not_constructed");
-        skipRemainingSymbolAssignments();
-        continue;
-      }
-      const { plan } = buildResult;
-      if (puzzles.some((entry) => (
-        entry.provenance.topologyHash === plan.topologyHash
-      ))) {
-        reject("duplicate_topology_in_worksheet");
-        continue;
-      }
-      const knownValidation = validateSolution(
-        plan.puzzle,
-        plan.plantedSolution,
-      );
-      if (!knownValidation.valid) {
-        throw new GenerationFailure({
-          code: "INTERNAL_INVARIANT_BROKEN",
-          checkId: "known_solution_valid",
-        });
-      }
-      const entryResult = analyzeUniquePathCoverEntry(
-        plan.puzzle,
-        terminalProfile,
-      );
-      if (entryResult.status === "rejected") {
-        reject("entry_structure_missing");
-        skipRemainingSymbolAssignments();
-        continue;
-      }
-      const validity = solvePuzzle(plan.puzzle, {
-        solutionLimit: 2,
-        stateBudget: terminalProfile.maximumValidityStates,
-      });
-      if (validity.status === "budget_exhausted") {
-        reject("validity_solver_budget_exhausted");
-        continue;
-      }
-      if (validity.status === "unsatisfiable") {
-        throw new GenerationFailure({
-          code: "INTERNAL_INVARIANT_BROKEN",
-          checkId: "independent_solver_found_solution",
-        });
-      }
-      if (
-        validity.solutionCount.kind !== "exact"
-        || validity.solutionCount.count !== 1
-      ) {
-        reject("solution_not_unique");
-        continue;
-      }
-      const optimization = optimizeSolution(
-        plan.puzzle,
-        plan.plantedSolution,
-        {
-          stateBudget: terminalProfile.maximumProofStates,
-        },
-      );
-      if (optimization.status === "budget_exhausted") {
-        reject("quality_optimizer_budget_exhausted");
-        continue;
-      }
-      if (optimization.status === "unsatisfiable") {
-        throw new GenerationFailure({
-          code: "INTERNAL_INVARIANT_BROKEN",
-          checkId: "quality_optimizer_found_solution",
-        });
-      }
-      const plantedCost = calculateSolutionCost(
-        plan.puzzle,
-        plan.plantedSolution,
-      );
-      if (
-        plantedCost.totalEdgeCount
-          !== optimization.cost.totalEdgeCount
-      ) {
-        reject("planted_solution_not_optimal");
-        continue;
-      }
-      if (!doesSolutionPreserveRouteRoles(
-        plan.puzzle,
-        optimization.solution,
-        plan.routeRoles,
-      )) {
-        reject("planted_solution_not_optimal");
-        continue;
-      }
-      const geometry = analyzeSolutionGeometry(
-        plan.puzzle,
-        optimization.solution,
-      );
-      const coverage = analyzeSolutionCoverage(
-        plan.puzzle,
-        optimization.solution,
-      );
-      if (!passesUniquePathCoverGates(
-        coverage.usedCellCount,
-        geometry,
-        entryResult.analysis,
-        terminalProfile,
-      )) {
-        reject("geometry_gate_failed");
-        continue;
-      }
-      const interactionWitnesses = explainUniquePathCover(
-        entryResult.analysis,
-        validity.metrics.exploredStateCount,
-      );
-      const difficulty = analyzeDifficulty(
-        request.difficulty,
-        plan.puzzle,
-        validity.metrics,
-      );
-      if (difficulty.measuredBand !== request.difficulty) {
-        reject("difficulty_band_mismatch");
-        continue;
-      }
-      generated = {
-        puzzle: plan.puzzle,
-        canonicalSolution: optimization.solution,
-        answerCoverage: coverage,
-        solutionCount: { kind: "exact", count: 1 },
-        solutionCost: optimization.cost,
-        entry: entryResult.analysis,
-        geometry,
-        interactionWitnesses,
-        routeRoles: plan.routeRoles,
-        generationWitness: {
-          plantedInflationEdgeCount:
-            plantedCost.totalEdgeCount
-            - optimization.cost.totalEdgeCount,
-          rolePreservationStatus: "proven",
-        },
-        difficulty,
-        qualityProof: {
-          status: "optimal",
-          exploredStateCount: optimization.exploredStateCount,
-        },
-        uniquenessProof: {
-          status: "proven",
-          exploredStateCount: validity.metrics.exploredStateCount,
-        },
-        provenance: {
-          terminalPattern,
-          profileId,
-          constructionStateCount: buildResult.constructionStateCount,
-          pathLengthProfile: buildResult.pathLengthProfile,
-          candidateIndex,
-          puzzleSeed,
-          topologyHash: plan.topologyHash,
-          precedingRejections: [...puzzleRejections],
-        },
-      };
-      break;
-
-      function reject(reason: CandidateRejectionReason): void {
-        const rejection = { candidateIndex, puzzleSeed, reason } as const;
-        puzzleRejections.push(rejection);
-        allRejections.push(rejection);
-      }
-
-      function skipRemainingSymbolAssignments(): void {
-        candidateIndex += (
-          symbolAssignmentVariantCount
-          - symbolAssignmentVariant
-          - 1
-        );
-      }
-    }
-    if (generated === null) {
-      throw new GenerationFailure({
-        code: "GENERATION_BUDGET_EXHAUSTED",
-        attemptedCandidates: totalAttempts,
-        rejections: allRejections,
-      });
-    }
-    puzzles.push(generated);
+      puzzles,
+      progress,
+    ));
   }
 
   const report = runMachineChecks(request, puzzles);
@@ -356,6 +160,295 @@ export function generateWorksheet(request: GenerationRequest): Worksheet {
       seed: request.seed,
     },
   };
+}
+
+function generatePuzzle(
+  request: GenerationRequest,
+  versions: GeneratorVersions,
+  puzzleIndex: number,
+  precedingPuzzles: readonly GeneratedPuzzle[],
+  progress: GenerationProgress,
+): GeneratedPuzzle {
+  const profileId = selectUniquePathCoverProfileId(
+    request.difficulty,
+    request.seed,
+    puzzleIndex,
+    request.puzzleCount,
+  );
+  const profile = getUniquePathCoverProfile(profileId);
+  const symbolAssignmentVariantCount = profile.width === 6
+    ? getSymbolAssignmentVariantCount(profileId)
+    : 1;
+  const puzzleRejections: CandidateRejection[] = [];
+
+  for (
+    let candidateIndex = 0;
+    candidateIndex < profile.maximumCandidateCount;
+    candidateIndex += 1
+  ) {
+    progress.totalAttempts += 1;
+    const identity = createCandidateIdentity(
+      request,
+      versions,
+      puzzleIndex,
+      candidateIndex,
+      profile,
+      symbolAssignmentVariantCount,
+    );
+    const evaluation = evaluateCandidate(
+      request,
+      identity,
+      profile,
+      precedingPuzzles,
+      puzzleRejections,
+    );
+    if (evaluation.status === "accepted") {
+      return evaluation.generatedPuzzle;
+    }
+
+    recordRejection(
+      identity,
+      evaluation.reason,
+      puzzleRejections,
+      progress.allRejections,
+    );
+    if (evaluation.skipRemainingSymbolAssignments) {
+      candidateIndex += (
+        symbolAssignmentVariantCount
+        - identity.symbolAssignmentVariant
+        - 1
+      );
+    }
+  }
+
+  throw new GenerationFailure({
+    code: "GENERATION_BUDGET_EXHAUSTED",
+    attemptedCandidates: progress.totalAttempts,
+    rejections: progress.allRejections,
+  });
+}
+
+function createCandidateIdentity(
+  request: GenerationRequest,
+  versions: GeneratorVersions,
+  puzzleIndex: number,
+  candidateIndex: number,
+  profile: UniquePathCoverProfile,
+  symbolAssignmentVariantCount: number,
+): CandidateIdentity {
+  const routeCandidateIndex = Math.floor(
+    candidateIndex / symbolAssignmentVariantCount,
+  );
+  const symbolAssignmentVariant = (
+    candidateIndex % symbolAssignmentVariantCount
+  );
+  const routeSeed = [
+    request.seed,
+    versions.generatorVersion,
+    `puzzle-${puzzleIndex + 1}`,
+    request.difficulty === 1
+      ? `terminals-${profile.terminalPattern}`
+      : `profile-${profile.profileId}`,
+    `candidate-${routeCandidateIndex}`,
+  ].join("::");
+  const puzzleSeed = profile.width === 5
+    ? routeSeed
+    : `${routeSeed}::symbol-${symbolAssignmentVariant}`;
+  return {
+    candidateIndex,
+    routeSeed,
+    puzzleSeed,
+    symbolAssignmentVariant,
+  };
+}
+
+function evaluateCandidate(
+  request: GenerationRequest,
+  identity: CandidateIdentity,
+  profile: UniquePathCoverProfile,
+  precedingPuzzles: readonly GeneratedPuzzle[],
+  precedingRejections: readonly CandidateRejection[],
+): CandidateEvaluation {
+  const buildResult = buildUniquePathCover(
+    identity.routeSeed,
+    createSeededRandom(identity.routeSeed),
+    profile.profileId,
+    {
+      symbolAssignmentVariant: identity.symbolAssignmentVariant,
+      materializedPuzzleSeed: identity.puzzleSeed,
+    },
+  );
+  if (buildResult.status === "budget_exhausted") {
+    return rejectedCandidate(
+      "construction_state_budget_exhausted",
+      true,
+    );
+  }
+  if (buildResult.status === "not_constructed") {
+    return rejectedCandidate("route_plan_not_constructed", true);
+  }
+
+  const { plan } = buildResult;
+  if (precedingPuzzles.some((entry) => (
+    entry.provenance.topologyHash === plan.topologyHash
+  ))) {
+    return rejectedCandidate("duplicate_topology_in_worksheet");
+  }
+  if (!validateSolution(plan.puzzle, plan.plantedSolution).valid) {
+    throw brokenInvariant("known_solution_valid");
+  }
+
+  const entryResult = analyzeUniquePathCoverEntry(plan.puzzle, profile);
+  if (entryResult.status === "rejected") {
+    return rejectedCandidate("entry_structure_missing", true);
+  }
+
+  const validity = solvePuzzle(plan.puzzle, {
+    solutionLimit: 2,
+    stateBudget: profile.maximumValidityStates,
+  });
+  if (validity.status === "budget_exhausted") {
+    return rejectedCandidate("validity_solver_budget_exhausted");
+  }
+  if (validity.status === "unsatisfiable") {
+    throw brokenInvariant("independent_solver_found_solution");
+  }
+  if (
+    validity.solutionCount.kind !== "exact"
+    || validity.solutionCount.count !== 1
+  ) {
+    return rejectedCandidate("solution_not_unique");
+  }
+
+  const optimization = optimizeSolution(
+    plan.puzzle,
+    plan.plantedSolution,
+    { stateBudget: profile.maximumProofStates },
+  );
+  if (optimization.status === "budget_exhausted") {
+    return rejectedCandidate("quality_optimizer_budget_exhausted");
+  }
+  if (optimization.status === "unsatisfiable") {
+    throw brokenInvariant("quality_optimizer_found_solution");
+  }
+
+  const plantedCost = calculateSolutionCost(
+    plan.puzzle,
+    plan.plantedSolution,
+  );
+  const plantedSolutionIsOptimal = (
+    plantedCost.totalEdgeCount === optimization.cost.totalEdgeCount
+    && doesSolutionPreserveRouteRoles(
+      plan.puzzle,
+      optimization.solution,
+      plan.routeRoles,
+    )
+  );
+  if (!plantedSolutionIsOptimal) {
+    return rejectedCandidate("planted_solution_not_optimal");
+  }
+
+  const geometry = analyzeSolutionGeometry(
+    plan.puzzle,
+    optimization.solution,
+  );
+  const coverage = analyzeSolutionCoverage(
+    plan.puzzle,
+    optimization.solution,
+  );
+  if (!passesUniquePathCoverGates(
+    coverage.usedCellCount,
+    geometry,
+    entryResult.analysis,
+    profile,
+  )) {
+    return rejectedCandidate("geometry_gate_failed");
+  }
+
+  const difficulty = analyzeDifficulty(
+    request.difficulty,
+    plan.puzzle,
+    validity.metrics,
+  );
+  if (difficulty.measuredBand !== request.difficulty) {
+    return rejectedCandidate("difficulty_band_mismatch");
+  }
+
+  return {
+    status: "accepted",
+    generatedPuzzle: {
+      puzzle: plan.puzzle,
+      canonicalSolution: optimization.solution,
+      answerCoverage: coverage,
+      solutionCount: { kind: "exact", count: 1 },
+      solutionCost: optimization.cost,
+      entry: entryResult.analysis,
+      geometry,
+      interactionWitnesses: explainUniquePathCover(
+        entryResult.analysis,
+        validity.metrics.exploredStateCount,
+      ),
+      routeRoles: plan.routeRoles,
+      generationWitness: {
+        plantedInflationEdgeCount:
+          plantedCost.totalEdgeCount
+          - optimization.cost.totalEdgeCount,
+        rolePreservationStatus: "proven",
+      },
+      difficulty,
+      qualityProof: {
+        status: "optimal",
+        exploredStateCount: optimization.exploredStateCount,
+      },
+      uniquenessProof: {
+        status: "proven",
+        exploredStateCount: validity.metrics.exploredStateCount,
+      },
+      provenance: {
+        terminalPattern: profile.terminalPattern,
+        profileId: profile.profileId,
+        constructionStateCount: buildResult.constructionStateCount,
+        pathLengthProfile: buildResult.pathLengthProfile,
+        candidateIndex: identity.candidateIndex,
+        puzzleSeed: identity.puzzleSeed,
+        topologyHash: plan.topologyHash,
+        precedingRejections: [...precedingRejections],
+      },
+    },
+  };
+}
+
+function rejectedCandidate(
+  reason: CandidateRejectionReason,
+  skipRemainingSymbolAssignments = false,
+): CandidateEvaluation {
+  return {
+    status: "rejected",
+    reason,
+    skipRemainingSymbolAssignments,
+  };
+}
+
+function recordRejection(
+  identity: CandidateIdentity,
+  reason: CandidateRejectionReason,
+  puzzleRejections: CandidateRejection[],
+  allRejections: CandidateRejection[],
+): void {
+  const rejection = {
+    candidateIndex: identity.candidateIndex,
+    puzzleSeed: identity.puzzleSeed,
+    reason,
+  } as const;
+  puzzleRejections.push(rejection);
+  allRejections.push(rejection);
+}
+
+function brokenInvariant(checkId: string): GenerationFailure {
+  return new GenerationFailure({
+    code: "INTERNAL_INVARIANT_BROKEN",
+    checkId,
+  });
 }
 
 function passesUniquePathCoverGates(

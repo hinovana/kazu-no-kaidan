@@ -16,6 +16,9 @@ import type {
   MachineCheck,
   MachineCheckReport,
 } from "../types/worksheet.ts";
+import type {
+  UniquePathCoverProfile,
+} from "../generation/build-unique-path-cover.ts";
 import { doesSolutionPreserveRouteRoles } from "./solution-route-roles.ts";
 import { validatePuzzle } from "./validate-puzzle.ts";
 import { validateSolution } from "./validate-solution.ts";
@@ -80,71 +83,15 @@ export function runMachineChecks(
     ),
     aggregateCheck(
       "entry_structure_present",
-      puzzles.map((entry) => {
-        const profile = getUniquePathCoverProfile(
-          entry.provenance.profileId,
-        );
-        const expectedPairingChoiceCount = profile.symbolPathCounts.reduce(
-          (product, pathCount) => (
-            product * countPerfectMatchings(pathCount * 2)
-          ),
-          1,
-        );
-        return entry.entry.pattern === "unique_path_cover"
-        && entry.entry.terminalPattern === profile.terminalPattern
-        && entry.entry.machineStatus === "entry_candidate"
-        && entry.entry.symbolGroups.length === 3
-        && entry.entry.pairingChoiceCount === expectedPairingChoiceCount
-        && entry.entry.forcedExitTerminalIds.length
-          >= profile.minimumForcedExitCount
-        && entry.entry.forcedExitTerminalIds.length
-          <= profile.maximumForcedExitCount
-        && entry.entry.maximumLineConcentration
-          <= profile.maximumLineConcentration;
-      }),
+      puzzles.map(hasExpectedEntryStructure),
     ),
     aggregateCheck(
       "solution_geometry_natural",
-      puzzles.map((entry) => {
-        const profile = getUniquePathCoverProfile(
-          entry.provenance.profileId,
-        );
-        const cellCount = profile.width * profile.height;
-        return entry.answerCoverage.usedCellCount
-          >= profile.minimumUsedCellCount
-        && entry.answerCoverage.usedCellCount
-          <= profile.maximumUsedCellCount
-        && entry.puzzle.terminals.length === profile.terminalCount
-        && entry.canonicalSolution.paths.length === profile.pathCount
-        && entry.geometry.totalEdgeCount === cellCount - profile.pathCount
-        && entry.geometry.unexplainedUnitBayCount === 0
-        && entry.geometry.totalTurnCount
-          <= profile.maximumTotalTurnCount
-        && entry.geometry.unusedComponentCount === 0
-        && entry.geometry.isolatedUnusedCellCount === 0;
-      }),
+      puzzles.map(hasNaturalSolutionGeometry),
     ),
     aggregateCheck(
       "interaction_witnesses_proven",
-      puzzles.map((entry) => (
-        entry.interactionWitnesses.some((witness) => (
-          witness.kind === "forced_exit"
-        ))
-        && (
-          entry.entry.pairingChoiceCount === 1
-          || entry.interactionWitnesses.some((witness) => (
-            witness.kind === "pairing_choice"
-            && witness.exploredStateCount > 0
-          ))
-        )
-        && entry.interactionWitnesses.some((witness) => (
-          witness.kind === "unique_solution"
-          && witness.exploredStateCount > 0
-        ))
-        && entry.interactionWitnesses.every((witness) => (
-          witness.proofStatus === "proven"
-        ))
-      )),
+      puzzles.map(hasProvenInteractionWitnesses),
     ),
     aggregateCheck(
       "difficulty_profile_matched",
@@ -164,20 +111,95 @@ export function runMachineChecks(
     ),
     aggregateCheck(
       "render_geometry_valid",
-      puzzles.map((entry) => {
-        const profile = getUniquePathCoverProfile(
-          entry.provenance.profileId,
-        );
-        return entry.puzzle.width === profile.width
-          && entry.puzzle.height === profile.height
-          && entry.puzzle.terminals.length === profile.terminalCount;
-      }),
+      puzzles.map(hasExpectedRenderGeometry),
     ),
   ];
   return {
     allPassed: checks.every((check) => check.passed),
     checks,
   };
+}
+
+function hasExpectedEntryStructure(entry: GeneratedPuzzle): boolean {
+  const profile = profileFor(entry);
+  const expectedPairingChoiceCount = profile.symbolPathCounts.reduce(
+    (product, pathCount) => (
+      product * countPerfectMatchings(pathCount * 2)
+    ),
+    1,
+  );
+  return entry.entry.pattern === "unique_path_cover"
+    && entry.entry.terminalPattern === profile.terminalPattern
+    && entry.entry.machineStatus === "entry_candidate"
+    && entry.entry.symbolGroups.length === 3
+    && entry.entry.pairingChoiceCount === expectedPairingChoiceCount
+    && isWithinRange(
+      entry.entry.forcedExitTerminalIds.length,
+      profile.minimumForcedExitCount,
+      profile.maximumForcedExitCount,
+    )
+    && entry.entry.maximumLineConcentration
+      <= profile.maximumLineConcentration;
+}
+
+function hasNaturalSolutionGeometry(entry: GeneratedPuzzle): boolean {
+  const profile = profileFor(entry);
+  const cellCount = profile.width * profile.height;
+  return isWithinRange(
+    entry.answerCoverage.usedCellCount,
+    profile.minimumUsedCellCount,
+    profile.maximumUsedCellCount,
+  )
+    && entry.puzzle.terminals.length === profile.terminalCount
+    && entry.canonicalSolution.paths.length === profile.pathCount
+    && entry.geometry.totalEdgeCount === cellCount - profile.pathCount
+    && entry.geometry.unexplainedUnitBayCount === 0
+    && entry.geometry.totalTurnCount <= profile.maximumTotalTurnCount
+    && entry.geometry.unusedComponentCount === 0
+    && entry.geometry.isolatedUnusedCellCount === 0;
+}
+
+function hasProvenInteractionWitnesses(entry: GeneratedPuzzle): boolean {
+  const hasForcedExit = entry.interactionWitnesses.some(
+    (witness) => witness.kind === "forced_exit",
+  );
+  const hasPairingChoiceWhenNeeded = (
+    entry.entry.pairingChoiceCount === 1
+    || entry.interactionWitnesses.some((witness) => (
+      witness.kind === "pairing_choice"
+      && witness.exploredStateCount > 0
+    ))
+  );
+  const hasUniqueSolution = entry.interactionWitnesses.some((witness) => (
+    witness.kind === "unique_solution"
+    && witness.exploredStateCount > 0
+  ));
+  const everyWitnessIsProven = entry.interactionWitnesses.every(
+    (witness) => witness.proofStatus === "proven",
+  );
+  return hasForcedExit
+    && hasPairingChoiceWhenNeeded
+    && hasUniqueSolution
+    && everyWitnessIsProven;
+}
+
+function hasExpectedRenderGeometry(entry: GeneratedPuzzle): boolean {
+  const profile = profileFor(entry);
+  return entry.puzzle.width === profile.width
+    && entry.puzzle.height === profile.height
+    && entry.puzzle.terminals.length === profile.terminalCount;
+}
+
+function profileFor(entry: GeneratedPuzzle): UniquePathCoverProfile {
+  return getUniquePathCoverProfile(entry.provenance.profileId);
+}
+
+function isWithinRange(
+  value: number,
+  minimum: number,
+  maximum: number,
+): boolean {
+  return value >= minimum && value <= maximum;
 }
 
 function aggregateCheck(

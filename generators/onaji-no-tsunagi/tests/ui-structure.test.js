@@ -5,6 +5,8 @@ const generatorBase = new URL("../", import.meta.url);
 const rootBase = new URL("../../../", import.meta.url);
 const [
   page,
+  generationControls,
+  generationHook,
   board,
   problemPreview,
   answerPreview,
@@ -20,6 +22,8 @@ const [
   referenceDecoder,
 ] = await Promise.all([
   readFile(new URL("ui/OnajiNoTsunagiPage.tsx", generatorBase), "utf8"),
+  readFile(new URL("ui/WorksheetGenerationControls.tsx", generatorBase), "utf8"),
+  readFile(new URL("ui/use-worksheet-generation.ts", generatorBase), "utf8"),
   readFile(new URL("ui/PuzzleBoard.tsx", generatorBase), "utf8"),
   readFile(new URL("ui/WorksheetPreview.tsx", generatorBase), "utf8"),
   readFile(new URL("ui/AnswerPreview.tsx", generatorBase), "utf8"),
@@ -34,6 +38,11 @@ const [
   readFile(new URL("ui/ReferenceCorpusReviewPage.tsx", generatorBase), "utf8"),
   readFile(new URL("application/decode-reference-corpus.ts", generatorBase), "utf8"),
 ]);
+const generatorPageSource = [
+  page,
+  generationControls,
+  generationHook,
+].join("\n");
 
 assert.match(moduleSource, /satisfies LoadedGeneratorModule/);
 assert.match(moduleSource, /OnajiNoTsunagiPage/);
@@ -62,22 +71,27 @@ for (const text of [
   "ペアリングも含め",
   "お手本JSONを盤面で確認",
 ]) {
-  assert.match(page, new RegExp(text), `page must contain: ${text}`);
+  assert.match(
+    generatorPageSource,
+    new RegExp(text),
+    `page modules must contain: ${text}`,
+  );
 }
 
-assert.match(page, /new Worker/);
-assert.match(page, /generation-worker\.ts/);
-assert.doesNotMatch(page, /generation-v34-review-worker\.ts/);
-assert.doesNotMatch(page, /mode=v34-review/);
-assert.doesNotMatch(page, /reviewMode/);
-assert.match(page, /worker\.postMessage\(input\)/);
+assert.match(generationHook, /new Worker/);
+assert.match(generationHook, /generation-worker\.ts/);
+assert.doesNotMatch(generatorPageSource, /generation-v34-review-worker\.ts/);
+assert.doesNotMatch(generatorPageSource, /mode=v34-review/);
+assert.doesNotMatch(generatorPageSource, /reviewMode/);
+assert.match(generationHook, /worker\.postMessage\(input\)/);
 assert.match(page, /window\.requestAnimationFrame/);
-assert.match(page, /onClick=\{handlePrint\}/);
-assert.match(page, /globalThis\.crypto\.getRandomValues/);
-assert.match(page, /activeWorker\.current\?\.terminate/);
+assert.match(page, /onPrint=\{handlePrint\}/);
+assert.match(generationControls, /onClick=\{onPrint\}/);
+assert.match(generationControls, /globalThis\.crypto\.getRandomValues/);
+assert.match(generationHook, /activeWorker\.current\?\.terminate/);
 assert.match(workerSource, /generateWorksheetUseCase\(event\.data\)/);
 assert.match(workerSource, /generationErrorMessage/);
-assert.match(page, /<AnswerPreview worksheet=\{pageState\.worksheet\} hidden=\{!showAnswers\} \/>/);
+assert.match(page, /<AnswerPreview worksheet=\{state\.worksheet\} hidden=\{!showAnswers\} \/>/);
 assert.match(problemPreview, /solution=\{null\}/);
 assert.match(answerPreview, /solution=\{generated\.canonicalSolution\}/);
 assert.match(answerPreview, /どの2こを組にするかと線の通り方を含めて、答えは1通りです/);

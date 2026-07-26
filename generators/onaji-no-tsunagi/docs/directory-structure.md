@@ -54,14 +54,20 @@ generators/onaji-no-tsunagi/
 │   ├── generation-error-message.ts
 │   ├── generation-worker-contract.ts
 │   ├── generation-worker.ts
-│   └── parse-generation-request.ts
+│   ├── parse-generation-request.ts
+│   └── strict-json-reader.ts
 ├── domain/
 │   ├── generation/
 │   │   ├── analyze-difficulty.ts
 │   │   ├── build-unique-path-cover.ts
 │   │   ├── generate-worksheet.ts
 │   │   ├── materialize-path-plan.ts
-│   │   └── random.ts
+│   │   ├── path-candidate-source.ts
+│   │   ├── path-cover-grid.ts
+│   │   ├── path-symbol-assignment.ts
+│   │   ├── random.ts
+│   │   ├── select-path-cover.ts
+│   │   └── unique-path-cover-profile.ts
 │   ├── grid/
 │   │   ├── adjacency.ts
 │   │   └── coordinates.ts
@@ -93,6 +99,7 @@ generators/onaji-no-tsunagi/
 │   └── source-corpus.schema.json
 ├── tests/
 │   ├── application-boundary.test.js
+│   ├── architecture.test.js
 │   ├── corpus.mjs
 │   ├── generator.test.js
 │   ├── layout-quality.test.js
@@ -109,8 +116,10 @@ generators/onaji-no-tsunagi/
 │   ├── OnajiNoTsunagiPage.tsx
 │   ├── PuzzleBoard.tsx
 │   ├── ReferenceCorpusReviewPage.tsx
+│   ├── WorksheetGenerationControls.tsx
 │   ├── WorksheetPreview.tsx
-│   └── symbol-label.ts
+│   ├── symbol-label.ts
+│   └── use-worksheet-generation.ts
 ├── index.html
 ├── module.tsx
 ├── redirect.ts
@@ -148,6 +157,7 @@ TypeDocの生成物はリポジトリルートの
 | `generation-worker.ts` | 重い生成処理をメインスレッド外で実行するWorker入口 |
 | `generation-error-message.ts` | domain/applicationの例外を画面向け日本語へ変換する |
 | `decode-reference-corpus.ts` | 原本参照JSONを厳格デコードし、問題validatorへ接続する |
+| `strict-json-reader.ts` | 未知のJSON値をpath付きエラーへ変換する、schema非依存の低水準reader |
 
 ここには問題の正誤ルールを実装しない。入力形式やWeb実行方式を変えずに説明できる規則は、`domain/`へ置く。
 
@@ -179,7 +189,12 @@ TypeDocの生成物はリポジトリルートの
 
 | ファイル | 責務 |
 | --- | --- |
-| `build-unique-path-cover.ts` | 盤面・端点profileごとのsolution-first経路候補とexact-cover構築 |
+| `build-unique-path-cover.ts` | solution-first構成の公開入口。下記のprofile、候補、exact-cover、記号割当を統括する |
+| `unique-path-cover-profile.ts` | 5×5・6×6の版付きprofile値と、難易度・問題位置からのprofile選択 |
+| `path-candidate-source.ts` | 低曲がり単純経路候補の列挙、向きの重複排除、geometry単位の遅延cache |
+| `select-path-cover.ts` | 経路候補から盤面全体を一度ずつ覆う組を探すexact-cover探索 |
+| `path-symbol-assignment.ts` | 構成済み経路への三記号割当と、6×6の割当variant列挙 |
+| `path-cover-grid.ts` | 生成seed互換の隣接順と、経路構成用BigInt bitmask操作 |
 | `materialize-path-plan.ts` | 選択した経路計画へ端点ID・記号・route roleを割り当て、PuzzleとSolutionへ変換する |
 | `generate-worksheet.ts` | profile選択、候補生成、独立solver、optimizer、品質gateを統括しWorksheetを作る |
 | `analyze-difficulty.ts` | 構造的な難易度指標を集計する |
@@ -219,7 +234,9 @@ validatorは「保存済みの答えと同じか」ではなく、ルールを�
 
 | ファイル | 責務 |
 | --- | --- |
-| `OnajiNoTsunagiPage.tsx` | 教材画面の状態、フォーム、Worker起動、通常画面と参照JSON確認画面の切替 |
+| `OnajiNoTsunagiPage.tsx` | 通常画面と参照JSON確認画面の切替、生成結果、答案表示、印刷を統括する |
+| `WorksheetGenerationControls.tsx` | 難易度・問題数・seedと、生成・答案表示・印刷のform control |
+| `use-worksheet-generation.ts` | 生成Workerの開始、結果状態、unmount時の終了処理を管理するReact hook |
 | `WorksheetPreview.tsx` | 問題用紙、氏名欄、難易度表示 |
 | `AnswerPreview.tsx` | 唯一の答えを載せた答案表示 |
 | `PuzzleBoard.tsx` | 問題と答えで共有するSVG盤面。参照確認時はセル座標も表示できる |

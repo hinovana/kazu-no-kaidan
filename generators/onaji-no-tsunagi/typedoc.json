@@ -19,6 +19,7 @@
   "githubPages": true,
   "customJs": "./docs/typedoc-custom.js",
   "disableGit": true,
+  "excludeInternal": true,
   "gitRevision": "main",
   "sourceLinkTemplate": "https://github.com/hinovana/kazu-no-kaidan/blob/{gitRevision}/generators/onaji-no-tsunagi/{path}#L{line}",
   "searchInComments": true,
