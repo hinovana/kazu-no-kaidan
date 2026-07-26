@@ -12,17 +12,16 @@ import {indexToCell} from '../grid/coordinates.ts';
 import type {AvailableDifficultyLevel} from '../types/generation.ts';
 import type {UniquePathCoverProfileId} from '../types/puzzle.ts';
 import {
+  assignProfilePathSymbols,
+  canReuseRouteCover,
+} from './generation-profile-adapter.ts';
+import {
   materializePathPlan,
   type MaterializedPathPlan,
   type PlannedPath,
   type RouteRole,
 } from './materialize-path-plan.ts';
 import {getPathCandidateSource} from './path-candidate-source.ts';
-import {
-  assignFiveByFivePathSymbols,
-  assignSixBySixPathSymbols,
-  countPathSymbolAssignments,
-} from './path-symbol-assignment.ts';
 import {type SeededRandom} from './random.ts';
 import {
   chooseUniquePathCoverProfileId,
@@ -60,29 +59,19 @@ interface BuildUniquePathCoverOptions {
   readonly materializedPuzzleSeed?: string;
 }
 
-interface CachedSixBySixRouteCover {
+interface CachedRouteCover {
   readonly cacheKey: string;
   readonly lengths: readonly number[];
   readonly result: PathCoverResult;
 }
 
-let lastSixBySixRouteCover: CachedSixBySixRouteCover | undefined;
+let lastReusableRouteCover: CachedRouteCover | undefined;
 
 /** profile IDに対応する読取専用の構成・品質gateを返す。 */
 export function getUniquePathCoverProfile(
   profileId: UniquePathCoverProfileId,
 ): UniquePathCoverProfile {
   return findUniquePathCoverProfile(profileId);
-}
-
-/**
- * profileの`symbolPathCounts`を三記号へ割り当てる異なるvariant数を返す。
- */
-export function getSymbolAssignmentVariantCount(
-  profileId: UniquePathCoverProfileId,
-): number {
-  const profile = findUniquePathCoverProfile(profileId);
-  return countPathSymbolAssignments(profile.symbolPathCounts);
 }
 
 /**
@@ -137,14 +126,12 @@ export function buildUniquePathCover(
     return routeCover.result;
   }
 
-  const symbols =
-    profile.width === 5
-      ? assignFiveByFivePathSymbols(random, profile.symbolPathCounts)
-      : assignSixBySixPathSymbols(
-          routeSeed,
-          profile.symbolPathCounts,
-          options.symbolAssignmentVariant ?? 0,
-        );
+  const symbols = assignProfilePathSymbols(
+    profile,
+    routeSeed,
+    random,
+    options.symbolAssignmentVariant ?? 0,
+  );
   if (symbols.length !== profile.pathCount) {
     throw new TypeError('terminal profile does not match its path count');
   }
@@ -180,8 +167,11 @@ function buildOrReuseRouteCover(
   readonly result: PathCoverResult;
 } {
   const cacheKey = `${profile.profileId}|${routeSeed}`;
-  if (profile.width === 6 && lastSixBySixRouteCover?.cacheKey === cacheKey) {
-    return lastSixBySixRouteCover;
+  if (
+    canReuseRouteCover(profile) &&
+    lastReusableRouteCover?.cacheKey === cacheKey
+  ) {
+    return lastReusableRouteCover;
   }
 
   const lengths =
@@ -194,8 +184,8 @@ function buildOrReuseRouteCover(
     profile,
     getPathCandidateSource(profile),
   );
-  if (profile.width === 6) {
-    lastSixBySixRouteCover = {cacheKey, lengths, result};
+  if (canReuseRouteCover(profile)) {
+    lastReusableRouteCover = {cacheKey, lengths, result};
   }
   return {lengths, result};
 }

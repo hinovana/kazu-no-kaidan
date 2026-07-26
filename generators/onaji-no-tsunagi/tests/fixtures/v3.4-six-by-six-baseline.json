@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "onaji-no-tsunagi.six-by-six-regression-baseline.v1",
+  "corpusVersion": "onaji-no-tsunagi-corpus.v3.4-draft",
+  "sampleSizePerProfile": 1000,
+  "minimumRegressionSampleSize": 100,
+  "tolerances": {
+    "minimumTopologyRatioFactor": 0.8,
+    "maximumCandidateIndexFactor": 1.5,
+    "maximumRejectionsPerAcceptedFactor": 1.5,
+    "maximumStateCountFactor": 1.5,
+    "p95StateCountFactor": 1.5
+  },
+  "profiles": {
+    "6x6-4-4-2": {
+      "uniqueTopologyCount": 891,
+      "maximumCandidateIndex": 574,
+      "rejectionsPerAccepted": 16.173,
+      "constructionStates": {
+        "maximum": 7618,
+        "p95": 1009
+      },
+      "uniquenessStates": {
+        "maximum": 12409,
+        "p95": 2535
+      },
+      "optimalityStates": {
+        "maximum": 12455,
+        "p95": 2535
+      }
+    },
+    "6x6-4-4-4": {
+      "uniqueTopologyCount": 982,
+      "maximumCandidateIndex": 167,
+      "rejectionsPerAccepted": 7.107,
+      "constructionStates": {
+        "maximum": 21289,
+        "p95": 2931
+      },
+      "uniquenessStates": {
+        "maximum": 9431,
+        "p95": 960
+      },
+      "optimalityStates": {
+        "maximum": 4667,
+        "p95": 858
+      }
+    },
+    "6x6-6-4-4": {
+      "uniqueTopologyCount": 995,
+      "maximumCandidateIndex": 847,
+      "rejectionsPerAccepted": 12.714,
+      "constructionStates": {
+        "maximum": 29042,
+        "p95": 15055
+      },
+      "uniquenessStates": {
+        "maximum": 1689,
+        "p95": 373
+      },
+      "optimalityStates": {
+        "maximum": 1547,
+        "p95": 348
+      }
+    }
+  }
+}

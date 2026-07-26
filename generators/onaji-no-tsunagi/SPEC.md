@@ -224,6 +224,8 @@ optimizerは総辺数、一マスU字、曲がり、正規化hashの辞書式cos
 - validatorの正例・反例
 - solverの解なし、複数解、唯一解、予算超過の分離
 - 小盤面全解参照との一致
+- 本番solverの探索helperと正規化関数を使わない参照器で、3×3・4×3の
+  同記号4端点の全621配置について正規化解hash集合まで一致
 - 5×5の3〜5経路solution-first構築
 - 6/8/10端点と記号個数profile
 - 同記号4個の完全マッチングとペアリングを含む唯一解
@@ -327,6 +329,16 @@ type TerminalMultiplicityPattern =
 
 interface UniquePathCoverProfile {
   readonly profileId: string;
+  readonly generationPolicy: {
+    readonly versionTrack: "v3.3-stable" | "v3.4-draft";
+    readonly candidateSeedStrategy:
+      | "legacy-terminal-pattern"
+      | "profile-with-symbol-variant";
+    readonly symbolAssignmentStrategy:
+      | "legacy-seeded-shuffle"
+      | "enumerated-route-variants";
+    readonly reuseRouteCoverAcrossSymbolAssignments: boolean;
+  };
   readonly width: number;
   readonly height: number;
   readonly terminalPattern: TerminalMultiplicityPattern;
@@ -356,6 +368,9 @@ interface UniquePathCoverProfile {
 - 5×5と6×6を別solverへ分岐させない
 - `Puzzle`、validator、solverはwidth/heightから動く現在の汎用境界を維持する
 - `PuzzleProvenance`へ`profileId`を保存する
+- Worksheet版、candidate seed表現、記号割当、route cover再利用は
+  `generationPolicy`からprofile adapterが決定し、difficultyや盤面寸法の
+  分岐をWorksheet制御層へ置かない
 
 ファイル移動は`git mv`を使い、5×5の同一seed再現性を壊さない段階と、v3.4へ版を上げる段階を分ける。
 
@@ -438,7 +453,7 @@ interface PathCandidateSource {
 6. 最後の経路はremaining maskと完全一致する候補だけを受け入れる
 7. 構成状態予算を超えた候補は`route_plan_not_constructed`ではなく、専用の予算超過理由で記録する
 
-6×6候補は列挙時に一マスU字を除外する。これにより植え込みlayout自体がU字0を満たし、optimizer後だけで偶然0になることへ依存しない。5×5はv3.3の候補集合と列挙順を変えない。
+6×6候補は列挙時に一マスU字を除外する。これにより植え込みlayout自体がU字0を満たし、optimizer後だけで偶然0になることへ依存しない。5×5はv3.3の候補集合と列挙順を変えない。route coverの再利用可否は盤面幅ではなくprofileの`generationPolicy`で決める。
 
 次のsoundな枝刈りを追加できる。
 
@@ -460,6 +475,8 @@ interface PathCandidateSource {
 | `6-4-4` | `[3, 2, 2]`をseedで記号へ割当 |
 
 `Puzzle`へ保存するのは端点だけである。植え込み時のpartner、経路、`symbolPathCounts`を独立solverへ渡して唯一性探索を狭めてはならない。
+
+記号割当はprofileの`symbolAssignmentStrategy`で選ぶ。5×5はv3.3の乱数消費順を保つ`legacy-seeded-shuffle`、6×6は同じcoverに対する異なる割当を列挙する`enumerated-route-variants`とする。
 
 ### 13.9 solver・optimizerの成立条件
 
@@ -516,6 +533,12 @@ optimizerも36マスで探索を完走し、植え込み解が最適解と同じ
 - `pairing_choice`と`unique_solution` witnessを持つ
 
 表の上限は各profile 1,000問の未加工コーパス実測最大値である。これらは5×5の流用ではないが、無理な整列と蛇行を人間が許容した証拠でもない。人間レビューで不適切な標本が見つかった場合は、同じ版の閾値を黙って緩めず、gateを厳しくして同じ3,000問を再実行する。
+
+機械基準値は`tests/fixtures/v3.4-six-by-six-baseline.json`にも保存し、100問/profile以上のコーパスで次の許容幅を回帰gateにする。
+
+- topology比率は基準値の80%以上
+- 最大candidate、採用1問あたり棄却数、構成・唯一性・最適性の最大状態数とp95は基準値の150%以下
+- 許容幅の変更は、同じ3,000問の再計測と基準値文書・JSONの同期を必要とする
 
 ### 13.11 難易度分析
 
@@ -616,9 +639,10 @@ optimizerも36マスで探索を完走し、植え込み解が最適解と同じ
 
 1. `AvailableDifficultyLevel`へ2/3を追加し、通常の`parseGenerationRequest`で1〜3を受け入れる
 2. 通常Worker、UI、診断、答案文言を同期する
-3. 実ブラウザで1〜4問、同seed再現、console、狭幅を確認する
-4. A4全ページを問題・答えとも確認する
-5. 人間レビュー完了後にだけgenerator、spec、profiles、difficulty、worksheetの版をv3.4へ同期する
+3. 生成要求へ単調増加request IDを付け、新しい要求開始時に既存Workerをterminateし、最新ID以外の成功・失敗を表示へ反映しない
+4. 実ブラウザで1〜4問、同seed再現、console、狭幅を確認する
+5. A4全ページを問題・答えとも確認する
+6. 人間レビュー完了後にだけgenerator、spec、profiles、difficulty、worksheetの版をv3.4へ同期する
 
 ### 13.14 v3.4へ版を上げる条件
 

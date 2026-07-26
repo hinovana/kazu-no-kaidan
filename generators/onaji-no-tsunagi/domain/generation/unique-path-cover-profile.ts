@@ -14,6 +14,16 @@ import type {
 } from '../types/puzzle.ts';
 import {createSeededRandom} from './random.ts';
 
+/** profileごとに切り替える、版・seed・記号割当・cover再利用の方針。 */
+export interface UniquePathCoverGenerationPolicy {
+  readonly versionTrack: 'v3.3-stable' | 'v3.4-draft';
+  readonly candidateSeedStrategy:
+    'legacy-terminal-pattern' | 'profile-with-symbol-variant';
+  readonly symbolAssignmentStrategy:
+    'legacy-seeded-shuffle' | 'enumerated-route-variants';
+  readonly reuseRouteCoverAcrossSymbolAssignments: boolean;
+}
+
 /**
  * solution-first構成と後段の品質検査で共有する、版付き盤面profile。
  *
@@ -22,6 +32,7 @@ import {createSeededRandom} from './random.ts';
  */
 export interface UniquePathCoverProfile {
   readonly profileId: UniquePathCoverProfileId;
+  readonly generationPolicy: UniquePathCoverGenerationPolicy;
   readonly width: number;
   readonly height: number;
   readonly terminalPattern: TerminalMultiplicityPattern;
@@ -42,9 +53,24 @@ export interface UniquePathCoverProfile {
   readonly maximumProofStates: number;
 }
 
+const FIVE_BY_FIVE_GENERATION_POLICY = {
+  versionTrack: 'v3.3-stable',
+  candidateSeedStrategy: 'legacy-terminal-pattern',
+  symbolAssignmentStrategy: 'legacy-seeded-shuffle',
+  reuseRouteCoverAcrossSymbolAssignments: false,
+} as const satisfies UniquePathCoverGenerationPolicy;
+
+const SIX_BY_SIX_GENERATION_POLICY = {
+  versionTrack: 'v3.4-draft',
+  candidateSeedStrategy: 'profile-with-symbol-variant',
+  symbolAssignmentStrategy: 'enumerated-route-variants',
+  reuseRouteCoverAcrossSymbolAssignments: true,
+} as const satisfies UniquePathCoverGenerationPolicy;
+
 const FIVE_BY_FIVE_PROFILES = {
   '5x5-2-2-2': {
     profileId: '5x5-2-2-2',
+    generationPolicy: FIVE_BY_FIVE_GENERATION_POLICY,
     width: 5,
     height: 5,
     terminalPattern: '2-2-2',
@@ -75,6 +101,7 @@ const FIVE_BY_FIVE_PROFILES = {
   },
   '5x5-4-2-2': {
     profileId: '5x5-4-2-2',
+    generationPolicy: FIVE_BY_FIVE_GENERATION_POLICY,
     width: 5,
     height: 5,
     terminalPattern: '4-2-2',
@@ -103,6 +130,7 @@ const FIVE_BY_FIVE_PROFILES = {
   },
   '5x5-4-4-2': {
     profileId: '5x5-4-4-2',
+    generationPolicy: FIVE_BY_FIVE_GENERATION_POLICY,
     width: 5,
     height: 5,
     terminalPattern: '4-4-2',
@@ -133,6 +161,7 @@ const FIVE_BY_FIVE_PROFILES = {
 const SIX_BY_SIX_PROFILES = {
   '6x6-4-4-2': {
     profileId: '6x6-4-4-2',
+    generationPolicy: SIX_BY_SIX_GENERATION_POLICY,
     width: 6,
     height: 6,
     terminalPattern: '4-4-2',
@@ -159,6 +188,7 @@ const SIX_BY_SIX_PROFILES = {
   },
   '6x6-4-4-4': {
     profileId: '6x6-4-4-4',
+    generationPolicy: SIX_BY_SIX_GENERATION_POLICY,
     width: 6,
     height: 6,
     terminalPattern: '4-4-4',
@@ -185,6 +215,7 @@ const SIX_BY_SIX_PROFILES = {
   },
   '6x6-6-4-4': {
     profileId: '6x6-6-4-4',
+    generationPolicy: SIX_BY_SIX_GENERATION_POLICY,
     width: 6,
     height: 6,
     terminalPattern: '6-4-4',

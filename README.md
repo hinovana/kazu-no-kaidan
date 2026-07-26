@@ -32,6 +32,7 @@ npm run build
 npm run typecheck
 npm test
 npm run test:kazu-sagashi:corpus
+npm run test:onaji-no-tsunagi
 npm run test:onaji-no-tsunagi:corpus
 npm run test:onaji-no-tsunagi:6x6-corpus
 ```

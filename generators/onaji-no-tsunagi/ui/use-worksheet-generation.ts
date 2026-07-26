@@ -8,7 +8,10 @@
  */
 
 import {useEffect, useRef, useState} from 'react';
-import type {GenerationWorkerResponse} from '../application/generation-worker-contract.ts';
+import type {
+  GenerationWorkerRequest,
+  GenerationWorkerResponse,
+} from '../application/generation-worker-contract.ts';
 import type {Worksheet} from '../domain/types/worksheet.ts';
 
 /** Worksheet生成画面が表示する非同期処理状態。 @internal */
@@ -25,8 +28,21 @@ interface WorksheetGenerationController {
   readonly generate: (input: unknown) => Promise<void>;
 }
 
+interface PendingWorkerGeneration {
+  readonly result: Promise<Worksheet>;
+  readonly cancel: () => void;
+}
+
+interface ActiveWorkerGeneration {
+  readonly requestId: number;
+  readonly pending: PendingWorkerGeneration;
+}
+
 /**
  * 一度に一つの生成Workerを管理し、画面向け状態と開始関数を返す。
+ *
+ * 新しい生成を開始すると前のWorkerと待機中Promiseを終了する。要求IDが最新で
+ * ない成功・失敗は破棄するため、古い応答が新しい画面状態を上書きしない。
  *
  * @internal
  */
@@ -34,69 +50,119 @@ export function useWorksheetGeneration(): WorksheetGenerationController {
   const [state, setState] = useState<WorksheetGenerationState>({
     status: 'idle',
   });
-  const activeWorker = useRef<Worker | null>(null);
+  const latestRequestId = useRef(0);
+  const activeGeneration = useRef<ActiveWorkerGeneration | null>(null);
 
   useEffect(
     () => () => {
-      activeWorker.current?.terminate();
+      latestRequestId.current += 1;
+      activeGeneration.current?.pending.cancel();
+      activeGeneration.current = null;
     },
     [],
   );
 
   async function generate(input: unknown): Promise<void> {
+    const requestId = latestRequestId.current + 1;
+    latestRequestId.current = requestId;
+    activeGeneration.current?.pending.cancel();
+    activeGeneration.current = null;
     setState({status: 'generating'});
+
     try {
-      const worksheet = await generateWorksheetInWorker(input, worker => {
-        activeWorker.current = worker;
-      });
+      const pending = startWorksheetGeneration(requestId, input);
+      activeGeneration.current = {requestId, pending};
+      const worksheet = await pending.result;
+      if (latestRequestId.current !== requestId) {
+        return;
+      }
       setState({status: 'ready', worksheet});
     } catch (error: unknown) {
+      if (
+        latestRequestId.current !== requestId ||
+        error instanceof SupersededGenerationError
+      ) {
+        return;
+      }
       setState({
         status: 'error',
         message: error instanceof Error ? error.message : '不明なエラーです。',
       });
     } finally {
-      activeWorker.current = null;
+      if (activeGeneration.current?.requestId === requestId) {
+        activeGeneration.current = null;
+      }
     }
   }
 
   return {state, generate};
 }
 
-function generateWorksheetInWorker(
+function startWorksheetGeneration(
+  requestId: number,
   input: unknown,
-  onCreated: (worker: Worker) => void,
-): Promise<Worksheet> {
-  return new Promise((resolve, reject) => {
-    const worker = new Worker(
-      new URL('../application/generation-worker.ts', import.meta.url),
-      {type: 'module'},
-    );
-    onCreated(worker);
+): PendingWorkerGeneration {
+  const worker = new Worker(
+    new URL('../application/generation-worker.ts', import.meta.url),
+    {type: 'module'},
+  );
+  let settled = false;
+  let rejectPending: (reason: Error) => void = () => {};
+  const result = new Promise<Worksheet>((resolve, reject) => {
+    rejectPending = reject;
     worker.addEventListener(
       'message',
       (event: MessageEvent<GenerationWorkerResponse>) => {
-        worker.terminate();
-        if (event.data.status === 'ready') {
-          resolve(event.data.worksheet);
+        const response = event.data;
+        if (response.requestId !== requestId) {
+          return;
+        }
+        if (response.status === 'ready') {
+          const {worksheet} = response;
+          settle(() => resolve(worksheet));
         } else {
-          reject(new Error(event.data.message));
+          const {message} = response;
+          settle(() => reject(new Error(message)));
         }
       },
-      {once: true},
     );
     worker.addEventListener(
       'error',
       () => {
-        worker.terminate();
-        reject(
-          new Error(
-            '生成処理を開始できませんでした。ページを再読み込みしてください。',
+        settle(() =>
+          reject(
+            new Error(
+              '生成処理を開始できませんでした。ページを再読み込みしてください。',
+            ),
           ),
         );
       },
       {once: true},
     );
-    worker.postMessage(input);
+    const request: GenerationWorkerRequest = {requestId, input};
+    worker.postMessage(request);
   });
+
+  return {
+    result,
+    cancel: () => {
+      settle(() => rejectPending(new SupersededGenerationError()));
+    },
+  };
+
+  function settle(complete: () => void): void {
+    if (settled) {
+      return;
+    }
+    settled = true;
+    worker.terminate();
+    complete();
+  }
+}
+
+class SupersededGenerationError extends Error {
+  constructor() {
+    super('A newer worksheet generation request superseded this request.');
+    this.name = 'SupersededGenerationError';
+  }
 }

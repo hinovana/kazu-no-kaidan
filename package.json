@@ -17,11 +17,15 @@
     "typecheck": "tsc -p tsconfig.app.json && npm run typecheck:kokugo-no-tane && npm run typecheck:onaji-no-tsunagi",
     "typecheck:kokugo-no-tane": "tsc -p generators/kokugo-no-tane/tsconfig.json && tsc -p generators/kokugo-no-tane/tsconfig.server.json",
     "typecheck:onaji-no-tsunagi": "tsc -p generators/onaji-no-tsunagi/tsconfig.json",
-    "test": "for test_file in generators/*/tests/*.test.js; do node \"$test_file\" || exit 1; done",
+    "test": "for test_file in generators/*/tests/*.test.js; do node \"$test_file\" || exit 1; done && npm run test:onaji-no-tsunagi:dom",
     "test:kazu-sagashi:corpus": "node generators/kazu-sagashi/tests/corpus.mjs",
     "test:kokugo-no-tane:corpus": "node generators/kokugo-no-tane/tests/corpus.mjs",
     "test:onaji-no-tsunagi:corpus": "node generators/onaji-no-tsunagi/tests/corpus.mjs",
     "test:onaji-no-tsunagi:6x6-corpus": "node generators/onaji-no-tsunagi/tests/six-by-six-corpus.mjs",
+    "test:onaji-no-tsunagi:unit": "for test_file in generators/onaji-no-tsunagi/tests/*.test.js; do node \"$test_file\" || exit 1; done",
+    "test:onaji-no-tsunagi:dom": "vitest run --environment jsdom generators/onaji-no-tsunagi/tests/ui-behavior.test.tsx",
+    "test:onaji-no-tsunagi:quick-corpus": "OTS_CORPUS_SEEDS_PER_LEVEL=30 node generators/onaji-no-tsunagi/tests/corpus.mjs && OTS_SIX_BY_SIX_CORPUS_SEEDS_PER_PROFILE=100 node generators/onaji-no-tsunagi/tests/six-by-six-corpus.mjs",
+    "test:onaji-no-tsunagi": "npm run lint:onaji-no-tsunagi && tsc -p tsconfig.app.json && npm run typecheck:onaji-no-tsunagi && npm run test:onaji-no-tsunagi:unit && npm run test:onaji-no-tsunagi:dom && npm run test:onaji-no-tsunagi:quick-corpus",
     "test:kokugo-no-tane:ai:live": "node generators/kokugo-no-tane/tests/ai-proxy-live.mjs"
   },
   "dependencies": {
@@ -35,8 +39,10 @@
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "gts": "7.0.0",
+    "jsdom": "^29.1.1",
     "typedoc": "0.28.20",
     "typescript": "5.9.3",
-    "vite": "8.1.5"
+    "vite": "8.1.5",
+    "vitest": "^4.1.10"
   }
 }

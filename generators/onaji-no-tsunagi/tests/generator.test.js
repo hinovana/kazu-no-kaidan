@@ -38,6 +38,12 @@ for (const generated of first.puzzles) {
   const profile = getUniquePathCoverProfile(
     generated.provenance.profileId,
   );
+  assert.deepEqual(profile.generationPolicy, {
+    versionTrack: "v3.3-stable",
+    candidateSeedStrategy: "legacy-terminal-pattern",
+    symbolAssignmentStrategy: "legacy-seeded-shuffle",
+    reuseRouteCoverAcrossSymbolAssignments: false,
+  });
   assert.equal(generated.puzzle.width, 5);
   assert.equal(generated.puzzle.height, 5);
   assert.equal(generated.puzzle.terminals.length, profile.terminalCount);
@@ -188,6 +194,12 @@ for (const worksheet of [levelTwo, levelThree]) {
     const profile = getUniquePathCoverProfile(
       generated.provenance.profileId,
     );
+    assert.deepEqual(profile.generationPolicy, {
+      versionTrack: "v3.4-draft",
+      candidateSeedStrategy: "profile-with-symbol-variant",
+      symbolAssignmentStrategy: "enumerated-route-variants",
+      reuseRouteCoverAcrossSymbolAssignments: true,
+    });
     assert.equal(generated.puzzle.width, 6);
     assert.equal(generated.puzzle.height, 6);
     assert.equal(generated.puzzle.terminals.length, profile.terminalCount);

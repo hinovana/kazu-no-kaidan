@@ -41,7 +41,8 @@ export function OnajiNoTsunagiPage({onRequestPrint}: GeneratorModuleProps) {
   return <WorksheetGeneratorPage onRequestPrint={onRequestPrint} />;
 }
 
-function WorksheetGeneratorPage({onRequestPrint}: GeneratorModuleProps) {
+/** 通常生成画面。実DOMでWorker競合と印刷遷移を検証するため公開する。 @internal */
+export function WorksheetGeneratorPage({onRequestPrint}: GeneratorModuleProps) {
   const [form, setForm] = useState<WorksheetGenerationForm>(INITIAL_FORM);
   const [showAnswers, setShowAnswers] = useState(false);
   const generation = useWorksheetGeneration();

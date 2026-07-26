@@ -1,10 +1,15 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import {
   getUniquePathCoverProfile,
 } from "../domain/generation/build-unique-path-cover.ts";
 import { generateWorksheet } from "../domain/generation/generate-worksheet.ts";
 import { validateSolution } from "../domain/validation/validate-solution.ts";
 
+const regressionBaseline = JSON.parse(await readFile(
+  new URL("fixtures/v3.4-six-by-six-baseline.json", import.meta.url),
+  "utf8",
+));
 const seedsPerProfile = parsePositiveInteger(
   process.env.OTS_SIX_BY_SIX_CORPUS_SEEDS_PER_PROFILE,
   1_000,
@@ -68,8 +73,21 @@ for (const [profileId, stats] of statsByProfile) {
     stats.pathLengthProfiles.size,
     profile.pathLengthProfiles.length,
   );
+  if (seedsPerProfile >= regressionBaseline.minimumRegressionSampleSize) {
+    assertProfileWithinRegressionBaseline(
+      profileId,
+      summarize(stats),
+      regressionBaseline,
+    );
+  }
 }
 
+const summariesByProfile = new Map(
+  [...statsByProfile].map(([profileId, stats]) => [
+    profileId,
+    summarize(stats),
+  ]),
+);
 const result = {
   generator: "onaji-no-tsunagi",
   corpusVersion: "onaji-no-tsunagi-corpus.v3.4-draft",
@@ -79,11 +97,11 @@ const result = {
   totalAccepted: seedsPerProfile * profileIds.length,
   elapsedMs: Math.round(performance.now() - startedAt),
   levelTwoRequests: levelTwoSeedIndex,
+  regressionBaseline: regressionBaseline.schemaVersion,
+  regressionGateApplied:
+    seedsPerProfile >= regressionBaseline.minimumRegressionSampleSize,
   byProfile: Object.fromEntries(
-    [...statsByProfile].map(([profileId, stats]) => [
-      profileId,
-      summarize(stats),
-    ]),
+    summariesByProfile,
   ),
 };
 
@@ -186,6 +204,8 @@ function createStats() {
 }
 
 function summarize(stats) {
+  const totalRejectionCount = [...stats.rejectionReasons.values()]
+    .reduce((sum, count) => sum + count, 0);
   return {
     acceptedCount: stats.acceptedCount,
     exactUniqueCount: stats.exactUniqueCount,
@@ -194,6 +214,10 @@ function summarize(stats) {
       1 - stats.topologyHashes.size / stats.acceptedCount,
     ),
     maximumCandidateIndex: stats.maximumCandidateIndex,
+    totalRejectionCount,
+    rejectionsPerAccepted: round(
+      totalRejectionCount / stats.acceptedCount,
+    ),
     rejectionReasons: Object.fromEntries(stats.rejectionReasons),
     constructionStates: summarizeNumbers(stats.constructionStates),
     uniquenessStates: summarizeNumbers(stats.uniquenessStates),
@@ -203,6 +227,53 @@ function summarize(stats) {
     maximumLineConcentration: Math.max(...stats.lineConcentrations),
     pathLengthProfiles: [...stats.pathLengthProfiles].toSorted(),
   };
+}
+
+function assertProfileWithinRegressionBaseline(
+  profileId,
+  actual,
+  baselineDocument,
+) {
+  const expected = baselineDocument.profiles[profileId];
+  assert.ok(expected, `${profileId}: regression baseline is missing`);
+  const tolerances = baselineDocument.tolerances;
+  const baselineTopologyRatio = (
+    expected.uniqueTopologyCount
+    / baselineDocument.sampleSizePerProfile
+  );
+  assert.ok(
+    actual.uniqueTopologyHashes / actual.acceptedCount
+      >= baselineTopologyRatio * tolerances.minimumTopologyRatioFactor,
+    `${profileId}: topology diversity regressed below the allowed ratio`,
+  );
+  assert.ok(
+    actual.maximumCandidateIndex
+      <= expected.maximumCandidateIndex
+        * tolerances.maximumCandidateIndexFactor,
+    `${profileId}: candidate search maximum exceeded the allowed width`,
+  );
+  assert.ok(
+    actual.rejectionsPerAccepted
+      <= expected.rejectionsPerAccepted
+        * tolerances.maximumRejectionsPerAcceptedFactor,
+    `${profileId}: candidate rejection rate exceeded the allowed width`,
+  );
+  for (const metric of [
+    "constructionStates",
+    "uniquenessStates",
+    "optimalityStates",
+  ]) {
+    assert.ok(
+      actual[metric].maximum
+        <= expected[metric].maximum * tolerances.maximumStateCountFactor,
+      `${profileId}: ${metric} maximum exceeded the allowed width`,
+    );
+    assert.ok(
+      actual[metric].p95
+        <= expected[metric].p95 * tolerances.p95StateCountFactor,
+      `${profileId}: ${metric} p95 exceeded the allowed width`,
+    );
+  }
 }
 
 function summarizeNumbers(values) {

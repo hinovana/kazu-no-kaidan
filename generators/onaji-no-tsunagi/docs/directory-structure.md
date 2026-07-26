@@ -153,7 +153,7 @@ TypeDocの生成物はリポジトリルートの
 | --- | --- |
 | `parse-generation-request.ts` | フォームなどから来る未知の入力を`GenerationRequest`へ厳格変換する |
 | `generate-worksheet-use-case.ts` | 入力parse後にdomainのWorksheet生成を呼ぶ同期ユースケース |
-| `generation-worker-contract.ts` | WorkerからUIへ返す成功・失敗メッセージ型 |
+| `generation-worker-contract.ts` | request ID付きのWorker要求と、同じIDを返す成功・失敗メッセージ型 |
 | `generation-worker.ts` | 重い生成処理をメインスレッド外で実行するWorker入口 |
 | `generation-error-message.ts` | domain/applicationの例外を画面向け日本語へ変換する |
 | `decode-reference-corpus.ts` | 原本参照JSONを厳格デコードし、問題validatorへ接続する |
@@ -190,7 +190,8 @@ TypeDocの生成物はリポジトリルートの
 | ファイル | 責務 |
 | --- | --- |
 | `build-unique-path-cover.ts` | solution-first構成の公開入口。下記のprofile、候補、exact-cover、記号割当を統括する |
-| `unique-path-cover-profile.ts` | 5×5・6×6の版付きprofile値と、難易度・問題位置からのprofile選択 |
+| `unique-path-cover-profile.ts` | 5×5・6×6の版付きprofile値、生成方針と、難易度・問題位置からのprofile選択 |
+| `generation-profile-adapter.ts` | profileの版、seed互換、記号割当、cover再利用方針を実行手順へ変換する |
 | `path-candidate-source.ts` | 低曲がり単純経路候補の列挙、向きの重複排除、geometry単位の遅延cache |
 | `select-path-cover.ts` | 経路候補から盤面全体を一度ずつ覆う組を探すexact-cover探索 |
 | `path-symbol-assignment.ts` | 構成済み経路への三記号割当と、6×6の割当variant列挙 |
@@ -236,7 +237,7 @@ validatorは「保存済みの答えと同じか」ではなく、ルールを�
 | --- | --- |
 | `OnajiNoTsunagiPage.tsx` | 通常画面と参照JSON確認画面の切替、生成結果、答案表示、印刷を統括する |
 | `WorksheetGenerationControls.tsx` | 難易度・問題数・seedと、生成・答案表示・印刷のform control |
-| `use-worksheet-generation.ts` | 生成Workerの開始、結果状態、unmount時の終了処理を管理するReact hook |
+| `use-worksheet-generation.ts` | request ID、前Worker終了、古い応答破棄、結果状態、unmount cleanupを管理するReact hook |
 | `WorksheetPreview.tsx` | 問題用紙、氏名欄、難易度表示 |
 | `AnswerPreview.tsx` | 唯一の答えを載せた答案表示 |
 | `PuzzleBoard.tsx` | 問題と答えで共有するSVG盤面。参照確認時はセル座標も表示できる |
@@ -263,11 +264,13 @@ validatorは「保存済みの答えと同じか」ではなく、ルールを�
 | `generator.test.js` | 再現性、profile構成、生成結果、唯一解、来歴 |
 | `layout-quality.test.js` | solution-first構築、形状gate、取っ掛かり、トポロジー多様性 |
 | `solver.test.js` | pairing、bitset、solver、optimizer、正規化、予算超過 |
+| `solver-oracle.test.js` | 独立総当たり参照器と3×3・4×3の全4端点配置における解hash集合一致 |
 | `validator.test.js` | PuzzleとSolutionの正例・反例 |
 | `reference-corpus.test.js` | 参照JSONのschema、厳格デコード、SHA結合、異常系 |
 | `six-by-six-layout.test.js` | 6×6の構成成功率、状態予算、経路長profile、トポロジー |
-| `six-by-six-corpus.mjs` | 6×6各profileの多数seed生成、完全探索、品質gate、性能 |
-| `ui-structure.test.js` | SPA登録、Worker、問題・答え分離、印刷CSS、参照確認画面 |
+| `six-by-six-corpus.mjs` | 6×6各profileの多数seed生成、完全探索、品質gate、JSON基準値との性能・多様性回帰 |
+| `ui-structure.test.js` | SPA登録、問題・答え分離、印刷CSS、参照確認画面の静的構造 |
+| `ui-behavior.test.tsx` | 実DOMでWorker多重要求、最新結果の表示順、印刷前の答案状態 |
 | `typescript-contract.test.ts` | 公開する教材内型のコンパイル契約 |
 | `corpus.mjs` | 多数seedでの再現性、品質gate、分布、重複、性能 |
 
@@ -275,6 +278,7 @@ validatorは「保存済みの答えと同じか」ではなく、ルールを�
 
 ```bash
 node generators/onaji-no-tsunagi/tests/<対象>.test.js
+npm run test:onaji-no-tsunagi
 npm run test:onaji-no-tsunagi:corpus
 npm run typecheck:onaji-no-tsunagi
 npm test
@@ -317,11 +321,11 @@ JSONのデコード成功やPDFのSHA一致だけでは、座標転記の正し�
 | 変更したいこと | 最初に確認する場所 | 同時に確認する場所 |
 | --- | --- | --- |
 | 正誤ルール・唯一解契約 | `SPEC.md` | `types/`、`solver/`、`validation/`、画面説明、反例テスト |
-| 盤面サイズ・端点profile | `domain/types/puzzle.ts`、`build-unique-path-cover.ts` | `generate-worksheet.ts`、solver、品質gate、コーパス |
+| 盤面サイズ・端点profile | `domain/types/puzzle.ts`、`unique-path-cover-profile.ts` | `generation-profile-adapter.ts`、`build-unique-path-cover.ts`、solver、品質gate、コーパス |
 | solution-first作問文法 | `build-unique-path-cover.ts` | `materialize-path-plan.ts`、独立solver、layout品質テスト |
 | 解探索・一意性証明 | `domain/solver/` | validator、generator、solverテスト、予算超過表示 |
 | 取っ掛かり・形状gate | `domain/validation/` | `SPEC.md`、生成採用処理、layout品質テスト |
-| 生成フォーム・Worker | `ui/OnajiNoTsunagiPage.tsx`、`application/` | Worker契約、UI構造テスト、実ブラウザ |
+| 生成フォーム・Worker | `ui/OnajiNoTsunagiPage.tsx`、`application/` | Worker契約、実DOMテスト、実ブラウザ |
 | SVG盤面・印刷 | `ui/PuzzleBoard.tsx`、`styles.css` | 問題と答え、狭幅、A4全ページ |
 | 原本参照JSON形式 | `reference/source-corpus.schema.json`、`reference-corpus.ts` | decoder、確認画面、異常系テスト、ローカル実データ |
 | 開発診断 | `DeveloperDiagnostics.tsx`、`worksheet.ts` | 分析処理、説明生成、UI構造テスト |

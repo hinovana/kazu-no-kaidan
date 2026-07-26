@@ -32,30 +32,16 @@ import {validateSolution} from '../validation/validate-solution.ts';
 import {analyzeDifficulty} from './analyze-difficulty.ts';
 import {
   buildUniquePathCover,
-  getSymbolAssignmentVariantCount,
   getUniquePathCoverProfile,
   selectUniquePathCoverProfileId,
   type UniquePathCoverProfile,
 } from './build-unique-path-cover.ts';
+import {
+  createProfileCandidateIdentity,
+  getGeneratorVersions,
+  getProfileSymbolAssignmentVariantCount,
+} from './generation-profile-adapter.ts';
 import {createSeededRandom, stableHash} from './random.ts';
-
-const STABLE_VERSIONS = {
-  schemaVersion: 'onaji-no-tsunagi.worksheet.v3.3',
-  generatorVersion: 'onaji-no-tsunagi-generator.v3.3',
-  algorithmSpecVersion: 'onaji-no-tsunagi-spec.v3.3',
-  analyzerVersion: 'onaji-no-tsunagi-difficulty.v3.3',
-  profileVersion: 'onaji-no-tsunagi-profiles.v3.3',
-} as const;
-
-const DRAFT_VERSIONS = {
-  schemaVersion: 'onaji-no-tsunagi.worksheet.v3.4-draft',
-  generatorVersion: 'onaji-no-tsunagi-generator.v3.4-draft',
-  algorithmSpecVersion: 'onaji-no-tsunagi-spec.v3.4-draft',
-  analyzerVersion: 'onaji-no-tsunagi-difficulty.v3.4-draft',
-  profileVersion: 'onaji-no-tsunagi-profiles.v3.4-draft',
-} as const;
-
-type GeneratorVersions = typeof STABLE_VERSIONS | typeof DRAFT_VERSIONS;
 
 interface GenerationProgress {
   totalAttempts: number;
@@ -109,7 +95,21 @@ export class GenerationFailure extends Error {
  * 不変条件が壊れた場合。
  */
 export function generateWorksheet(request: GenerationRequest): Worksheet {
-  const versions = request.difficulty === 1 ? STABLE_VERSIONS : DRAFT_VERSIONS;
+  const profiles = selectWorksheetProfiles(request);
+  const firstProfile = profiles[0];
+  if (firstProfile === undefined) {
+    throw brokenInvariant('worksheet_has_profile');
+  }
+  const versions = getGeneratorVersions(firstProfile);
+  if (
+    profiles.some(
+      profile =>
+        profile.generationPolicy.versionTrack !==
+        firstProfile.generationPolicy.versionTrack,
+    )
+  ) {
+    throw brokenInvariant('worksheet_profiles_share_version_track');
+  }
   const puzzles: GeneratedPuzzle[] = [];
   const progress: GenerationProgress = {
     totalAttempts: 0,
@@ -121,8 +121,12 @@ export function generateWorksheet(request: GenerationRequest): Worksheet {
     puzzleIndex < request.puzzleCount;
     puzzleIndex += 1
   ) {
+    const profile = profiles[puzzleIndex];
+    if (profile === undefined) {
+      throw brokenInvariant('worksheet_profile_matches_puzzle_index');
+    }
     puzzles.push(
-      generatePuzzle(request, versions, puzzleIndex, puzzles, progress),
+      generatePuzzle(request, profile, puzzleIndex, puzzles, progress),
     );
   }
 
@@ -156,20 +160,13 @@ export function generateWorksheet(request: GenerationRequest): Worksheet {
 
 function generatePuzzle(
   request: GenerationRequest,
-  versions: GeneratorVersions,
+  profile: UniquePathCoverProfile,
   puzzleIndex: number,
   precedingPuzzles: readonly GeneratedPuzzle[],
   progress: GenerationProgress,
 ): GeneratedPuzzle {
-  const profileId = selectUniquePathCoverProfileId(
-    request.difficulty,
-    request.seed,
-    puzzleIndex,
-    request.puzzleCount,
-  );
-  const profile = getUniquePathCoverProfile(profileId);
   const symbolAssignmentVariantCount =
-    profile.width === 6 ? getSymbolAssignmentVariantCount(profileId) : 1;
+    getProfileSymbolAssignmentVariantCount(profile);
   const puzzleRejections: CandidateRejection[] = [];
 
   for (
@@ -180,11 +177,9 @@ function generatePuzzle(
     progress.totalAttempts += 1;
     const identity = createCandidateIdentity(
       request,
-      versions,
       puzzleIndex,
       candidateIndex,
       profile,
-      symbolAssignmentVariantCount,
     );
     const evaluation = evaluateCandidate(
       request,
@@ -218,35 +213,34 @@ function generatePuzzle(
 
 function createCandidateIdentity(
   request: GenerationRequest,
-  versions: GeneratorVersions,
   puzzleIndex: number,
   candidateIndex: number,
   profile: UniquePathCoverProfile,
-  symbolAssignmentVariantCount: number,
 ): CandidateIdentity {
-  const routeCandidateIndex = Math.floor(
-    candidateIndex / symbolAssignmentVariantCount,
-  );
-  const symbolAssignmentVariant = candidateIndex % symbolAssignmentVariantCount;
-  const routeSeed = [
+  const profileIdentity = createProfileCandidateIdentity(
+    profile,
     request.seed,
-    versions.generatorVersion,
-    `puzzle-${puzzleIndex + 1}`,
-    request.difficulty === 1
-      ? `terminals-${profile.terminalPattern}`
-      : `profile-${profile.profileId}`,
-    `candidate-${routeCandidateIndex}`,
-  ].join('::');
-  const puzzleSeed =
-    profile.width === 5
-      ? routeSeed
-      : `${routeSeed}::symbol-${symbolAssignmentVariant}`;
+    puzzleIndex,
+    candidateIndex,
+  );
   return {
     candidateIndex,
-    routeSeed,
-    puzzleSeed,
-    symbolAssignmentVariant,
+    ...profileIdentity,
   };
+}
+
+function selectWorksheetProfiles(
+  request: GenerationRequest,
+): readonly UniquePathCoverProfile[] {
+  return Array.from({length: request.puzzleCount}, (_, puzzleIndex) => {
+    const profileId = selectUniquePathCoverProfileId(
+      request.difficulty,
+      request.seed,
+      puzzleIndex,
+      request.puzzleCount,
+    );
+    return getUniquePathCoverProfile(profileId);
+  });
 }
 
 function evaluateCandidate(
