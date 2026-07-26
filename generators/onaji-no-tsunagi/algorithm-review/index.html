@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ja"
+  data-default-report="6x6-4-4-4-filter-classification-audit-2000.json">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>人間の目によるアルゴリズムレビュー</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <main>
+    <header class="report-header">
+      <h1 id="report-title">人間の目によるアルゴリズムレビュー</h1>
+    </header>
+
+    <section id="load-panel" class="load-panel" aria-labelledby="load-heading">
+      <h2 id="load-heading">監査データを読み込んでいます</h2>
+      <p id="load-status" class="load-status" role="status" aria-live="polite">
+        監査JSONを読み込んでいます…
+      </p>
+    </section>
+
+    <div id="report-root" hidden></div>
+  </main>
+
+  <dialog id="candidate-dialog">
+    <div id="dialog-content"></div>
+  </dialog>
+</body>
+</html>

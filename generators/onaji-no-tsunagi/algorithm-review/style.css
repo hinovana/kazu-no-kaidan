@@ -1,0 +1,426 @@
+:root {
+  color-scheme: light;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #152532;
+  background: #cbd8df;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+main {
+  min-height: 100vh;
+  max-width: 1680px;
+  margin-inline: auto;
+  padding: 16px 1em 80px;
+  border-inline: 1px solid #b3c4cd;
+  background: #f1f6f8;
+  box-shadow: 0 0 32px #324c5c24;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.25;
+}
+
+h1 {
+  margin: 0;
+  color: #102f49;
+  font-size: clamp(1.6rem, 2.6vw, 2.35rem);
+  letter-spacing: -.025em;
+}
+
+.report-header,
+.heading-with-action,
+.dialog-head,
+.dialog-id-row {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+}
+
+.report-header {
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.copy-conditions,
+.copy-id,
+.dialog-close {
+  flex: 0 0 auto;
+  border: 1px solid #168a9b;
+  border-radius: 7px;
+  background: #fff;
+  color: #075d69;
+  font-weight: 700;
+}
+
+.load-panel {
+  max-width: 760px;
+  margin: 48px auto;
+  padding: 24px;
+  border: 1px solid #aebfc9;
+  border-top: 4px solid #168a9b;
+  border-radius: 5px;
+  background: #f9fcfd;
+}
+
+.load-panel h2 {
+  margin-top: 0;
+}
+
+.load-panel p {
+  line-height: 1.7;
+}
+
+.load-status {
+  min-height: 1.7em;
+  margin-bottom: 0;
+  color: #075d69;
+  font-weight: 700;
+}
+
+.load-status.is-error {
+  color: #a63f2a;
+}
+
+.section-heading {
+  margin-top: 42px;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 4px;
+  background: #153852;
+  color: #fff;
+  letter-spacing: .02em;
+}
+
+.summary-grid,
+.candidate-grid,
+.reference-card-grid {
+  display: grid;
+}
+
+.summary-grid {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px;
+  margin: 16px 0 24px;
+}
+
+.panel,
+.candidate-card {
+  border: 1px solid #aebfc9;
+  border-radius: 5px;
+  background: #f9fcfd;
+  box-shadow: none;
+}
+
+.panel {
+  padding: 16px;
+  border-top: 4px solid #168a9b;
+}
+
+.panel strong {
+  display: block;
+  color: #087789;
+  font-size: 1.4rem;
+}
+
+.heading-with-action {
+  justify-content: space-between;
+}
+
+.heading-with-action h3 {
+  margin-right: auto;
+}
+
+.copy-conditions,
+.copy-id {
+  padding: 6px 10px;
+  font-size: .78rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #f9fcfd;
+  color: #152532;
+}
+
+th,
+td {
+  padding: 8px 10px;
+  border: 1px solid #c3d0d7;
+  text-align: right;
+}
+
+th:first-child,
+td:first-child {
+  text-align: left;
+}
+
+thead th {
+  background: #dce9ef;
+  color: #17354b;
+  font-size: .8rem;
+  letter-spacing: .02em;
+}
+
+.condition-cell {
+  min-width: 20rem;
+  line-height: 1.45;
+}
+
+.condition-cell small,
+.number-cell small {
+  display: block;
+  color: #587181;
+}
+
+.condition-cell small {
+  margin-top: 4px;
+}
+
+.number-cell {
+  white-space: nowrap;
+}
+
+.number-cell strong {
+  display: block;
+  color: #087789;
+  font-size: 1.05rem;
+}
+
+.summary-row th,
+.summary-row td {
+  border-top: 3px solid #7e918b;
+  background: #dff2f1;
+}
+
+.summary-row-continuation th,
+.summary-row-continuation td {
+  border-top-width: 1px;
+}
+
+.candidate-heading {
+  margin-top: 28px;
+}
+
+.candidate-grid {
+  grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+  gap: 7px;
+}
+
+.reference-card-grid {
+  grid-template-columns: repeat(2, minmax(0, 178px));
+  gap: 7px;
+}
+
+.candidate-card {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.candidate-button,
+.candidate-content {
+  display: block;
+  width: 100%;
+  padding: 6px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+}
+
+.candidate-button {
+  cursor: zoom-in;
+}
+
+.candidate-button:hover {
+  background: #e8f5f7;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  min-width: 0;
+  font-size: 10px;
+}
+
+.card-head strong {
+  color: #087789;
+  font-size: 14px;
+}
+
+.card-head code {
+  min-width: 0;
+  overflow: hidden;
+  color: #60706b;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.candidate-card svg {
+  display: block;
+  width: 100%;
+  max-width: none;
+  aspect-ratio: 1;
+  margin: 3px 0;
+  background: #fff;
+}
+
+.empty-group {
+  margin: 0;
+  padding: 14px;
+  border: 1px dashed #aebfc9;
+  color: #587181;
+  background: #f9fcfd;
+}
+
+dialog {
+  width: min(920px, 94vw);
+  max-height: 94vh;
+  padding: 18px;
+  border: 0;
+  border-radius: 14px;
+  background: #f7fbfc;
+  color: #152532;
+  box-shadow: 0 20px 70px #0006;
+}
+
+dialog::backdrop {
+  background: #172420b3;
+}
+
+.dialog-head {
+  align-items: start;
+  justify-content: space-between;
+}
+
+.dialog-head h2 {
+  margin: 0 0 4px;
+}
+
+.dialog-head code {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+
+.dialog-id-row {
+  gap: 8px;
+}
+
+.dialog-close {
+  padding: 8px 14px;
+}
+
+.dialog-boards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  margin-top: 12px;
+}
+
+.dialog-boards h3 {
+  margin: 0;
+  text-align: center;
+}
+
+.dialog-boards svg {
+  width: 100%;
+  max-height: 52vh;
+  background: #fff;
+}
+
+.dialog-details {
+  margin-top: 12px;
+}
+
+.badge {
+  display: inline-block;
+  margin-right: 5px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #edf1ef;
+  font-size: .82rem;
+}
+
+.badge.clearly_easier,
+.badge.filter-pass {
+  background: #e5f3e9;
+}
+
+.badge.reference_like {
+  background: #e5edf7;
+}
+
+.badge.clearly_harder,
+.badge.filter-fail {
+  background: #f9e5df;
+}
+
+.badge.mixed_easier,
+.badge.mixed_harder {
+  background: #f2ead7;
+}
+
+.modal-summary {
+  line-height: 1.7;
+}
+
+.modal-table {
+  margin-top: 12px;
+  font-size: .82rem;
+}
+
+.modal-table th,
+.modal-table td {
+  padding: 6px 8px;
+}
+
+@media (max-width: 680px) {
+  .dialog-boards {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  main {
+    padding-inline: 12px;
+  }
+
+  .review-candidate-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .reference-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  th,
+  td {
+    padding: 6px;
+    font-size: .85rem;
+  }
+}
