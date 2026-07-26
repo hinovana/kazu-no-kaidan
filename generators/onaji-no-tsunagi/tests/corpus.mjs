@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import {
   getFiveByFiveTerminalProfile,
-} from "../domain/generation/build-unique-five-by-five.ts";
+} from "../domain/generation/build-unique-path-cover.ts";
 import { generateWorksheet } from "../domain/generation/generate-worksheet.ts";
 import { validateSolution } from "../domain/validation/validate-solution.ts";
 
@@ -49,7 +49,7 @@ for (let seedIndex = 0; seedIndex < seedCount; seedIndex += 1) {
   const profile = getFiveByFiveTerminalProfile(
     generated.provenance.terminalPattern,
   );
-  const stats = patternStats.get(profile.pattern);
+  const stats = patternStats.get(profile.terminalPattern);
   assert.ok(stats);
   assert.equal(worksheet.machineChecks.allPassed, true);
   assert.equal(generated.puzzle.width, 5);
@@ -80,7 +80,7 @@ for (let seedIndex = 0; seedIndex < seedCount; seedIndex += 1) {
       <= profile.maximumTotalTurnCount,
   );
   assert.equal(generated.entry.pattern, "unique_path_cover");
-  assert.equal(generated.entry.terminalPattern, profile.pattern);
+  assert.equal(generated.entry.terminalPattern, profile.terminalPattern);
   assert.ok(
     generated.entry.forcedExitTerminalIds.length
       >= profile.minimumForcedExitCount,
@@ -95,9 +95,9 @@ for (let seedIndex = 0; seedIndex < seedCount; seedIndex += 1) {
   );
   assert.equal(
     generated.entry.pairingChoiceCount,
-    profile.pattern === "2-2-2"
+    profile.terminalPattern === "2-2-2"
       ? 1
-      : profile.pattern === "4-2-2"
+      : profile.terminalPattern === "4-2-2"
         ? 3
         : 9,
   );

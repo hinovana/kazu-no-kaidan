@@ -27,9 +27,15 @@ export function analyzeDifficulty(
   ));
   const requiredShortestPathRevision = geometry.detourEdgeCount > 0;
   return {
-    analyzerVersion: "onaji-no-tsunagi-difficulty.v3.3",
+    analyzerVersion: puzzle.width === 5
+      ? "onaji-no-tsunagi-difficulty.v3.3"
+      : "onaji-no-tsunagi-difficulty.v3.4-draft",
     requestedLevel,
-    measuredBand: 1,
+    measuredBand: puzzle.width === 5
+      ? 1
+      : puzzle.terminals.length === 14
+        ? 3
+        : 2,
     exploredStateCount: metrics.exploredStateCount,
     backtrackCount: metrics.backtrackCount,
     maximumDecisionDepth: metrics.maximumDecisionDepth,
@@ -41,6 +47,8 @@ export function analyzeDifficulty(
     nearestPairTrap: requiredPairingRevision,
     residualReachabilityPruneCount:
       metrics.residualReachabilityPruneCount,
+    componentParityPruneCount: metrics.componentParityPruneCount,
+    memoizedFailurePruneCount: metrics.memoizedFailurePruneCount,
     entryClarity: "clear",
     naturalHypothesisCount: entry.naturalHypothesisCount,
     interactionWitnessCount: witnesses.length,

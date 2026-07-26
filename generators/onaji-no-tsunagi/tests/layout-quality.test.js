@@ -3,7 +3,7 @@ import {
   buildUniqueFiveByFive,
   getFiveByFiveTerminalProfile,
   UNIQUE_FIVE_BY_FIVE_PROFILE,
-} from "../domain/generation/build-unique-five-by-five.ts";
+} from "../domain/generation/build-unique-path-cover.ts";
 import { createSeededRandom } from "../domain/generation/random.ts";
 import { solvePuzzle } from "../domain/solver/solve-puzzle.ts";
 import { analyzeSolutionCoverage } from "../domain/validation/analyze-solution-coverage.ts";

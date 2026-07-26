@@ -23,10 +23,17 @@ export function parseGenerationRequest(input: unknown): GenerationRequest {
   const puzzleCount = parseInteger(input.puzzleCount);
   const seed = typeof input.seed === "string" ? input.seed.trim() : "";
 
-  if (difficulty !== 1) {
+  if (difficulty === 4) {
     issues.push(
-      "現在は唯一解を証明できるレベル1だけ生成できます。レベル2から4は準備中です。",
+      "レベル4の唯一解文法は準備中です。",
     );
+  } else if (
+    difficulty === null
+    || ![1, 2, 3].includes(
+      difficulty as AvailableDifficultyLevel,
+    )
+  ) {
+    issues.push("レベルは1から3で指定します。");
   }
   if (puzzleCount === null || ![1, 2, 3, 4].includes(puzzleCount)) {
     issues.push("問題数は1から4で指定します。");

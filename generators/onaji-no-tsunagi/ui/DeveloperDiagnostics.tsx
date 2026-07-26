@@ -21,7 +21,12 @@ export function DeveloperDiagnostics({ worksheet }: { readonly worksheet: Worksh
                   （{generated.provenance.terminalPattern}）
                 </dd>
               </div>
+              <div><dt>profile</dt><dd>{generated.provenance.profileId}</dd></div>
               <div><dt>経路数</dt><dd>{generated.canonicalSolution.paths.length}</dd></div>
+              <div>
+                <dt>経路長</dt>
+                <dd>{generated.geometry.paths.map((path) => path.edgeCount + 1).join(" / ")}</dd>
+              </div>
               <div>
                 <dt>唯一解の使用マス</dt>
                 <dd>
@@ -77,12 +82,21 @@ export function DeveloperDiagnostics({ worksheet }: { readonly worksheet: Worksh
                 <dd>{generated.generationWitness.plantedInflationEdgeCount}辺</dd>
               </div>
               <div><dt>探索状態</dt><dd>{generated.difficulty.exploredStateCount}</dd></div>
+              <div><dt>構成状態</dt><dd>{generated.provenance.constructionStateCount}</dd></div>
               <div><dt>撤回</dt><dd>{generated.difficulty.backtrackCount}</dd></div>
               <div><dt>ペア候補指標</dt><dd>{generated.difficulty.pairingChoiceCount}</dd></div>
               <div><dt>回廊判断の連鎖</dt><dd>{generated.difficulty.revisionChainLength}</dd></div>
               <div>
                 <dt>到達不能枝の除外</dt>
                 <dd>{generated.difficulty.residualReachabilityPruneCount}</dd>
+              </div>
+              <div>
+                <dt>成分偶奇枝の除外</dt>
+                <dd>{generated.difficulty.componentParityPruneCount}</dd>
+              </div>
+              <div>
+                <dt>失敗memo枝の除外</dt>
+                <dd>{generated.difficulty.memoizedFailurePruneCount}</dd>
               </div>
               <div><dt>最短ペアの罠</dt><dd>{generated.difficulty.nearestPairTrap ? "あり" : "なし"}</dd></div>
               <div>

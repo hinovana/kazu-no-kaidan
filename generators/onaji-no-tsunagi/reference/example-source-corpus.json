@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "onaji-no-tsunagi.source-corpus.v1",
+  "sourceDocument": {
+    "id": "synthetic-format-example",
+    "sha256": null,
+    "bookPageRange": [1, 1],
+    "pdfPageCount": 1
+  },
+  "coordinateSystem": {
+    "origin": "top-left",
+    "indexBase": 0
+  },
+  "problems": [
+    {
+      "id": "synthetic-example-1",
+      "source": {
+        "bookPage": 1,
+        "pdfPage": 1,
+        "label": "架空例",
+        "kind": "tutorial-example",
+        "printedDifficulty": null
+      },
+      "board": {
+        "width": 5,
+        "height": 5
+      },
+      "terminals": [
+        {
+          "terminalId": "circle-1",
+          "symbol": "circle",
+          "row": 0,
+          "column": 0
+        },
+        {
+          "terminalId": "circle-2",
+          "symbol": "circle",
+          "row": 4,
+          "column": 4
+        },
+        {
+          "terminalId": "triangle-1",
+          "symbol": "triangle",
+          "row": 0,
+          "column": 4
+        },
+        {
+          "terminalId": "triangle-2",
+          "symbol": "triangle",
+          "row": 4,
+          "column": 0
+        },
+        {
+          "terminalId": "square-1",
+          "symbol": "square",
+          "row": 1,
+          "column": 2
+        },
+        {
+          "terminalId": "square-2",
+          "symbol": "square",
+          "row": 3,
+          "column": 2
+        }
+      ],
+      "transcription": {
+        "status": "draft",
+        "checkedAgainstSourceSha256": null
+      }
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import {
   useState,
   type FormEvent,
 } from "react";
+import { useSearchParams } from "react-router-dom";
 import type { GeneratorModuleProps } from "../../../src/app/generator-module.ts";
 import type {
   GenerationWorkerResponse,
@@ -15,6 +16,7 @@ import type {
 import type { Worksheet } from "../domain/types/worksheet.ts";
 import { AnswerPreview } from "./AnswerPreview.tsx";
 import { DeveloperDiagnostics } from "./DeveloperDiagnostics.tsx";
+import { ReferenceCorpusReviewPage } from "./ReferenceCorpusReviewPage.tsx";
 import { WorksheetPreview } from "./WorksheetPreview.tsx";
 
 interface FormState {
@@ -36,6 +38,16 @@ const INITIAL_FORM: FormState = {
 };
 
 export function OnajiNoTsunagiPage({ onRequestPrint }: GeneratorModuleProps) {
+  const [searchParams] = useSearchParams();
+  if (searchParams.get("mode") === "reference-review") {
+    return <ReferenceCorpusReviewPage />;
+  }
+  return <WorksheetGeneratorPage onRequestPrint={onRequestPrint} />;
+}
+
+function WorksheetGeneratorPage({
+  onRequestPrint,
+}: GeneratorModuleProps) {
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [pageState, setPageState] = useState<PageState>({ status: "idle" });
   const [showAnswers, setShowAnswers] = useState(false);
@@ -84,18 +96,25 @@ export function OnajiNoTsunagiPage({ onRequestPrint }: GeneratorModuleProps) {
     <main className="onaji-page">
       <header className="ots-page-header screen-only">
         <a className="ots-back-link" href="#/">← 教材一覧へ</a>
+        <a
+          className="ots-reference-link"
+          href="#/generators/onaji-no-tsunagi?mode=reference-review"
+        >
+          お手本JSONを盤面で確認
+        </a>
         <p className="ots-page-kicker">形と道すじの算数パズル</p>
         <h1>おなじのつなぎ</h1>
         <p>
-          6・8・10個のマークを、同じ形どうし2こずつ線でつなぎます。
-          同じ形が4こあるときは、どの2こを組にするかも考えましょう。
+          5×5・6×6のマークを、同じ形どうし2こずつ線でつなぎます。
+          同じ形が4こ以上あるときは、どの2こを組にするかも考えましょう。
         </p>
       </header>
 
       <aside className="ots-prototype-notice screen-only" role="note">
         <strong>開発確認用プロトタイプ</strong>
-        <span>5×5・6/8/10端点・唯一解を完全探索で証明済み</span>
-        <span>レベル2〜4の唯一解文法は準備中</span>
+        <span>v3.4 draft: 5×5・6×6・6/8/10/12/14端点・唯一解を完全探索で証明済み</span>
+        <span>6×6の機械gateは完了、人間レビュー・難易度校正は未完了</span>
+        <span>レベル4の唯一解文法は準備中</span>
         <span>挑戦したくなるか／解いて面白いかは人間未確認</span>
         <span>難易度は未校正／児童利用・学力判定不可</span>
       </aside>
@@ -106,9 +125,16 @@ export function OnajiNoTsunagiPage({ onRequestPrint }: GeneratorModuleProps) {
             暫定難易度
             <select
               value={form.difficulty}
-              disabled
+              onChange={(event) => setForm({
+                ...form,
+                difficulty: Number(
+                  event.target.value,
+                ) as AvailableDifficultyLevel,
+              })}
             >
               <option value={1}>★☆☆☆ レベル1（5×5・6/8/10個・唯一解）</option>
+              <option value={2}>★★☆☆ レベル2（6×6・10/12個・唯一解）</option>
+              <option value={3}>★★★☆ レベル3（6×6・14個・唯一解）</option>
             </select>
           </label>
           <label>
@@ -142,7 +168,7 @@ export function OnajiNoTsunagiPage({ onRequestPrint }: GeneratorModuleProps) {
           </button>
         </div>
         <p className="ots-control-note">
-          生成した問題は、同じ形が4個ある場合のペアリングも含め、
+          生成した問題は、同じ形が4個以上ある場合のペアリングも含め、
           答えが1通りだけであることを完全探索で確認します。
         </p>
         <div className="ots-action-row">

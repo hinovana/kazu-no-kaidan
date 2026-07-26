@@ -1,9 +1,10 @@
 import type { DifficultyAnalysis } from "./difficulty.ts";
 import type { CandidateRejection, GenerationRequest } from "./generation.ts";
 import type {
-  FiveByFiveTerminalPattern,
   Puzzle,
   SymbolId,
+  TerminalMultiplicityPattern,
+  UniquePathCoverProfileId,
 } from "./puzzle.ts";
 import type {
   Solution,
@@ -21,9 +22,11 @@ interface EntrySymbolGroup {
 }
 
 export interface UniquePathCoverEntryAnalysis {
-  readonly analysisVersion: "onaji-no-tsunagi-entry.v3.3";
+  readonly analysisVersion:
+    | "onaji-no-tsunagi-entry.v3.3"
+    | "onaji-no-tsunagi-entry.v3.4-draft";
   readonly pattern: "unique_path_cover";
-  readonly terminalPattern: FiveByFiveTerminalPattern;
+  readonly terminalPattern: TerminalMultiplicityPattern;
   readonly symbolGroups: readonly EntrySymbolGroup[];
   readonly pairingChoiceCount: number;
   readonly forcedExitTerminalIds: readonly string[];
@@ -89,17 +92,28 @@ export interface MachineCheckReport {
 }
 
 export interface GenerationProvenance {
-  readonly generatorVersion: "onaji-no-tsunagi-generator.v3.3";
-  readonly algorithmSpecVersion: "onaji-no-tsunagi-spec.v3.3";
+  readonly generatorVersion:
+    | "onaji-no-tsunagi-generator.v3.3"
+    | "onaji-no-tsunagi-generator.v3.4-draft";
+  readonly algorithmSpecVersion:
+    | "onaji-no-tsunagi-spec.v3.3"
+    | "onaji-no-tsunagi-spec.v3.4-draft";
   readonly solverVersion: "onaji-no-tsunagi-solver.v3.1";
-  readonly analyzerVersion: "onaji-no-tsunagi-difficulty.v3.3";
-  readonly profileVersion: "onaji-no-tsunagi-profiles.v3.3";
+  readonly analyzerVersion:
+    | "onaji-no-tsunagi-difficulty.v3.3"
+    | "onaji-no-tsunagi-difficulty.v3.4-draft";
+  readonly profileVersion:
+    | "onaji-no-tsunagi-profiles.v3.3"
+    | "onaji-no-tsunagi-profiles.v3.4-draft";
   readonly seed: string;
   readonly generatedAt: null;
 }
 
 export interface PuzzleProvenance {
-  readonly terminalPattern: FiveByFiveTerminalPattern;
+  readonly terminalPattern: TerminalMultiplicityPattern;
+  readonly profileId: UniquePathCoverProfileId;
+  readonly constructionStateCount: number;
+  readonly pathLengthProfile: readonly number[];
   readonly candidateIndex: number;
   readonly puzzleSeed: string;
   readonly topologyHash: string;
@@ -133,7 +147,9 @@ export interface GeneratedPuzzle {
 }
 
 export interface Worksheet {
-  readonly schemaVersion: "onaji-no-tsunagi.worksheet.v3.3";
+  readonly schemaVersion:
+    | "onaji-no-tsunagi.worksheet.v3.3"
+    | "onaji-no-tsunagi.worksheet.v3.4-draft";
   readonly worksheetId: string;
   readonly usageClass: "development_preview";
   readonly childUsePermitted: false;

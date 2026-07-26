@@ -1,0 +1,207 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kazu-no-kaidan.local/schema/onaji-no-tsunagi.source-corpus.v1.json",
+  "title": "おなじのつなぎ原本参照コーパス",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "sourceDocument",
+    "coordinateSystem",
+    "problems"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "onaji-no-tsunagi.source-corpus.v1"
+    },
+    "sourceDocument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "sha256", "bookPageRange", "pdfPageCount"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bookPageRange": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "integer",
+              "minimum": 1
+            }
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "pdfPageCount": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "coordinateSystem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["origin", "indexBase"],
+      "properties": {
+        "origin": {
+          "const": "top-left"
+        },
+        "indexBase": {
+          "const": 0
+        }
+      }
+    },
+    "problems": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/problem"
+      }
+    }
+  },
+  "$defs": {
+    "problem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "source",
+        "board",
+        "terminals",
+        "transcription"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "bookPage",
+            "pdfPage",
+            "label",
+            "kind",
+            "printedDifficulty"
+          ],
+          "properties": {
+            "bookPage": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "pdfPage": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "enum": [
+                "tutorial-example",
+                "numbered-problem",
+                "challenge"
+              ]
+            },
+            "printedDifficulty": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 5
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "board": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["width", "height"],
+          "properties": {
+            "width": {
+              "type": "integer",
+              "minimum": 2,
+              "maximum": 9
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 2,
+              "maximum": 9
+            }
+          }
+        },
+        "terminals": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["terminalId", "symbol", "row", "column"],
+            "properties": {
+              "terminalId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "symbol": {
+                "enum": ["circle", "triangle", "square"]
+              },
+              "row": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "column": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "transcription": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "checkedAgainstSourceSha256"],
+          "properties": {
+            "status": {
+              "enum": ["draft", "double-checked"]
+            },
+            "checkedAgainstSourceSha256": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

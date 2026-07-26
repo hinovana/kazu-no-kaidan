@@ -2,15 +2,15 @@ import { adjacentIndices } from "../grid/adjacency.ts";
 import { cellIndex } from "../grid/coordinates.ts";
 import { countPerfectMatchings } from "../solver/enumerate-pairings.ts";
 import type {
-  FiveByFiveTerminalPattern,
   Puzzle,
   SymbolId,
   Terminal,
+  TerminalMultiplicityPattern,
 } from "../types/puzzle.ts";
 import type { UniquePathCoverEntryAnalysis } from "../types/worksheet.ts";
 
 export interface UniquePathCoverEntryCriteria {
-  readonly pattern: FiveByFiveTerminalPattern;
+  readonly terminalPattern: TerminalMultiplicityPattern;
   readonly terminalCount: number;
   readonly symbolPathCounts: readonly [number, number, number];
   readonly minimumForcedExitCount: number;
@@ -106,9 +106,11 @@ export function analyzeUniquePathCoverEntry(
   return {
     status: "candidate",
     analysis: {
-      analysisVersion: "onaji-no-tsunagi-entry.v3.3",
+      analysisVersion: puzzle.width === 5
+        ? "onaji-no-tsunagi-entry.v3.3"
+        : "onaji-no-tsunagi-entry.v3.4-draft",
       pattern: "unique_path_cover",
-      terminalPattern: criteria.pattern,
+      terminalPattern: criteria.terminalPattern,
       symbolGroups: symbolGroups.map(([symbol, terminals]) => ({
         symbol,
         terminalIds: terminals

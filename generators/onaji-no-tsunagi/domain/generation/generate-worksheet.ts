@@ -25,12 +25,12 @@ import { runMachineChecks } from "../validation/run-machine-checks.ts";
 import { validateSolution } from "../validation/validate-solution.ts";
 import { analyzeDifficulty } from "./analyze-difficulty.ts";
 import {
-  buildUniqueFiveByFive,
-  getFiveByFiveTerminalProfile,
-  selectFiveByFiveTerminalPattern,
-  type FiveByFiveTerminalProfile,
-  UNIQUE_FIVE_BY_FIVE_PROFILE,
-} from "./build-unique-five-by-five.ts";
+  buildUniquePathCover,
+  getSymbolAssignmentVariantCount,
+  getUniquePathCoverProfile,
+  selectUniquePathCoverProfileId,
+  type UniquePathCoverProfile,
+} from "./build-unique-path-cover.ts";
 import { createSeededRandom, stableHash } from "./random.ts";
 
 export class GenerationFailure extends Error {
@@ -55,35 +55,64 @@ export function generateWorksheet(request: GenerationRequest): Worksheet {
   ) {
     const puzzleRejections: CandidateRejection[] = [];
     let generated: GeneratedPuzzle | null = null;
-    const terminalPattern = selectFiveByFiveTerminalPattern(
+    const profileId = selectUniquePathCoverProfileId(
+      request.difficulty,
       request.seed,
       puzzleIndex,
       request.puzzleCount,
     );
-    const terminalProfile = getFiveByFiveTerminalProfile(terminalPattern);
+    const terminalProfile = getUniquePathCoverProfile(profileId);
+    const terminalPattern = terminalProfile.terminalPattern;
+    const symbolAssignmentVariantCount = terminalProfile.width === 6
+      ? getSymbolAssignmentVariantCount(profileId)
+      : 1;
     for (
       let candidateIndex = 0;
-      candidateIndex < UNIQUE_FIVE_BY_FIVE_PROFILE.maximumCandidateCount;
+      candidateIndex < terminalProfile.maximumCandidateCount;
       candidateIndex += 1
     ) {
       totalAttempts += 1;
-      const puzzleSeed = [
-        request.seed,
-        "onaji-no-tsunagi-generator.v3.3",
-        `puzzle-${puzzleIndex + 1}`,
-        `terminals-${terminalPattern}`,
-        `candidate-${candidateIndex}`,
-      ].join("::");
-      const random = createSeededRandom(puzzleSeed);
-      const plan = buildUniqueFiveByFive(
-        puzzleSeed,
-        random,
-        terminalPattern,
+      const routeCandidateIndex = Math.floor(
+        candidateIndex / symbolAssignmentVariantCount,
       );
-      if (plan === null) {
-        reject("route_plan_not_constructed");
+      const symbolAssignmentVariant = (
+        candidateIndex % symbolAssignmentVariantCount
+      );
+      const routeSeed = [
+        request.seed,
+        request.difficulty === 1
+          ? "onaji-no-tsunagi-generator.v3.3"
+          : "onaji-no-tsunagi-generator.v3.4-draft",
+        `puzzle-${puzzleIndex + 1}`,
+        request.difficulty === 1
+          ? `terminals-${terminalPattern}`
+          : `profile-${profileId}`,
+        `candidate-${routeCandidateIndex}`,
+      ].join("::");
+      const puzzleSeed = terminalProfile.width === 5
+        ? routeSeed
+        : `${routeSeed}::symbol-${symbolAssignmentVariant}`;
+      const random = createSeededRandom(routeSeed);
+      const buildResult = buildUniquePathCover(
+        routeSeed,
+        random,
+        profileId,
+        {
+          symbolAssignmentVariant,
+          materializedPuzzleSeed: puzzleSeed,
+        },
+      );
+      if (buildResult.status === "budget_exhausted") {
+        reject("construction_state_budget_exhausted");
+        skipRemainingSymbolAssignments();
         continue;
       }
+      if (buildResult.status === "not_constructed") {
+        reject("route_plan_not_constructed");
+        skipRemainingSymbolAssignments();
+        continue;
+      }
+      const { plan } = buildResult;
       if (puzzles.some((entry) => (
         entry.provenance.topologyHash === plan.topologyHash
       ))) {
@@ -106,11 +135,12 @@ export function generateWorksheet(request: GenerationRequest): Worksheet {
       );
       if (entryResult.status === "rejected") {
         reject("entry_structure_missing");
+        skipRemainingSymbolAssignments();
         continue;
       }
       const validity = solvePuzzle(plan.puzzle, {
         solutionLimit: 2,
-        stateBudget: UNIQUE_FIVE_BY_FIVE_PROFILE.maximumValidityStates,
+        stateBudget: terminalProfile.maximumValidityStates,
       });
       if (validity.status === "budget_exhausted") {
         reject("validity_solver_budget_exhausted");
@@ -133,8 +163,7 @@ export function generateWorksheet(request: GenerationRequest): Worksheet {
         plan.puzzle,
         plan.plantedSolution,
         {
-          stateBudget:
-            UNIQUE_FIVE_BY_FIVE_PROFILE.maximumProofStates,
+          stateBudget: terminalProfile.maximumProofStates,
         },
       );
       if (optimization.status === "budget_exhausted") {
@@ -176,7 +205,7 @@ export function generateWorksheet(request: GenerationRequest): Worksheet {
         plan.puzzle,
         optimization.solution,
       );
-      if (!passesUniqueFiveByFiveGates(
+      if (!passesUniquePathCoverGates(
         coverage.usedCellCount,
         geometry,
         entryResult.analysis,
@@ -230,6 +259,9 @@ export function generateWorksheet(request: GenerationRequest): Worksheet {
         },
         provenance: {
           terminalPattern,
+          profileId,
+          constructionStateCount: buildResult.constructionStateCount,
+          pathLengthProfile: buildResult.pathLengthProfile,
           candidateIndex,
           puzzleSeed,
           topologyHash: plan.topologyHash,
@@ -242,6 +274,14 @@ export function generateWorksheet(request: GenerationRequest): Worksheet {
         const rejection = { candidateIndex, puzzleSeed, reason } as const;
         puzzleRejections.push(rejection);
         allRejections.push(rejection);
+      }
+
+      function skipRemainingSymbolAssignments(): void {
+        candidateIndex += (
+          symbolAssignmentVariantCount
+          - symbolAssignmentVariant
+          - 1
+        );
       }
     }
     if (generated === null) {
@@ -264,7 +304,9 @@ export function generateWorksheet(request: GenerationRequest): Worksheet {
   }
 
   return {
-    schemaVersion: "onaji-no-tsunagi.worksheet.v3.3",
+    schemaVersion: request.difficulty === 1
+      ? "onaji-no-tsunagi.worksheet.v3.3"
+      : "onaji-no-tsunagi.worksheet.v3.4-draft",
     worksheetId: `ots-sheet-${stableHash(JSON.stringify(request))}`,
     usageClass: "development_preview",
     childUsePermitted: false,
@@ -272,11 +314,19 @@ export function generateWorksheet(request: GenerationRequest): Worksheet {
     puzzles,
     machineChecks: { ...report, allPassed: true },
     provenance: {
-      generatorVersion: "onaji-no-tsunagi-generator.v3.3",
-      algorithmSpecVersion: "onaji-no-tsunagi-spec.v3.3",
+      generatorVersion: request.difficulty === 1
+        ? "onaji-no-tsunagi-generator.v3.3"
+        : "onaji-no-tsunagi-generator.v3.4-draft",
+      algorithmSpecVersion: request.difficulty === 1
+        ? "onaji-no-tsunagi-spec.v3.3"
+        : "onaji-no-tsunagi-spec.v3.4-draft",
       solverVersion: "onaji-no-tsunagi-solver.v3.1",
-      analyzerVersion: "onaji-no-tsunagi-difficulty.v3.3",
-      profileVersion: "onaji-no-tsunagi-profiles.v3.3",
+      analyzerVersion: request.difficulty === 1
+        ? "onaji-no-tsunagi-difficulty.v3.3"
+        : "onaji-no-tsunagi-difficulty.v3.4-draft",
+      profileVersion: request.difficulty === 1
+        ? "onaji-no-tsunagi-profiles.v3.3"
+        : "onaji-no-tsunagi-profiles.v3.4-draft",
       seed: request.seed,
       generatedAt: null,
     },
@@ -285,15 +335,17 @@ export function generateWorksheet(request: GenerationRequest): Worksheet {
   };
 }
 
-function passesUniqueFiveByFiveGates(
+function passesUniquePathCoverGates(
   usedCellCount: number,
   geometry: GeneratedPuzzle["geometry"],
   entry: UniquePathCoverEntryAnalysis,
-  profile: FiveByFiveTerminalProfile,
+  profile: UniquePathCoverProfile,
 ): boolean {
+  const cellCount = profile.width * profile.height;
   return usedCellCount
-      >= UNIQUE_FIVE_BY_FIVE_PROFILE.minimumUsedCellCount
-    && geometry.totalEdgeCount === 25 - profile.pathCount
+      >= profile.minimumUsedCellCount
+    && usedCellCount <= profile.maximumUsedCellCount
+    && geometry.totalEdgeCount === cellCount - profile.pathCount
     && geometry.unexplainedUnitBayCount === 0
     && geometry.totalTurnCount
       <= profile.maximumTotalTurnCount

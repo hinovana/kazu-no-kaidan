@@ -23,6 +23,13 @@
   font-weight: 700;
 }
 
+.ots-reference-link {
+  display: inline-block;
+  margin-left: 18px;
+  color: var(--ots-accent-dark);
+  font-weight: 700;
+}
+
 .ots-page-kicker,
 .ots-sheet-kicker {
   margin: 22px 0 4px;
@@ -131,7 +138,9 @@
 .ots-secondary-button:focus-visible,
 .ots-control-panel input:focus-visible,
 .ots-control-panel select:focus-visible,
-.ots-back-link:focus-visible {
+.ots-back-link:focus-visible,
+.ots-reference-link:focus-visible,
+.ots-file-picker input:focus-visible {
   outline: 3px solid rgb(20 124 121 / 35%);
   outline-offset: 2px;
 }
@@ -304,20 +313,20 @@
   stroke-linejoin: round;
 }
 
+.ots-cell-coordinate {
+  fill: #61706c;
+  font-size: 17px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
 .ots-answer-line {
   fill: none;
   stroke: var(--ots-ink);
   stroke-width: 14;
   stroke-linecap: round;
   stroke-linejoin: round;
-}
-
-.ots-answer-line--1 {
-  stroke-dasharray: 26 12;
-}
-
-.ots-answer-line--2 {
-  stroke-dasharray: 8 10;
+  shape-rendering: geometricPrecision;
 }
 
 .ots-puzzle-id {
@@ -372,10 +381,262 @@
   font-variant-numeric: tabular-nums;
 }
 
+.ots-reference-review {
+  max-width: 1500px;
+}
+
+.ots-reference-loader {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto auto;
+  gap: 14px 18px;
+  align-items: center;
+  margin: 20px 0;
+  padding: 20px;
+  border: 1px solid #cbd5d1;
+  border-radius: 16px;
+  background: #f7faf8;
+}
+
+.ots-reference-loader > * {
+  min-width: 0;
+}
+
+.ots-reference-loader h2,
+.ots-reference-loader p {
+  margin: 0;
+}
+
+.ots-reference-loader p {
+  margin-top: 6px;
+  line-height: 1.65;
+}
+
+.ots-reference-loader .ots-control-note {
+  grid-column: 1 / -1;
+}
+
+.ots-file-picker {
+  display: grid;
+  gap: 6px;
+  font-weight: 800;
+}
+
+.ots-file-picker input {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 320px;
+  padding: 8px;
+  border: 1px solid #99aaa4;
+  border-radius: 8px;
+  background: white;
+  color: var(--ots-ink);
+  font: inherit;
+}
+
+.ots-decode-errors {
+  max-height: 360px;
+  overflow: auto;
+  margin: 14px 0 0;
+  padding-left: 24px;
+  text-align: left;
+}
+
+.ots-decode-errors li + li {
+  margin-top: 8px;
+}
+
+.ots-reference-results {
+  margin-top: 22px;
+}
+
+.ots-source-pdf-check {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(240px, auto);
+  gap: 14px 18px;
+  align-items: center;
+  margin: 20px 0;
+  padding: 18px 20px;
+  border: 1px solid #b8cbc5;
+  border-radius: 14px;
+  background: #eef7f4;
+}
+
+.ots-source-pdf-check h2,
+.ots-source-pdf-check p {
+  margin: 0;
+}
+
+.ots-source-pdf-check p {
+  margin-top: 6px;
+  line-height: 1.65;
+}
+
+.ots-source-pdf-check code,
+.ots-reference-hash {
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+}
+
+.ots-pdf-check-result {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 4px;
+  padding: 11px 13px;
+  border-radius: 9px;
+}
+
+.ots-pdf-check-result--waiting {
+  background: #f5f7f6;
+  color: var(--ots-muted);
+}
+
+.ots-pdf-check-result--match {
+  background: #dff3ea;
+  color: #175d49;
+}
+
+.ots-pdf-check-result--mismatch {
+  background: #fff0ed;
+  color: #842e1e;
+}
+
+.ots-reference-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.ots-reference-summary div {
+  display: grid;
+  gap: 5px;
+  padding: 14px;
+  border: 1px solid #cbd5d1;
+  border-radius: 10px;
+  background: #f4f7f5;
+}
+
+.ots-reference-summary span {
+  color: var(--ots-muted);
+  font-size: 0.8rem;
+}
+
+.ots-reference-summary strong {
+  overflow-wrap: anywhere;
+}
+
+.ots-reference-warning {
+  padding: 12px 15px;
+  border-left: 5px solid #d49033;
+  background: #fff8e7;
+  color: #6a4718;
+  font-weight: 700;
+}
+
+.ots-reference-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.ots-reference-card {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #cbd5d1;
+  border-radius: 14px;
+  background: var(--ots-paper);
+  box-shadow: 0 8px 24px rgb(31 63 54 / 8%);
+}
+
+.ots-reference-card > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+}
+
+.ots-reference-card h2,
+.ots-reference-source {
+  margin: 0;
+}
+
+.ots-reference-source {
+  color: var(--ots-muted);
+  font-size: 0.82rem;
+}
+
+.ots-transcription-status {
+  flex: none;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.ots-transcription-status--draft {
+  background: #fff0d6;
+  color: #7c4a00;
+}
+
+.ots-transcription-status--double-checked {
+  background: #dff3ea;
+  color: #175d49;
+}
+
+.ots-reference-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 14px 0;
+}
+
+.ots-reference-facts div {
+  padding: 8px;
+  background: #f4f7f5;
+}
+
+.ots-reference-facts dt {
+  color: var(--ots-muted);
+  font-size: 0.72rem;
+}
+
+.ots-reference-facts dd {
+  margin: 2px 0 0;
+  font-weight: 800;
+}
+
+.ots-coordinate-details {
+  margin-top: 12px;
+}
+
+.ots-coordinate-details summary {
+  cursor: pointer;
+  color: var(--ots-teal);
+  font-weight: 800;
+}
+
+.ots-coordinate-details table {
+  width: 100%;
+  margin-top: 10px;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.ots-coordinate-details th,
+.ots-coordinate-details td {
+  padding: 6px;
+  border-bottom: 1px solid #d5ddd9;
+  text-align: left;
+}
+
 @media (max-width: 720px) {
   .ots-control-grid,
-  .ots-worksheet-grid {
-    grid-template-columns: 1fr;
+  .ots-worksheet-grid,
+  .ots-reference-loader,
+  .ots-source-pdf-check,
+  .ots-reference-grid,
+  .ots-reference-summary {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .ots-seed-field {
@@ -388,6 +649,23 @@
 
   .ots-student-fields {
     min-width: 0;
+  }
+
+  .ots-reference-link {
+    display: block;
+    margin: 10px 0 0;
+  }
+
+  .ots-reference-loader .ots-control-note {
+    grid-column: auto;
+  }
+
+  .ots-reference-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ots-coordinate-details {
+    overflow-x: auto;
   }
 }
 

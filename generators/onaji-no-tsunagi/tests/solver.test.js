@@ -2,12 +2,52 @@ import assert from "node:assert/strict";
 import {
   optimizeSolution,
 } from "../domain/solver/optimize-solution.ts";
+import {
+  countPerfectMatchings,
+  listSameSymbolPartners,
+} from "../domain/solver/enumerate-pairings.ts";
+import {
+  isBitSet,
+  setBit,
+} from "../domain/solver/residual-reachability.ts";
 import { solvePuzzle } from "../domain/solver/solve-puzzle.ts";
 import {
   calculateSolutionCost,
   compareSolutionCost,
 } from "../domain/validation/analyze-solution-geometry.ts";
 import { validateSolution } from "../domain/validation/validate-solution.ts";
+
+const sixSameSymbolTerminals = Array.from({ length: 6 }, (_, index) => ({
+  terminalId: `six-${index + 1}`,
+  symbol: "circle",
+  row: Math.floor(index / 3),
+  column: index % 3,
+}));
+assert.equal(
+  listSameSymbolPartners(
+    sixSameSymbolTerminals[0],
+    sixSameSymbolTerminals,
+  ).length,
+  5,
+);
+assert.equal(countPerfectMatchings(6), 15);
+assert.equal(countPerfectMatchings(4) * countPerfectMatchings(4), 9);
+assert.equal(
+  countPerfectMatchings(4) ** 3,
+  27,
+);
+assert.equal(
+  countPerfectMatchings(6)
+    * countPerfectMatchings(4)
+    * countPerfectMatchings(4),
+  135,
+);
+
+const thirtySixCellMask = setBit(setBit(0n, 0), 35);
+assert.equal(isBitSet(thirtySixCellMask, 0), true);
+assert.equal(isBitSet(thirtySixCellMask, 35), true);
+assert.equal(isBitSet(thirtySixCellMask, 31), false);
+assert.notEqual(1 << 35, Number(thirtySixCellMask));
 
 const multiplePairingPuzzle = {
   schemaVersion: "onaji-no-tsunagi.puzzle.v1",

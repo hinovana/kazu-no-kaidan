@@ -1,6 +1,6 @@
 import type { DifficultyLevel } from "./difficulty.ts";
 
-export type AvailableDifficultyLevel = Extract<DifficultyLevel, 1>;
+export type AvailableDifficultyLevel = Extract<DifficultyLevel, 1 | 2 | 3>;
 export type PuzzleCount = 1 | 2 | 3 | 4;
 
 export interface GenerationRequest {
@@ -11,6 +11,7 @@ export interface GenerationRequest {
 
 export type CandidateRejectionReason =
   | "route_plan_not_constructed"
+  | "construction_state_budget_exhausted"
   | "duplicate_topology_in_worksheet"
   | "known_solution_invalid"
   | "validity_solver_budget_exhausted"

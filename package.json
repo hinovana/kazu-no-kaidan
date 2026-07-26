@@ -18,6 +18,7 @@
     "test:kazu-sagashi:corpus": "node generators/kazu-sagashi/tests/corpus.mjs",
     "test:kokugo-no-tane:corpus": "node generators/kokugo-no-tane/tests/corpus.mjs",
     "test:onaji-no-tsunagi:corpus": "node generators/onaji-no-tsunagi/tests/corpus.mjs",
+    "test:onaji-no-tsunagi:6x6-corpus": "node generators/onaji-no-tsunagi/tests/six-by-six-corpus.mjs",
     "test:kokugo-no-tane:ai:live": "node generators/kokugo-no-tane/tests/ai-proxy-live.mjs"
   },
   "dependencies": {

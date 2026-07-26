@@ -1,7 +1,6 @@
 import {
-  getFiveByFiveTerminalProfile,
-  UNIQUE_FIVE_BY_FIVE_PROFILE,
-} from "../generation/build-unique-five-by-five.ts";
+  getUniquePathCoverProfile,
+} from "../generation/build-unique-path-cover.ts";
 import { countPerfectMatchings } from "../solver/enumerate-pairings.ts";
 import type { GenerationRequest } from "../types/generation.ts";
 import type {
@@ -67,8 +66,8 @@ export function runMachineChecks(
     aggregateCheck(
       "entry_structure_present",
       puzzles.map((entry) => {
-        const profile = getFiveByFiveTerminalProfile(
-          entry.provenance.terminalPattern,
+        const profile = getUniquePathCoverProfile(
+          entry.provenance.profileId,
         );
         const expectedPairingChoiceCount = profile.symbolPathCounts.reduce(
           (product, pathCount) => (
@@ -77,7 +76,7 @@ export function runMachineChecks(
           1,
         );
         return entry.entry.pattern === "unique_path_cover"
-        && entry.entry.terminalPattern === profile.pattern
+        && entry.entry.terminalPattern === profile.terminalPattern
         && entry.entry.machineStatus === "entry_candidate"
         && entry.entry.symbolGroups.length === 3
         && entry.entry.pairingChoiceCount === expectedPairingChoiceCount
@@ -92,14 +91,17 @@ export function runMachineChecks(
     aggregateCheck(
       "solution_geometry_natural",
       puzzles.map((entry) => {
-        const profile = getFiveByFiveTerminalProfile(
-          entry.provenance.terminalPattern,
+        const profile = getUniquePathCoverProfile(
+          entry.provenance.profileId,
         );
+        const cellCount = profile.width * profile.height;
         return entry.answerCoverage.usedCellCount
-          >= UNIQUE_FIVE_BY_FIVE_PROFILE.minimumUsedCellCount
+          >= profile.minimumUsedCellCount
+        && entry.answerCoverage.usedCellCount
+          <= profile.maximumUsedCellCount
         && entry.puzzle.terminals.length === profile.terminalCount
         && entry.canonicalSolution.paths.length === profile.pathCount
-        && entry.geometry.totalEdgeCount === 25 - profile.pathCount
+        && entry.geometry.totalEdgeCount === cellCount - profile.pathCount
         && entry.geometry.unexplainedUnitBayCount === 0
         && entry.geometry.totalTurnCount
           <= profile.maximumTotalTurnCount
@@ -147,11 +149,14 @@ export function runMachineChecks(
     ),
     aggregateCheck(
       "render_geometry_valid",
-      puzzles.map((entry) => (
-        entry.puzzle.width === 5
-        && entry.puzzle.height === 5
-        && [6, 8, 10].includes(entry.puzzle.terminals.length)
-      )),
+      puzzles.map((entry) => {
+        const profile = getUniquePathCoverProfile(
+          entry.provenance.profileId,
+        );
+        return entry.puzzle.width === profile.width
+          && entry.puzzle.height === profile.height
+          && entry.puzzle.terminals.length === profile.terminalCount;
+      }),
     ),
   ];
   return {
@@ -160,7 +165,7 @@ export function runMachineChecks(
     qualityAssessment: {
       status: "structural_candidate_only",
       reason: [
-        "5×5・6/8/10端点の唯一解、ペアリング、取っ掛かり、経路形状を機械検査済みです。",
+        "5×5・6/8/10端点または6×6・10/12/14端点の唯一解、ペアリング、取っ掛かり、経路形状を機械検査済みです。",
         "挑戦したくなるか、解いて面白いか、児童向け難易度は人間未確認です。",
       ].join(""),
     },

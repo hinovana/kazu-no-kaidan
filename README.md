@@ -19,7 +19,7 @@
 - `generators/kazu-no-kaidan/`: 数字の階段
 - `generators/kazu-sagashi/`: かずさがし。入門のレベル1、3種類の問題を均等に混ぜるレベル2、リンゴとナシの関係を探すレベル3、3種類の大小関係を扱う「レベル: ノイマン（試験版）」に対応します。通常仕様は [`generators/kazu-sagashi/SPEC.md`](generators/kazu-sagashi/SPEC.md)、ノイマン専用仕様は [`generators/kazu-sagashi/SPEC-NEUMANN.md`](generators/kazu-sagashi/SPEC-NEUMANN.md) を参照してください。多数seedを複数解法で比較する開発用画面は [`generators/kazu-sagashi/difficulty-lab.html`](generators/kazu-sagashi/difficulty-lab.html) です。
 - `generators/kokugo-no-tane/`: こくごのたね。TypeScript・ReactのSPA教材モジュールとして、小学1〜3年生向けの物語文と標準4問をseed付きで生成する開発確認用ブラウザプロトタイプです。構造的自動検査は通過していますが人間未確認であり、児童利用や学力判定には使用できません。設計資料は [`generators/kokugo-no-tane/docs/README.md`](generators/kokugo-no-tane/docs/README.md) を参照してください。
-- `generators/onaji-no-tsunagi/`: おなじのつなぎ。同じ形を2個ずつ、同じマスを共有しない線で結ぶ問題をseed付きで生成するTypeScript・Reactの開発確認用SPA教材モジュールです。v3.3は5×5へ6/8/10個の端点と独立した低曲がり経路3〜5本を構成し、同記号4個の組み方を含めて正規化解が1個と完全探索で証明できた問題だけを表示します。レベル1のみ実装済みで、レベル2〜4は唯一解文法の準備中です。人間レビュー・難易度校正前のため児童利用はできません。契約は [`generators/onaji-no-tsunagi/SPEC.md`](generators/onaji-no-tsunagi/SPEC.md) を参照してください。
+- `generators/onaji-no-tsunagi/`: おなじのつなぎ。同じ形を2個ずつ、同じマスを共有しない線で結ぶ問題をseed付きで生成するTypeScript・Reactの開発確認用SPA教材モジュールです。通常の開発画面で、v3.3の5×5・6/8/10端点（レベル1）と、v3.4 draftの6×6・10/12/14端点（暫定レベル2/3）を選べます。同記号4個・6個の組み方を含めて正規化解が1個と完全探索で証明できた問題だけを表示します。人間レビュー・難易度校正・公開判定前のため、児童利用はできません。契約は [`generators/onaji-no-tsunagi/SPEC.md`](generators/onaji-no-tsunagi/SPEC.md) を参照してください。
 
 ## 起動
 
@@ -33,6 +33,7 @@ npm run typecheck
 npm test
 npm run test:kazu-sagashi:corpus
 npm run test:onaji-no-tsunagi:corpus
+npm run test:onaji-no-tsunagi:6x6-corpus
 ```
 
 「こくごのたね」で開発用AI生成を使う場合は、Codex CLIへログインした状態で、別ターミナルからローカルAIプロキシを起動します。評価フェーズの既定providerはAPI課金を使わないCodexヘッドレス実行です。

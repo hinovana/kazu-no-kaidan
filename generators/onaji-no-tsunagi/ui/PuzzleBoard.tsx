@@ -5,12 +5,18 @@ export interface PuzzleBoardProps {
   readonly puzzle: Puzzle;
   readonly solution: Solution | null;
   readonly mode: "problem" | "answer";
+  readonly showCoordinates?: boolean;
 }
 
 const CELL_SIZE = 100;
 const MARKER_RADIUS = 27;
 
-export function PuzzleBoard({ puzzle, solution, mode }: PuzzleBoardProps) {
+export function PuzzleBoard({
+  puzzle,
+  solution,
+  mode,
+  showCoordinates = false,
+}: PuzzleBoardProps) {
   const width = puzzle.width * CELL_SIZE;
   const height = puzzle.height * CELL_SIZE;
   return (
@@ -42,9 +48,23 @@ export function PuzzleBoard({ puzzle, solution, mode }: PuzzleBoardProps) {
           y2={row * CELL_SIZE}
         />
       ))}
+      {showCoordinates
+        ? Array.from({ length: puzzle.height }, (_, row) => (
+            Array.from({ length: puzzle.width }, (_, column) => (
+              <text
+                className="ots-cell-coordinate"
+                key={`coordinate-${row}-${column}`}
+                x={column * CELL_SIZE + 8}
+                y={row * CELL_SIZE + 19}
+              >
+                {row},{column}
+              </text>
+            ))
+          ))
+        : null}
       {solution?.paths.map((path, pathIndex) => (
         <polyline
-          className={`ots-answer-line ots-answer-line--${pathIndex % 3}`}
+          className="ots-answer-line"
           key={`path-${pathIndex}`}
           points={path.cells.map((cell) => (
             `${cell.column * CELL_SIZE + CELL_SIZE / 2},${cell.row * CELL_SIZE + CELL_SIZE / 2}`
