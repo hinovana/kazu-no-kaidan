@@ -1,3 +1,11 @@
+/**
+ * Solutionの辺数、曲がり、U字、形状costを分析する。
+ *
+ * 作問候補の比較と表示用canonical solutionの選択材料を提供する。
+ *
+ * @packageDocumentation
+ */
+
 import { adjacentIndices } from "../grid/adjacency.ts";
 import {
   cellKey,
@@ -17,6 +25,11 @@ interface AnalyzedPath extends PathGeometryAnalysis {
   readonly unitBayCount: number;
 }
 
+/**
+ * optimizerが使う辞書式costを解から計算する。
+ *
+ * 解の有効性は検査せず、総辺数、一マスU字、総曲がり、正規化hashを返す。
+ */
 export function calculateSolutionCost(
   puzzle: Puzzle,
   solution: Solution,
@@ -37,6 +50,11 @@ export function calculateSolutionCost(
   };
 }
 
+/**
+ * 二つのcostを総辺数、一マスU字、総曲がり、正規化hashの順で比較する。
+ *
+ * 負数なら`left`、正数なら`right`が小さく、0なら同一costである。
+ */
 export function compareSolutionCost(
   left: SolutionCost,
   right: SolutionCost,
@@ -47,6 +65,11 @@ export function compareSolutionCost(
     || left.normalizedSolutionHash.localeCompare(right.normalizedSolutionHash);
 }
 
+/**
+ * profile別品質gateで使う経路形状と未使用セル成分を集計する。
+ *
+ * 一マスU字は、経路上で3辺進んだ先が開始セルと隣接する形として数える。
+ */
 export function analyzeSolutionGeometry(
   puzzle: Puzzle,
   solution: Solution,

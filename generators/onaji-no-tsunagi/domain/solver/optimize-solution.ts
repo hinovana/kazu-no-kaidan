@@ -1,3 +1,11 @@
+/**
+ * 有効な端点接続を完全探索し、経路形状costが最小のSolutionを選ぶ。
+ *
+ * 解数証明を行う独立solverとは役割を分け、表示に適したcanonical solutionを求める。
+ *
+ * @packageDocumentation
+ */
+
 import { adjacentIndices } from "../grid/adjacency.ts";
 import {
   cellIndex,
@@ -33,7 +41,9 @@ import {
   terminalSearchStateKey,
 } from "./search-grid.ts";
 
+/** cost最小化solverの探索設定。 */
 export interface OptimizeSolutionOptions {
+  /** 探索状態の上限。超過時は既知の最良解と下界を返す。 */
   readonly stateBudget?: number;
 }
 
@@ -61,6 +71,17 @@ interface TerminalSelection {
   readonly partners: readonly Terminal[];
 }
 
+/**
+ * 有効な植え込み解を初期incumbentとして、全partner・全経路から最小cost解を探す。
+ *
+ * @remarks
+ * costは総辺数、一マスU字、総曲がり、正規化hashの辞書式順である。
+ * `plantedSolution`は探索を狭める制約ではなく、必ず独立探索で最適性を確認する。
+ * `optimal`だけが探索完走を示し、`budget_exhausted`のincumbentは最適とは限らない。
+ *
+ * @throws `TypeError`
+ * Puzzleまたは植え込み解がvalidatorの規則を満たさない場合。
+ */
 export function optimizeSolution(
   puzzle: Puzzle,
   plantedSolution: Solution,

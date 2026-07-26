@@ -1,9 +1,25 @@
+/**
+ * Puzzleに対する任意のSolutionが、接続・隣接・非共有のルールを満たすか検査する。
+ *
+ * 保存済みのcanonical solutionとの一致ではなく、ルールを満たす任意解を受理する。
+ *
+ * @packageDocumentation
+ */
+
 import { areOrthogonallyAdjacent, cellKey, isCellInBounds } from "../grid/coordinates.ts";
 import type { Puzzle } from "../types/puzzle.ts";
 import type { Solution } from "../types/solution.ts";
 import type { ValidationIssue, ValidationResult } from "./validate-puzzle.ts";
 import { validatePuzzle } from "./validate-puzzle.ts";
 
+/**
+ * 保存済み正解との一致ではなく、Puzzle規則を満たす任意の解を判定する。
+ *
+ * @remarks
+ * 上下左右の連続性、自己再訪、経路間共有、端点記号、端点の一回使用、
+ * 他端点の途中通過を検査する。全セル使用や唯一解は規則ではないため
+ * このvalidatorでは要求しない。
+ */
 export function validateSolution(puzzle: Puzzle, solution: Solution): ValidationResult {
   const puzzleValidation = validatePuzzle(puzzle);
   if (!puzzleValidation.valid) {

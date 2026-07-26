@@ -1,3 +1,11 @@
+/**
+ * 唯一解問題の取っ掛かり、端点集中、pairing候補、経路干渉を分析する。
+ *
+ * 機械的な構造分析であり、人間レビューや児童による難易度校正の代替ではない。
+ *
+ * @packageDocumentation
+ */
+
 import { adjacentIndices } from "../grid/adjacency.ts";
 import { cellIndex } from "../grid/coordinates.ts";
 import { countPerfectMatchings } from "../solver/enumerate-pairings.ts";
@@ -18,6 +26,9 @@ interface UniquePathCoverEntryCriteria {
   readonly maximumLineConcentration: number;
 }
 
+/**
+ * 端点配置がprofileの取っ掛かりgateを満たすかを表す内部結果。
+ */
 type UniquePathCoverEntryResult =
   | {
       readonly status: "candidate";
@@ -32,6 +43,13 @@ type UniquePathCoverEntryResult =
         | "line_concentration";
     };
 
+/**
+ * 端点配置だけから、pairing候補、局所出口、行列集中を検査する。
+ *
+ * @remarks
+ * `candidate`はprofileの機械gate通過を示すだけで、人が初手を発見できること、
+ * 面白さ、体感難易度を保証しない。唯一解もこの関数では検査しない。
+ */
 export function analyzeUniquePathCoverEntry(
   puzzle: Puzzle,
   criteria: UniquePathCoverEntryCriteria,

@@ -1,5 +1,18 @@
+/**
+ * 生成来歴、機械gate、未実施の人間確認を開発者向けに表示する。
+ *
+ * 印刷物には含めず、自動検査と教材品質の証拠を混同しないための診断UIを提供する。
+ *
+ * @packageDocumentation
+ */
+
 import type { Worksheet } from "../domain/types/worksheet.ts";
 
+/**
+ * 機械gateと生成来歴を開発者向けに表示する、印刷対象外の診断panel。
+ *
+ * 自動検査と、人間レビュー・難易度校正の未実施状態を区別して表示する。
+ */
 export function DeveloperDiagnostics({ worksheet }: { readonly worksheet: Worksheet }) {
   return (
     <details className="ots-diagnostics screen-only">

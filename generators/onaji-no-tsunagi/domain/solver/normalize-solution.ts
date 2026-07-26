@@ -1,6 +1,19 @@
+/**
+ * 経路の向きと列挙順に依存しないSolutionの正規形と識別keyを作る。
+ *
+ * 見かけ上の順序だけが異なる解を、同じ意味の解として数えるために使用する。
+ *
+ * @packageDocumentation
+ */
+
 import { cellIndex } from "../grid/coordinates.ts";
 import type { Solution } from "../types/solution.ts";
 
+/**
+ * 経路の向きと列挙順を正規化し、意味が同じ解を同じ表現へ揃える。
+ *
+ * 使用セル、経路形状、端点pairの違いは保持する。
+ */
 export function normalizeSolution(solution: Solution, width: number): Solution {
   const paths = solution.paths.map((path) => {
     const forward = path.cells.map((cell) => cellIndex(cell, width));
@@ -23,6 +36,11 @@ export function normalizeSolution(solution: Solution, width: number): Solution {
   return { paths };
 }
 
+/**
+ * 正規化解の同一性判定に使う決定的な文字列表現を返す。
+ *
+ * 暗号学的hashではなく、正規化した全セル列そのものを含む。
+ */
 export function solutionHash(solution: Solution, width: number): string {
   const normalized = normalizeSolution(solution, width);
   return normalized.paths.map((path) => (

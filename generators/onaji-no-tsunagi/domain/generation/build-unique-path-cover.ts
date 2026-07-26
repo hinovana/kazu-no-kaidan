@@ -1,3 +1,11 @@
+/**
+ * 盤面全体を覆う経路を先に組み立て、作問用のpath plan候補を生成する。
+ *
+ * profileごとの端点数と探索予算を扱い、後段が独立solverで検証できる候補を返す。
+ *
+ * @packageDocumentation
+ */
+
 import { indexToCell } from "../grid/coordinates.ts";
 import type {
   SymbolId,
@@ -21,6 +29,9 @@ interface PathCandidate {
   readonly occupiedMask: bigint;
 }
 
+/**
+ * 残余maskへ収まる候補を、同じ条件では同じ順序で返す経路候補source。
+ */
 interface PathCandidateSource {
   candidatesFor(
     length: number,
@@ -28,6 +39,12 @@ interface PathCandidateSource {
   ): readonly PathCandidate[];
 }
 
+/**
+ * solution-first構成と後段の品質検査で共有する、版付き盤面profile。
+ *
+ * 状態数と形状の上限はprofile別コーパスで固定し、同じversionのまま
+ * 黙って緩和しない。
+ */
 export interface UniquePathCoverProfile {
   readonly profileId: UniquePathCoverProfileId;
   readonly width: number;
@@ -50,6 +67,12 @@ export interface UniquePathCoverProfile {
   readonly maximumProofStates: number;
 }
 
+/**
+ * exact-cover構成の結果。
+ *
+ * `built`は植え込み経路を構成できたことだけを示す。問題の有効性、唯一解、
+ * 最適性は後段の独立validator・solver・optimizerで証明する。
+ */
 type BuildUniquePathCoverResult =
   | {
       readonly status: "built";
@@ -260,12 +283,16 @@ let lastSixBySixRouteCover:
     }
   | undefined;
 
+/** profile IDに対応する読取専用の構成・品質gateを返す。 */
 export function getUniquePathCoverProfile(
   profileId: UniquePathCoverProfileId,
 ): UniquePathCoverProfile {
   return UNIQUE_PATH_COVER_PROFILES[profileId];
 }
 
+/**
+ * profileの`symbolPathCounts`を三記号へ割り当てる異なるvariant数を返す。
+ */
 export function getSymbolAssignmentVariantCount(
   profileId: UniquePathCoverProfileId,
 ): number {
@@ -273,6 +300,15 @@ export function getSymbolAssignmentVariantCount(
   return enumerateSymbolAssignments(profile.symbolPathCounts).length;
 }
 
+/**
+ * 難易度、Worksheet内の位置、問題数、request seedからprofileを決定する。
+ *
+ * @remarks
+ * 複数問では仕様で固定した並びを使い、一問だけの場合にseedで候補を選ぶ。
+ *
+ * @throws `RangeError`
+ * `puzzleIndex`がWorksheet範囲外、または未対応の条件の場合。
+ */
 export function selectUniquePathCoverProfileId(
   difficulty: AvailableDifficultyLevel,
   requestSeed: string,
@@ -318,6 +354,20 @@ export function selectUniquePathCoverProfileId(
   throw new RangeError("unsupported difficulty");
 }
 
+/**
+ * 独立した低曲がり経路のexact coverをsolution-firstで構成し、端点化する。
+ *
+ * @remarks
+ * 5×5の候補集合と列挙順はv3.3互換を保つ。6×6では経路geometryを
+ * `routeSeed`単位で再利用し、`symbolAssignmentVariant`だけを変えて記号
+ * 割り当てを探索できる。返却した`Puzzle`には植え込みpartnerを含めない。
+ *
+ * @param routeSeed - 経路候補と列挙順を決めるseed。
+ * @param random - `routeSeed`から作成した決定的な疑似乱数source。
+ * @param profileId - 盤面寸法、端点数、形状gate、探索予算を選ぶprofile。
+ * @param options - 6×6の記号割り当てvariantと、成果物ID用のseed。
+ * @returns 構成済みplan、構成不能、構成予算超過のいずれか。
+ */
 export function buildUniquePathCover(
   routeSeed: string,
   random: SeededRandom,

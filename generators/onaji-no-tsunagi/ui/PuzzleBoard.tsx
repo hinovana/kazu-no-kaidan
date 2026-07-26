@@ -1,3 +1,11 @@
+/**
+ * Puzzleと任意のSolutionを、画面・印刷共通のSVG盤面として描画する。
+ *
+ * 問題用では端点だけを、答案用では端点と解答経路を表示する。
+ *
+ * @packageDocumentation
+ */
+
 import type { Puzzle, Terminal } from "../domain/types/puzzle.ts";
 import type { Solution } from "../domain/types/solution.ts";
 import { symbolLabel } from "./symbol-label.ts";
@@ -12,6 +20,13 @@ interface PuzzleBoardProps {
 const CELL_SIZE = 100;
 const MARKER_RADIUS = 27;
 
+/**
+ * 問題と答えで共有するSVG盤面component。
+ *
+ * @remarks
+ * 問題面へ答え線を埋め込まないため、`mode: "problem"`では呼出側が
+ * `solution: null`を渡す。`showCoordinates`は原本転記の開発確認専用である。
+ */
 export function PuzzleBoard({
   puzzle,
   solution,

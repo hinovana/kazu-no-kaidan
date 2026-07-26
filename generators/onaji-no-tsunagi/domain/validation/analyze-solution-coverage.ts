@@ -1,7 +1,18 @@
+/**
+ * Solutionが使用するセル数と盤面被覆率を集計する。
+ *
+ * @packageDocumentation
+ */
+
 import { cellKey } from "../grid/coordinates.ts";
 import type { Puzzle } from "../types/puzzle.ts";
 import type { Solution, SolutionCoverage } from "../types/solution.ts";
 
+/**
+ * 解答経路が使用する一意なセル数と盤面比率を集計する。
+ *
+ * `coverageRatio`は小数第3位へ丸める。解の有効性は別途validatorで確認する。
+ */
 export function analyzeSolutionCoverage(
   puzzle: Pick<Puzzle, "width" | "height">,
   solution: Solution,

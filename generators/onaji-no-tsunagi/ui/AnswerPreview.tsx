@@ -1,7 +1,18 @@
+/**
+ * canonical solutionの解答線を含む、印刷用答案ページを描画する。
+ *
+ * @packageDocumentation
+ */
+
 import type { Worksheet } from "../domain/types/worksheet.ts";
 import { PuzzleBoard } from "./PuzzleBoard.tsx";
 import { DifficultyStars, SheetHeader } from "./WorksheetPreview.tsx";
 
+/**
+ * canonical solutionだけを描画する答案用紙。
+ *
+ * `hidden`は画面上の表示だけを隠し、印刷処理が答案DOMを用意できるようにする。
+ */
 export function AnswerPreview({
   worksheet,
   hidden,

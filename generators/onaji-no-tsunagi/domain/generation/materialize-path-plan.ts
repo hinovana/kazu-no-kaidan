@@ -1,3 +1,11 @@
+/**
+ * 抽象的なpath planへ端点ID、記号、route roleを割り当てる。
+ *
+ * 生成候補をvalidatorと独立solverが扱えるPuzzleとSolutionへ具体化する。
+ *
+ * @packageDocumentation
+ */
+
 import { cellIndex, cellKey } from "../grid/coordinates.ts";
 import { orderedTerminalIds } from "../solver/enumerate-pairings.ts";
 import type { Cell, Puzzle, SymbolId, Terminal } from "../types/puzzle.ts";
@@ -5,14 +13,23 @@ import type { PathSolution, Solution } from "../types/solution.ts";
 import type { RouteRoles } from "../types/worksheet.ts";
 import { stableHash } from "./random.ts";
 
+/**
+ * solution-first構成における経路の来歴上の役割。
+ *
+ * 問題ルールや画面上の意味は持たない。
+ */
 export type RouteRole = "spine" | "thread" | "scaffold";
 
+/** 端点化する前の、役割と記号を割り当てた一本の植え込み経路。 */
 export interface PlannedPath {
   readonly role: RouteRole;
   readonly symbol: SymbolId;
   readonly cells: readonly Cell[];
 }
 
+/**
+ * 植え込み経路を端点だけへ戻した問題と、独立検証用の生成来歴。
+ */
 export interface MaterializedPathPlan {
   readonly puzzle: Puzzle;
   readonly plantedSolution: Solution;
@@ -20,6 +37,16 @@ export interface MaterializedPathPlan {
   readonly topologyHash: string;
 }
 
+/**
+ * 計画経路を、端点だけの`Puzzle`と植え込み解へ決定的に変換する。
+ *
+ * @remarks
+ * terminal IDはrow-major順に付ける。`topologyHash`は回転、反転、記号名の
+ * 入れ替えを同一視し、同一Worksheet内の重複検出に使う。
+ *
+ * @throws `TypeError`
+ * 経路に端点がない、または`spine`・`thread`の役割が揃っていない場合。
+ */
 export function materializePathPlan(
   paths: readonly PlannedPath[],
   width: number,

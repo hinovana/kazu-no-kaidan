@@ -1,3 +1,11 @@
+/**
+ * solution-first作問、独立solver、最適化、品質gateを統括してWorksheetを生成する。
+ *
+ * 個々の探索規則は専用moduleへ委譲し、このmoduleは採用・棄却の流れを管理する。
+ *
+ * @packageDocumentation
+ */
+
 import { optimizeSolution } from "../solver/optimize-solution.ts";
 import { solvePuzzle } from "../solver/solve-puzzle.ts";
 import type {
@@ -49,6 +57,11 @@ const DRAFT_VERSIONS = {
   profileVersion: "onaji-no-tsunagi-profiles.v3.4-draft",
 } as const;
 
+/**
+ * Worksheet生成を続行できないdomain error。
+ *
+ * `detail`で候補予算超過と内部不変条件破損を区別する。
+ */
 export class GenerationFailure extends Error {
   readonly detail: GenerationError;
 
@@ -59,6 +72,19 @@ export class GenerationFailure extends Error {
   }
 }
 
+/**
+ * solution-first構成、独立solver、optimizer、品質gateを通してWorksheetを作る。
+ *
+ * @remarks
+ * 公開成果物へ採用するのは、partnerを固定しない完全探索で
+ * `solutionCount = { kind: "exact", count: 1 }`と証明できた候補だけである。
+ * 予算超過や複数解へfallbackしない。同じversionとrequestから同じ全fieldを
+ * 再現する。
+ *
+ * @throws `GenerationFailure`
+ * 候補上限までに採用問題を作れない場合、または植え込み解と独立検証の
+ * 不変条件が壊れた場合。
+ */
 export function generateWorksheet(request: GenerationRequest): Worksheet {
   const versions = request.difficulty === 1
     ? STABLE_VERSIONS

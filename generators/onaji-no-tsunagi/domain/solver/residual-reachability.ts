@@ -1,3 +1,16 @@
+/**
+ * 経路探索途中の残余盤面をBigInt bitsetで表し、到達可能性を判定する。
+ *
+ * solverとoptimizerが共有する枝刈り用の低水準処理をまとめる。
+ *
+ * @packageDocumentation
+ */
+
+/**
+ * 経路探索途中の残余盤面。
+ *
+ * `occupied`のセルと、探索target以外の端点セルは通過不能として扱う。
+ */
 export interface ResidualGrid {
   readonly width: number;
   readonly height: number;
@@ -5,6 +18,7 @@ export interface ResidualGrid {
   readonly terminalIndices: ReadonlySet<number>;
 }
 
+/** 残余盤面上でstartからtargetへ到達できるかを判定する。 */
 export function isReachable(
   grid: ResidualGrid,
   startIndex: number,
@@ -13,6 +27,11 @@ export function isReachable(
   return shortestPathDistance(grid, startIndex, targetIndex) !== null;
 }
 
+/**
+ * 残余盤面上の上下左右の最短辺数を返す。
+ *
+ * target以外の端点を中継せず、到達不能なら`null`を返す。
+ */
 export function shortestPathDistance(
   grid: ResidualGrid,
   startIndex: number,
@@ -60,10 +79,12 @@ export function shortestPathDistance(
   return null;
 }
 
+/** `bigint` bitmaskの指定indexが1かを判定する。 */
 export function isBitSet(bits: bigint, index: number): boolean {
   return (bits & (1n << BigInt(index))) !== 0n;
 }
 
+/** `bigint` bitmaskの指定indexを1にした値を返す。 */
 export function setBit(bits: bigint, index: number): bigint {
   return bits | (1n << BigInt(index));
 }

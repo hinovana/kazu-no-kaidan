@@ -1,3 +1,11 @@
+/**
+ * 原本参照JSONを読み込み、出典・転記状態・再描画盤面を開発者が確認する画面。
+ *
+ * 参照データは作問へ流用せず、原本照合専用として扱う。
+ *
+ * @packageDocumentation
+ */
+
 import {
   useState,
   type ChangeEvent,
@@ -48,6 +56,12 @@ type PdfCheckState =
       readonly message: string;
     };
 
+/**
+ * ローカルの原本参照JSONを再描画し、選択PDFのSHA-256を照合する開発画面。
+ *
+ * ファイルはブラウザ内だけで読み込み、生成処理やサーバーへ渡さない。
+ * デコード成功やSHA一致だけでは転記座標の正確性を証明しない。
+ */
 export function ReferenceCorpusReviewPage() {
   const [reviewState, setReviewState] = useState<ReviewState>({
     status: "empty",

@@ -1,17 +1,30 @@
+/**
+ * Puzzle単体の寸法、端点ID、座標、記号個数などの不変条件を検査する。
+ *
+ * @packageDocumentation
+ */
+
 import { cellKey, isCellInBounds } from "../grid/coordinates.ts";
 import type { Puzzle, SymbolId } from "../types/puzzle.ts";
 
+/** validatorが返す、機械判定用codeと人間向け説明。 */
 export interface ValidationIssue {
   readonly code: string;
   readonly message: string;
 }
 
+/** 複数のvalidation issueをまとめて返せる判定結果。 */
 export type ValidationResult =
   | { readonly valid: true }
   | { readonly valid: false; readonly issues: readonly ValidationIssue[] };
 
 const SYMBOLS: readonly SymbolId[] = ["circle", "triangle", "square"];
 
+/**
+ * Puzzleのschema、寸法、端点ID・座標・記号数を検査する。
+ *
+ * 解の存在、唯一性、難易度、profile別品質gateは検査しない。
+ */
 export function validatePuzzle(puzzle: Puzzle): ValidationResult {
   const issues: ValidationIssue[] = [];
 

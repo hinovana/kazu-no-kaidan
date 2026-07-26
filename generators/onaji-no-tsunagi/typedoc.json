@@ -1,0 +1,42 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "name": "おなじのつなぎ API リファレンス",
+  "tsconfig": "./tsconfig.docs.json",
+  "entryPoints": [
+    "./application",
+    "./domain",
+    "./ui",
+    "./module.tsx"
+  ],
+  "entryPointStrategy": "expand",
+  "exclude": [
+    "./application/generation-worker.ts"
+  ],
+  "out": "../../docs/onaji-no-tsunagi/reference",
+  "lang": "ja",
+  "readme": "none",
+  "cleanOutputDir": true,
+  "githubPages": true,
+  "customJs": "./docs/typedoc-custom.js",
+  "disableGit": true,
+  "gitRevision": "main",
+  "sourceLinkTemplate": "https://github.com/hinovana/kazu-no-kaidan/blob/{gitRevision}/generators/onaji-no-tsunagi/{path}#L{line}",
+  "searchInComments": true,
+  "useFirstParagraphOfCommentAsSummary": true,
+  "validation": {
+    "notExported": false,
+    "invalidLink": true,
+    "invalidPath": true,
+    "rewrittenLink": true,
+    "notDocumented": true
+  },
+  "requiredToBeDocumented": [
+    "Module",
+    "Variable",
+    "Function",
+    "Class",
+    "Interface",
+    "TypeAlias"
+  ],
+  "treatValidationWarningsAsErrors": true
+}

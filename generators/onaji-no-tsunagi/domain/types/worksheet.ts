@@ -1,3 +1,9 @@
+/**
+ * 生成済み問題、Worksheet、来歴、機械検査、人間向け説明材料の型を定義する。
+ *
+ * @packageDocumentation
+ */
+
 import type { DifficultyAnalysis } from "./difficulty.ts";
 import type { CandidateRejection, GenerationRequest } from "./generation.ts";
 import type {
@@ -17,6 +23,11 @@ interface EntrySymbolGroup {
   readonly pairingChoiceCount: number;
 }
 
+/**
+ * 端点だけから計算した、取っ掛かり候補とpairing候補数の機械分析。
+ *
+ * 人間が実際に選ぶ初手や体感難易度を示すものではない。
+ */
 export interface UniquePathCoverEntryAnalysis {
   readonly analysisVersion:
     | "onaji-no-tsunagi-entry.v3.3"
@@ -31,11 +42,17 @@ export interface UniquePathCoverEntryAnalysis {
   readonly machineStatus: "entry_candidate";
 }
 
+/** Worksheetへ保存する機械的な相互作用証拠の種類。 */
 export type InteractionMotifKind =
   | "forced_exit"
   | "pairing_choice"
   | "unique_solution";
 
+/**
+ * 局所制約または完全探索から作った機械証拠。
+ *
+ * 人間がこの順序や仮説で解いたという観察記録ではない。
+ */
 export interface InteractionWitness {
   readonly kind: InteractionMotifKind;
   readonly involvedTerminalIds: readonly string[];
@@ -47,28 +64,41 @@ export interface InteractionWitness {
   readonly exploredStateCount: number;
 }
 
+/**
+ * solution-first構成時の経路役割を、端点pairへ射影した生成来歴。
+ *
+ * 役割名は問題のルールや利用者向け意味を持たない。
+ */
 export interface RouteRoles {
   readonly spineTerminalIds: readonly [string, string];
   readonly threadTerminalIds: readonly [string, string];
   readonly scaffoldTerminalIdPairs: readonly (readonly [string, string])[];
 }
 
+/** 植え込み解と最適解の整合性について保存する証拠。 */
 export interface GenerationWitnessAnalysis {
   readonly plantedInflationEdgeCount: number;
   readonly rolePreservationStatus: "proven";
 }
 
+/** 一つの技術gateの識別子、合否、診断値。 */
 export interface MachineCheck {
   readonly checkId: string;
   readonly passed: boolean;
   readonly details: Readonly<Record<string, unknown>>;
 }
 
+/**
+ * Worksheet全体に対する機械gateの集約結果。
+ *
+ * 美しさ、面白さ、児童利用可否、難易度校正を証明しない。
+ */
 export interface MachineCheckReport {
   readonly allPassed: boolean;
   readonly checks: readonly MachineCheck[];
 }
 
+/** 同一Worksheetを再現するための版とrequest seed。 */
 export interface GenerationProvenance {
   readonly generatorVersion:
     | "onaji-no-tsunagi-generator.v3.3"
@@ -86,6 +116,7 @@ export interface GenerationProvenance {
   readonly seed: string;
 }
 
+/** 一問の候補選択と再現性を追跡する生成来歴。 */
 export interface PuzzleProvenance {
   readonly terminalPattern: TerminalMultiplicityPattern;
   readonly profileId: UniquePathCoverProfileId;
@@ -97,6 +128,11 @@ export interface PuzzleProvenance {
   readonly precedingRejections: readonly CandidateRejection[];
 }
 
+/**
+ * 唯一解、最適性、profile別機械gateを通過した一問分の成果物。
+ *
+ * 児童向け品質や体感難易度の確認済みを意味しない。
+ */
 export interface GeneratedPuzzle {
   readonly puzzle: Puzzle;
   readonly canonicalSolution: Solution;
@@ -123,6 +159,13 @@ export interface GeneratedPuzzle {
   readonly provenance: PuzzleProvenance;
 }
 
+/**
+ * 印刷・画面表示へ渡す決定的な教材成果物。
+ *
+ * @remarks
+ * 現在は常に`development_preview`かつ`childUsePermitted: false`であり、
+ * 機械検査合格だけを理由に児童利用へ変更してはならない。
+ */
 export interface Worksheet {
   readonly schemaVersion:
     | "onaji-no-tsunagi.worksheet.v3.3"

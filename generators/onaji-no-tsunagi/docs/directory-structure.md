@@ -46,7 +46,8 @@ generators/onaji-no-tsunagi/
 ├── SPEC.md
 ├── docs/
 │   ├── README.md
-│   └── directory-structure.md
+│   ├── directory-structure.md
+│   └── typedoc-custom.js
 ├── application/
 │   ├── decode-reference-corpus.ts
 │   ├── generate-worksheet-use-case.ts
@@ -114,7 +115,9 @@ generators/onaji-no-tsunagi/
 ├── module.tsx
 ├── redirect.ts
 ├── styles.css
-└── tsconfig.json
+├── tsconfig.docs.json
+├── tsconfig.json
+└── typedoc.json
 ```
 
 ## 3. ルート直下
@@ -127,7 +130,13 @@ generators/onaji-no-tsunagi/
 | `redirect.ts` | 旧URLをSPAのHash URLへ移動する |
 | `styles.css` | 画面、盤面SVG、診断表示、参照JSON確認、A4印刷を含む教材専用CSS |
 | `tsconfig.json` | この教材のTypeScript検査範囲と設定 |
-| `docs/` | 実装を読むための補助資料。仕様の正本は置かない |
+| `tsconfig.docs.json` | TypeDocがapplication、domain、UIを一つのprogramとして読むための設定 |
+| `typedoc.json` | HTML APIリファレンスの入口、出力先、document validationを定義する |
+| `docs/` | 実装を読むための補助資料と、TypeDoc画面の軽微な日本語補正。仕様の正本は置かない |
+
+TypeDocの生成物はリポジトリルートの
+`docs/onaji-no-tsunagi/reference/`へ置く。生成物を直接編集せず、
+`npm run docs:onaji-no-tsunagi`で再生成する。
 
 ## 4. `application/`: Webとdomainの境界
 

@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.app.json",
+  "include": [
+    "application/**/*.ts",
+    "domain/**/*.ts",
+    "ui/**/*.ts",
+    "ui/**/*.tsx",
+    "module.tsx"
+  ]
+}

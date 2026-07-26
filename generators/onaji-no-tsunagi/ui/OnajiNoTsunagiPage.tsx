@@ -1,3 +1,11 @@
+/**
+ * 生成条件入力、Web Worker実行、問題・解答previewを統括する教材画面。
+ *
+ * 通常生成と原本参照コーパス確認の画面modeを同じSPA入口で切り替える。
+ *
+ * @packageDocumentation
+ */
+
 import {
   useEffect,
   useRef,
@@ -37,6 +45,11 @@ const INITIAL_FORM: FormState = {
   seed: "onaji-start",
 };
 
+/**
+ * 通常のWorksheet生成画面と原本参照画面をquery modeで切り替える教材page。
+ *
+ * 通常生成はWeb Workerで実行し、画面unmount時に処理中Workerを終了する。
+ */
 export function OnajiNoTsunagiPage({ onRequestPrint }: GeneratorModuleProps) {
   const [searchParams] = useSearchParams();
   if (searchParams.get("mode") === "reference-review") {

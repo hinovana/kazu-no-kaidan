@@ -1,3 +1,11 @@
+/**
+ * 生成候補へ適用するvalidator、唯一解、profile、品質条件を一括実行する。
+ *
+ * 自動検査通過は、人間レビューや児童利用許可を意味しない。
+ *
+ * @packageDocumentation
+ */
+
 import {
   getUniquePathCoverProfile,
 } from "../generation/build-unique-path-cover.ts";
@@ -12,6 +20,13 @@ import { doesSolutionPreserveRouteRoles } from "./solution-route-roles.ts";
 import { validatePuzzle } from "./validate-puzzle.ts";
 import { validateSolution } from "./validate-solution.ts";
 
+/**
+ * 生成済み問題群に対し、仕様で要求する技術gateを再集約する。
+ *
+ * @remarks
+ * 合格は盤面・解・唯一性証拠・profile形状・再現性metadataの整合を示す。
+ * 美しさ、面白さ、難易度校正、児童利用可否を評価しない。
+ */
 export function runMachineChecks(
   request: GenerationRequest,
   puzzles: readonly GeneratedPuzzle[],

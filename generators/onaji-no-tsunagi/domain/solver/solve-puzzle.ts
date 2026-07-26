@@ -1,3 +1,11 @@
+/**
+ * Puzzleの端点情報だけから、partner選択を含む全ての有効解を探索する。
+ *
+ * 解数のexact/at-leastと探索予算超過を区別し、唯一解主張の証拠を提供する。
+ *
+ * @packageDocumentation
+ */
+
 import { adjacentIndices } from "../grid/adjacency.ts";
 import { cellIndex, indexToCell, manhattanDistance } from "../grid/coordinates.ts";
 import type { Puzzle, Terminal } from "../types/puzzle.ts";
@@ -23,16 +31,32 @@ import {
   terminalSearchStateKey,
 } from "./search-grid.ts";
 
+/**
+ * 独立solverの探索上限、補助制約、枝刈り設定。
+ *
+ * `requiredTerminalPairs`と`pathEdgeLimits`は反例・補助検査用に問題を狭める。
+ * generatorの唯一性証明では指定せず、端点だけから全partnerと全経路を調べる。
+ */
 export interface SolverOptions {
+  /** 探索状態の上限。超過時は`budget_exhausted`を返す。 */
   readonly stateBudget?: number;
+  /**
+   * 正規化した異なる解をこの数だけ見つけたら打ち切る。
+   * 打ち切り時の解数は`at-least`になる。
+   */
   readonly solutionLimit?: number;
+  /** 指定した端点pair以外を認めない補助制約。 */
   readonly requiredTerminalPairs?: readonly (readonly [string, string])[];
+  /** 指定した端点pairに許す最大辺数。 */
   readonly pathEdgeLimits?: readonly {
     readonly terminalIds: readonly [string, string];
     readonly maximumEdgeCount: number;
   }[];
+  /** 新しい正規化解を見つけるたびに呼ぶ診断用callback。 */
   readonly solutionObserver?: (solution: Solution) => void;
+  /** 連結成分ごとの記号偶奇によるsoundな枝刈り。既定値は`true`。 */
   readonly useComponentParity?: boolean;
+  /** 解へ到達しなかった状態のmemo化。既定値は`true`。 */
   readonly useFailureMemo?: boolean;
 }
 
@@ -70,6 +94,17 @@ interface TerminalSelection {
   readonly hasPathEdgeLimit: boolean;
 }
 
+/**
+ * 端点だけのPuzzleから、partnerの組み方を含む全ての有効解を探索する。
+ *
+ * @remarks
+ * 経路の向きと列挙順だけが異なる解は正規化して一つと数える。
+ * `solutionLimit`で打ち切った`at-least`と、探索木を完走した`exact`を区別する。
+ * `budget_exhausted`は解なしや唯一解の証明ではない。
+ *
+ * @throws `TypeError`
+ * Puzzle、指定pair、または辺数制約が不正な場合。
+ */
 export function solvePuzzle(puzzle: Puzzle, options: SolverOptions = {}): SolveResult {
   const validation = validatePuzzle(puzzle);
   if (!validation.valid) {

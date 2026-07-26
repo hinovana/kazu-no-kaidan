@@ -1,3 +1,9 @@
+/**
+ * 長方形盤面上の上下左右の隣接セルを、決定的な順序で列挙する。
+ *
+ * @packageDocumentation
+ */
+
 import { indexToCell } from "./coordinates.ts";
 import type { Cell } from "../types/puzzle.ts";
 
@@ -27,6 +33,12 @@ function adjacentCells(cell: Cell, width: number, height: number): readonly Cell
   return result;
 }
 
+/**
+ * row-major indexに上下左右で隣接する盤面内indexを返す。
+ *
+ * @remarks
+ * 返却順は上、右、下、左で固定され、solverの決定的な探索順に利用される。
+ */
 export function adjacentIndices(index: number, width: number, height: number): readonly number[] {
   return adjacentCells(indexToCell(index, width), width, height)
     .map((cell) => cell.row * width + cell.column);

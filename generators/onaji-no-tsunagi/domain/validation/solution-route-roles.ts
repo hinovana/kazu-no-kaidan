@@ -1,9 +1,20 @@
+/**
+ * solverが見つけた解とsolution-first生成時のroute roleの対応を調べる。
+ *
+ * @packageDocumentation
+ */
+
 import { cellKey } from "../grid/coordinates.ts";
 import { terminalPairKey } from "../solver/enumerate-pairings.ts";
 import type { Puzzle } from "../types/puzzle.ts";
 import type { Solution } from "../types/solution.ts";
 import type { RouteRoles } from "../types/worksheet.ts";
 
+/**
+ * 解の端点pairが、solution-first構成時の全経路役割pairを保つか判定する。
+ *
+ * 経路形状や列挙順は比較しない。PuzzleとSolutionの有効性は呼出側で検査する。
+ */
 export function doesSolutionPreserveRouteRoles(
   puzzle: Puzzle,
   solution: Solution,

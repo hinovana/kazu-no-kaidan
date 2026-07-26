@@ -1,6 +1,15 @@
+/**
+ * 解答線を含まない問題用Worksheetを、画面previewとA4印刷向けに構成する。
+ *
+ * @packageDocumentation
+ */
+
 import type { Worksheet } from "../domain/types/worksheet.ts";
 import { PuzzleBoard } from "./PuzzleBoard.tsx";
 
+/**
+ * 解答線を含まない問題用紙を、難易度に応じたA4 page構成で描画する。
+ */
 export function WorksheetPreview({ worksheet }: { readonly worksheet: Worksheet }) {
   const large = worksheet.request.difficulty >= 2;
   if (large) {
@@ -92,6 +101,7 @@ function ProblemCard({
   );
 }
 
+/** 問題・答案で共有する、記名欄と再現用seedを含む印刷header。 */
 export function SheetHeader({
   headingId,
   title,
@@ -116,6 +126,9 @@ export function SheetHeader({
   );
 }
 
+/**
+ * 未校正の構造帯を4段階の星とaccessibility labelで表示する。
+ */
 export function DifficultyStars({ level }: { readonly level: 1 | 2 | 3 | 4 }) {
   return (
     <span className="ots-stars" aria-label={`暫定難易度${level}`}>

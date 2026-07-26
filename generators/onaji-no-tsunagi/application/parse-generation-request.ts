@@ -1,9 +1,20 @@
+/**
+ * フォームやWorkerから届く未知の値を、domainのGenerationRequestへ厳格変換する。
+ *
+ * 許可されたseed、難易度、問題数だけを受け入れ、不正入力を明示的な例外にする。
+ *
+ * @packageDocumentation
+ */
+
 import type {
   AvailableDifficultyLevel,
   GenerationRequest,
   PuzzleCount,
 } from "../domain/types/generation.ts";
 
+/**
+ * 生成条件のruntime検証で見つかった問題をまとめて保持する例外。
+ */
 export class GenerationRequestParseError extends TypeError {
   readonly issues: readonly string[];
 
@@ -14,6 +25,16 @@ export class GenerationRequestParseError extends TypeError {
   }
 }
 
+/**
+ * UI、Worker、Nodeから渡される未検証値を`GenerationRequest`へ変換する。
+ *
+ * @remarks
+ * 数値または10進数字列を受け入れ、seedの前後空白を除去する。値を範囲内へ
+ * 暗黙補正せず、レベル4も未実装として拒否する。
+ *
+ * @throws `GenerationRequestParseError`
+ * object形状、難易度、問題数、seed長のいずれかが契約外の場合。
+ */
 export function parseGenerationRequest(input: unknown): GenerationRequest {
   if (!isRecord(input)) {
     throw new GenerationRequestParseError(["生成条件はobjectで指定します。"]);

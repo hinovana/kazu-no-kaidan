@@ -1,0 +1,106 @@
+<!DOCTYPE html><html class="default" lang="ja" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>Worksheet | おなじのつなぎ API リファレンス</title><meta name="description" content="Documentation for おなじのつなぎ API リファレンス"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script defer src="../assets/custom.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<div class="tsd-toolbar-contents container"><a href="../index.html" class="title">おなじのつなぎ API リファレンス</a>
+<div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="検索"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="検索"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="theme_search_placeholder" maxLength="100"/>
+<ul role="listbox" id="tsd-search-results"></ul>
+<div id="tsd-search-status" aria-live="polite" aria-atomic="true">
+<div>検索インデックスを準備しています...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="メニュー"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header>
+<div class="container container-main">
+<div class="col-content">
+<div class="tsd-page-title">
+<ul class="tsd-breadcrumb" aria-label="Breadcrumb">
+<li><a href="../modules/domain_types_worksheet.html">domain/types/worksheet</a></li>
+<li><a href="" aria-current="page">Worksheet</a></li></ul>
+<h1>インターフェイス Worksheet</h1></div>
+<section class="tsd-panel tsd-comment">
+<div class="tsd-comment tsd-typography"><p>印刷・画面表示へ渡す決定的な教材成果物。</p>
+</div>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-remarks">
+<h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="パーマリンク" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>現在は常に<code>development_preview</code>かつ<code>childUsePermitted: false</code>であり、
+機械検査合格だけを理由に児童利用へ変更してはならない。</p>
+</div></div></section>
+<div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">Worksheet</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#childusepermitted">childUsePermitted</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">false</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#machinechecks">machineChecks</a><span class="tsd-signature-symbol">:</span> <a href="domain_types_worksheet.MachineCheckReport.html" class="tsd-signature-type tsd-kind-interface">MachineCheckReport</a> <span class="tsd-signature-symbol">&amp;</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">allPassed</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">true</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#provenance">provenance</a><span class="tsd-signature-symbol">:</span> <a href="domain_types_worksheet.GenerationProvenance.html" class="tsd-signature-type tsd-kind-interface">GenerationProvenance</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#puzzles">puzzles</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">readonly</span> <a href="domain_types_worksheet.GeneratedPuzzle.html" class="tsd-signature-type tsd-kind-interface">GeneratedPuzzle</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#request">request</a><span class="tsd-signature-symbol">:</span> <a href="domain_types_generation.GenerationRequest.html" class="tsd-signature-type tsd-kind-interface">GenerationRequest</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#schemaversion">schemaVersion</a><span class="tsd-signature-symbol">:</span><br/>        <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;onaji-no-tsunagi.worksheet.v3.3&quot;</span><br/>        <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;onaji-no-tsunagi.worksheet.v3.4-draft&quot;</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#usageclass">usageClass</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;development_preview&quot;</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#worksheetid">worksheetId</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
+<ul>
+<li>定義 <a href="https://github.com/hinovana/kazu-no-kaidan/blob/main/generators/onaji-no-tsunagi/domain/types/worksheet.ts#L169">generators/onaji-no-tsunagi/domain/types/worksheet.ts:169</a></li></ul></aside>
+<section class="tsd-panel-group tsd-index-group">
+<section class="tsd-panel tsd-index-panel">
+<details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h5 class="tsd-index-heading uppercase">インデックス</h5></summary>
+<div class="tsd-accordion-details">
+<section class="tsd-index-section">
+<h3 class="tsd-index-heading tsd-anchor-link" id="プロパティ">プロパティ<a href="#プロパティ" aria-label="パーマリンク" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-index-list"><a href="#childusepermitted" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="プロパティ"><use href="../assets/icons.svg#icon-1024"></use></svg><span>child<wbr/>Use<wbr/>Permitted</span></a>
+<a href="#machinechecks" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="プロパティ"><use href="../assets/icons.svg#icon-1024"></use></svg><span>machine<wbr/>Checks</span></a>
+<a href="#provenance" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="プロパティ"><use href="../assets/icons.svg#icon-1024"></use></svg><span>provenance</span></a>
+<a href="#puzzles" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="プロパティ"><use href="../assets/icons.svg#icon-1024"></use></svg><span>puzzles</span></a>
+<a href="#request" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="プロパティ"><use href="../assets/icons.svg#icon-1024"></use></svg><span>request</span></a>
+<a href="#schemaversion" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="プロパティ"><use href="../assets/icons.svg#icon-1024"></use></svg><span>schema<wbr/>Version</span></a>
+<a href="#usageclass" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="プロパティ"><use href="../assets/icons.svg#icon-1024"></use></svg><span>usage<wbr/>Class</span></a>
+<a href="#worksheetid" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="プロパティ"><use href="../assets/icons.svg#icon-1024"></use></svg><span>worksheet<wbr/>Id</span></a>
+</div></section></div></details></section></section>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-プロパティ"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h2 class="tsd-anchor-link" id="プロパティ-1">プロパティ<a href="#プロパティ-1" aria-label="パーマリンク" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
+<section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="childusepermitted"><code class="tsd-tag">読み取り専用</code><span>child<wbr/>Use<wbr/>Permitted</span><a href="#childusepermitted" aria-label="パーマリンク" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">childUsePermitted</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">false</span></div><aside class="tsd-sources">
+<ul>
+<li>定義 <a href="https://github.com/hinovana/kazu-no-kaidan/blob/main/generators/onaji-no-tsunagi/domain/types/worksheet.ts#L175">generators/onaji-no-tsunagi/domain/types/worksheet.ts:175</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="machinechecks"><code class="tsd-tag">読み取り専用</code><span>machine<wbr/>Checks</span><a href="#machinechecks" aria-label="パーマリンク" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">machineChecks</span><span class="tsd-signature-symbol">:</span> <a href="domain_types_worksheet.MachineCheckReport.html" class="tsd-signature-type tsd-kind-interface">MachineCheckReport</a> <span class="tsd-signature-symbol">&amp;</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">allPassed</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">true</span> <span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
+<ul>
+<li>定義 <a href="https://github.com/hinovana/kazu-no-kaidan/blob/main/generators/onaji-no-tsunagi/domain/types/worksheet.ts#L178">generators/onaji-no-tsunagi/domain/types/worksheet.ts:178</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="provenance"><code class="tsd-tag">読み取り専用</code><span>provenance</span><a href="#provenance" aria-label="パーマリンク" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">provenance</span><span class="tsd-signature-symbol">:</span> <a href="domain_types_worksheet.GenerationProvenance.html" class="tsd-signature-type tsd-kind-interface">GenerationProvenance</a></div><aside class="tsd-sources">
+<ul>
+<li>定義 <a href="https://github.com/hinovana/kazu-no-kaidan/blob/main/generators/onaji-no-tsunagi/domain/types/worksheet.ts#L179">generators/onaji-no-tsunagi/domain/types/worksheet.ts:179</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="puzzles"><code class="tsd-tag">読み取り専用</code><span>puzzles</span><a href="#puzzles" aria-label="パーマリンク" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">puzzles</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">readonly</span> <a href="domain_types_worksheet.GeneratedPuzzle.html" class="tsd-signature-type tsd-kind-interface">GeneratedPuzzle</a><span class="tsd-signature-symbol">[]</span></div><aside class="tsd-sources">
+<ul>
+<li>定義 <a href="https://github.com/hinovana/kazu-no-kaidan/blob/main/generators/onaji-no-tsunagi/domain/types/worksheet.ts#L177">generators/onaji-no-tsunagi/domain/types/worksheet.ts:177</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="request"><code class="tsd-tag">読み取り専用</code><span>request</span><a href="#request" aria-label="パーマリンク" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">request</span><span class="tsd-signature-symbol">:</span> <a href="domain_types_generation.GenerationRequest.html" class="tsd-signature-type tsd-kind-interface">GenerationRequest</a></div><aside class="tsd-sources">
+<ul>
+<li>定義 <a href="https://github.com/hinovana/kazu-no-kaidan/blob/main/generators/onaji-no-tsunagi/domain/types/worksheet.ts#L176">generators/onaji-no-tsunagi/domain/types/worksheet.ts:176</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="schemaversion"><code class="tsd-tag">読み取り専用</code><span>schema<wbr/>Version</span><a href="#schemaversion" aria-label="パーマリンク" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">schemaVersion</span><span class="tsd-signature-symbol">:</span><br/>    <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;onaji-no-tsunagi.worksheet.v3.3&quot;</span><br/>    <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;onaji-no-tsunagi.worksheet.v3.4-draft&quot;</span></div><aside class="tsd-sources">
+<ul>
+<li>定義 <a href="https://github.com/hinovana/kazu-no-kaidan/blob/main/generators/onaji-no-tsunagi/domain/types/worksheet.ts#L170">generators/onaji-no-tsunagi/domain/types/worksheet.ts:170</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="usageclass"><code class="tsd-tag">読み取り専用</code><span>usage<wbr/>Class</span><a href="#usageclass" aria-label="パーマリンク" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">usageClass</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;development_preview&quot;</span></div><aside class="tsd-sources">
+<ul>
+<li>定義 <a href="https://github.com/hinovana/kazu-no-kaidan/blob/main/generators/onaji-no-tsunagi/domain/types/worksheet.ts#L174">generators/onaji-no-tsunagi/domain/types/worksheet.ts:174</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="worksheetid"><code class="tsd-tag">読み取り専用</code><span>worksheet<wbr/>Id</span><a href="#worksheetid" aria-label="パーマリンク" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">worksheetId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div><aside class="tsd-sources">
+<ul>
+<li>定義 <a href="https://github.com/hinovana/kazu-no-kaidan/blob/main/generators/onaji-no-tsunagi/domain/types/worksheet.ts#L173">generators/onaji-no-tsunagi/domain/types/worksheet.ts:173</a></li></ul></aside></section></section></details></div>
+<div class="col-sidebar">
+<div class="page-menu">
+<div class="tsd-navigation settings">
+<details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>テーマ設定</h3></summary>
+<div class="tsd-accordion-details">
+<div class="tsd-filter-visibility"><span class="settings-label">メンバーの可視性</span>
+<ul id="tsd-filter-options">
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>保護</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>継承</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>外部</span></label></li></ul></div>
+<div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">配色</label><select id="tsd-theme"><option value="os">自動</option><option value="light">ライト</option><option value="dark">ダーク</option></select></div></div></details></div>
+<details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>このページ</h3></summary>
+<div class="tsd-accordion-details">
+<details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-プロパティ"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>プロパティ</summary>
+<div><a href="#childusepermitted"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="プロパティ"><use href="../assets/icons.svg#icon-1024"></use></svg><span>child<wbr/>Use<wbr/>Permitted</span></a><a href="#machinechecks"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="プロパティ"><use href="../assets/icons.svg#icon-1024"></use></svg><span>machine<wbr/>Checks</span></a><a href="#provenance"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="プロパティ"><use href="../assets/icons.svg#icon-1024"></use></svg><span>provenance</span></a><a href="#puzzles"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="プロパティ"><use href="../assets/icons.svg#icon-1024"></use></svg><span>puzzles</span></a><a href="#request"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="プロパティ"><use href="../assets/icons.svg#icon-1024"></use></svg><span>request</span></a><a href="#schemaversion"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="プロパティ"><use href="../assets/icons.svg#icon-1024"></use></svg><span>schema<wbr/>Version</span></a><a href="#usageclass"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="プロパティ"><use href="../assets/icons.svg#icon-1024"></use></svg><span>usage<wbr/>Class</span></a><a href="#worksheetid"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="プロパティ"><use href="../assets/icons.svg#icon-1024"></use></svg><span>worksheet<wbr/>Id</span></a></div></details></div></details></div>
+<div class="site-menu">
+<nav class="tsd-navigation"><a href="../index.html">おなじのつなぎ API リファレンス</a>
+<ul class="tsd-small-nested-navigation" id="tsd-nav-container">
+<li>読み込み中...</li></ul></nav></div></div></div><footer>
+<p class="tsd-generator"><a href="https://typedoc.org/" target="_blank">TypeDoc</a>を使用して生成</p></footer>
+<div class="overlay"></div></body></html>

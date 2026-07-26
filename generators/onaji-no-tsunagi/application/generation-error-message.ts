@@ -1,6 +1,17 @@
+/**
+ * applicationとdomainで発生した既知の生成失敗を、画面表示用の日本語へ変換する。
+ *
+ * @packageDocumentation
+ */
+
 import { GenerationFailure } from "../domain/generation/generate-worksheet.ts";
 import { GenerationRequestParseError } from "./parse-generation-request.ts";
 
+/**
+ * application/domainの例外を、開発画面へ表示できる日本語メッセージへ変換する。
+ *
+ * 未知の値はthrowせず、必ずfallbackメッセージへ変換する。
+ */
 export function generationErrorMessage(error: unknown): string {
   if (error instanceof GenerationRequestParseError) {
     return error.issues.join(" ");

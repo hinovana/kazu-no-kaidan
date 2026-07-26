@@ -1,3 +1,11 @@
+/**
+ * 未知のJSONを原本参照コーパスとして厳格にデコードする。
+ *
+ * source情報、盤面、端点、記号数、原本SHA-256の整合性をapplication境界で検査する。
+ *
+ * @packageDocumentation
+ */
+
 import type {
   ReferenceCorpus,
   ReferenceProblem,
@@ -12,6 +20,11 @@ import {
 import type { Puzzle, SymbolId, Terminal } from "../domain/types/puzzle.ts";
 import { validatePuzzle } from "../domain/validation/validate-puzzle.ts";
 
+/**
+ * 原本参照JSONを厳格にデコードした結果。
+ *
+ * `ok: false`では、検出できた構造・整合性エラーを可能な限りまとめて返す。
+ */
 export type ReferenceCorpusDecodeResult =
   | { readonly ok: true; readonly corpus: ReferenceCorpus }
   | { readonly ok: false; readonly errors: readonly string[] };
@@ -27,6 +40,16 @@ const TRANSCRIPTION_STATUSES = [
   "double-checked",
 ] as const satisfies readonly TranscriptionStatus[];
 
+/**
+ * 原本参照JSONを、未知fieldを許さないschemaと盤面規則で検証する。
+ *
+ * @remarks
+ * デコード成功や原本PDFのSHA-256一致は、端点座標が原本どおりに転記された
+ * ことを証明しない。`double-checked`への変更には別途目視照合が必要である。
+ *
+ * @param sourceText - JSONファイルから読み込んだ未検証の文字列。
+ * @returns デコード済みcorpus、またはJSON path付きのエラー一覧。
+ */
 export function decodeReferenceCorpusJson(
   sourceText: string,
 ): ReferenceCorpusDecodeResult {
@@ -152,6 +175,12 @@ export function decodeReferenceCorpusJson(
   };
 }
 
+/**
+ * 原本参照問題から、出典情報を含まない端点だけの`Puzzle`を作る。
+ *
+ * @remarks
+ * solver入力へ変換するだけで、解数や転記の正確性は保証しない。
+ */
 export function referenceProblemToPuzzle(
   problem: ReferenceProblem,
 ): Puzzle {

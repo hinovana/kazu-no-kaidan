@@ -1,3 +1,9 @@
+/**
+ * solverとoptimizerが共有する盤面探索状態、端点順序、枝刈り判定を提供する。
+ *
+ * @packageDocumentation
+ */
+
 import { adjacentIndices } from "../grid/adjacency.ts";
 import { cellIndex } from "../grid/coordinates.ts";
 import type { Puzzle, Terminal } from "../types/puzzle.ts";
@@ -6,6 +12,7 @@ import {
   isReachable,
 } from "./residual-reachability.ts";
 
+/** Puzzleの全端点セルをrow-major indexのSetへ変換する。 */
 export function createTerminalIndexSet(
   puzzle: Puzzle,
 ): ReadonlySet<number> {
@@ -16,6 +23,11 @@ export function createTerminalIndexSet(
   );
 }
 
+/**
+ * 端点をrow-major index、同一セルでは`terminalId`の順に整列する。
+ *
+ * solverとoptimizerで同じ決定的探索順を共有するために使う。
+ */
 export function sortTerminals(
   terminals: readonly Terminal[],
   width: number,
@@ -26,6 +38,9 @@ export function sortTerminals(
   ));
 }
 
+/**
+ * 占有maskと残存terminal集合から、失敗memo用の決定的な状態keyを作る。
+ */
 export function terminalSearchStateKey(
   occupied: bigint,
   remainingTerminals: readonly Terminal[],
@@ -36,6 +51,11 @@ export function terminalSearchStateKey(
     .join(",")}`;
 }
 
+/**
+ * 経路探索で候補セルへ進入できるかを判定する。
+ *
+ * 使用済み・現在経路で訪問済みのセルと、target以外の端点セルを拒否する。
+ */
 export function canEnterPathCell(
   terminalIndices: ReadonlySet<number>,
   index: number,
@@ -49,6 +69,13 @@ export function canEnterPathCell(
   return index === targetIndex || !terminalIndices.has(index);
 }
 
+/**
+ * 各残余連結成分で、記号ごとの未接続端点数が偶数かを判定する。
+ *
+ * @remarks
+ * 解が存在するための必要条件であり、十分条件ではない。有効解を除外しない
+ * soundな枝刈りとしてsolverとoptimizerで共有する。
+ */
 export function hasEvenSymbolParityInEveryComponent(
   puzzle: Puzzle,
   terminals: readonly Terminal[],
@@ -98,6 +125,13 @@ export function hasEvenSymbolParityInEveryComponent(
   return [...counts.values()].every((count) => count % 2 === 0);
 }
 
+/**
+ * 各未接続端点に、残余盤面上で到達可能な同記号partnerがあるかを判定する。
+ *
+ * @remarks
+ * `requiredPartnerByTerminalId`がある端点は指定partnerだけを調べる。これは
+ * 各端点単独の必要条件であり、全pairを同時に結べる十分条件ではない。
+ */
 export function allTerminalsHaveReachablePartners(
   puzzle: Puzzle,
   terminalIndices: ReadonlySet<number>,
