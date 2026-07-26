@@ -144,8 +144,8 @@ generators/onaji-no-tsunagi/
 | `docs/` | 実装を読むための補助資料と、TypeDoc画面の軽微な日本語補正。仕様の正本は置かない |
 
 TypeDocの生成物はリポジトリルートの
-`docs/onaji-no-tsunagi/reference/`へ置く。生成物を直接編集せず、
-`npm run docs:onaji-no-tsunagi`で再生成する。
+`docs/onaji-no-tsunagi/reference/`へ置く。このディレクトリはGit管理対象外とし、
+生成物を直接編集せず、`npm run docs:onaji-no-tsunagi`で再生成する。
 
 ## 4. `application/`: Webとdomainの境界
 

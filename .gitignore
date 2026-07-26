@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 node_modules/
 dist/
+/docs/onaji-no-tsunagi/reference/
 
 generators/*/tmp/
 generators/kokugo-no-tane/.local/
