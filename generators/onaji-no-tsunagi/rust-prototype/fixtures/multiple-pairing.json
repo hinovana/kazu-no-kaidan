@@ -1,0 +1,1 @@
+{"schemaVersion":"onaji-no-tsunagi.puzzle.v1","puzzleId":"multiple-pairing","width":3,"height":3,"terminals":[{"terminalId":"a","symbol":"circle","row":0,"column":0},{"terminalId":"b","symbol":"circle","row":0,"column":2},{"terminalId":"c","symbol":"circle","row":2,"column":0},{"terminalId":"d","symbol":"circle","row":2,"column":2}]}

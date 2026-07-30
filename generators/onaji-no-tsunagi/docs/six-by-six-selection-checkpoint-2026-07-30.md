@@ -5,6 +5,7 @@
 | 記録日 | 2026-07-30 |
 | 対象branch | `codex/onaji-no-tsunagi` |
 | 差分の親commit | `56f5857` |
+| TypeScriptチェックポイントcommit | `0a9bc6c` |
 | 対象profile | `6x6-4-4-2`、`6x6-4-4-4` |
 | 位置づけ | Rustバッチ生成prototypeへ着手する直前のTypeScript実装・監査状態 |
 | 正誤・唯一解契約 | [`../SPEC.md`](../SPEC.md) |
@@ -123,6 +124,10 @@ prototypeの初期範囲:
 solution-first builderの完全移植は、solver prototypeの一致と計測を確認した後の
 次段階とする。prototypeを速いという理由だけで本番採用せず、同一問題集合の
 正規化解一致を採用条件にする。
+
+実装後、solverに加えて`6x6-4-4-4`の36マス構築だけを対象にした限定builderも
+追加した。これは大量batchのthroughput測定用であり、31マス短縮、全品質gate、
+topology重複排除、難易度分類、永続化をまだ含まないため、完全移植には当たらない。
 
 ## 5. チェックポイント検証
 
