@@ -1,6 +1,6 @@
 use crate::{
-    Cell, PathSolution, Puzzle, Solution, SolutionCountKind, SolveOptions, SolveResult, Terminal,
-    solution_hash, solve_puzzle,
+    Cell, PathSolution, Puzzle, Solution, SolutionCountKind, SolveOptions, SolveResult,
+    SolverMetrics, Terminal, solution_hash, solve_puzzle,
 };
 use serde::Serialize;
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -61,6 +61,47 @@ pub struct BuildAttempt {
     pub canonical_solution_hash: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub topology_hash: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub solver_metrics: Option<SolverMetrics>,
+}
+
+#[derive(Clone, Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TrimmedGenerationCounters {
+    pub transformation_attempt_count: usize,
+    pub duplicate_transformation_count: usize,
+    pub entry_rejected_count: usize,
+    pub solver_budget_exhausted_count: usize,
+    pub non_unique_count: usize,
+    pub geometry_gate_rejected_count: usize,
+    pub accepted_candidate_count: usize,
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TrimmedCandidate {
+    pub seed: String,
+    pub base_seed: String,
+    pub base_index: usize,
+    pub variant: usize,
+    pub trim_count: usize,
+    pub construction_state_count: u64,
+    pub path_length_profile: Vec<usize>,
+    pub puzzle: Puzzle,
+    pub canonical_solution: Solution,
+    pub canonical_solution_hash: String,
+    pub topology_hash: String,
+    pub solver_metrics: SolverMetrics,
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TrimmedBaseResult {
+    pub base_seed: String,
+    pub base_index: usize,
+    pub base_status: BuildStatus,
+    pub counters: TrimmedGenerationCounters,
+    pub candidates: Vec<TrimmedCandidate>,
 }
 
 enum CoverResult {
@@ -145,7 +186,7 @@ pub fn build_six_by_six_four_four_four(seed: &str, source: &BuilderSource) -> Bu
             SolveResult::Solved {
                 canonical_solution,
                 solution_count,
-                ..
+                metrics,
             } if solution_count.kind == SolutionCountKind::Exact && solution_count.count == 1 => {
                 let canonical_hash = solution_hash(&canonical_solution, WIDTH);
                 debug_assert_eq!(
@@ -153,18 +194,19 @@ pub fn build_six_by_six_four_four_four(seed: &str, source: &BuilderSource) -> Bu
                     solution_hash(&planted_solution, WIDTH),
                     "an exact unique puzzle must normalize to its planted solution",
                 );
-                if passes_geometry_gate(&canonical_solution) {
+                if passes_geometry_gate(&canonical_solution) && passes_entry_gate(&puzzle, 1, 10) {
                     return BuildAttempt {
                         seed: seed.to_owned(),
                         status: BuildStatus::Accepted,
                         construction_state_count,
                         symbol_assignments_tried: assignment_index + 1,
-                        solver_state_count: maximum_solver_states,
+                        solver_state_count: metrics.explored_state_count,
                         path_length_profile: lengths,
                         puzzle: Some(puzzle),
                         canonical_solution: Some(canonical_solution),
                         canonical_solution_hash: Some(canonical_hash),
                         topology_hash: Some(topology_hash),
+                        solver_metrics: Some(metrics),
                     };
                 }
                 saw_unique_geometry_rejection = true;
@@ -187,6 +229,102 @@ pub fn build_six_by_six_four_four_four(seed: &str, source: &BuilderSource) -> Bu
         maximum_solver_states,
         lengths,
     )
+}
+
+pub fn build_trimmed_six_by_six_four_four_four(
+    base_seed: &str,
+    base_index: usize,
+    variants_per_base: usize,
+    source: &BuilderSource,
+) -> TrimmedBaseResult {
+    let base = build_six_by_six_four_four_four(base_seed, source);
+    let base_status = base.status.clone();
+    let Some(base_solution) = base.canonical_solution.as_ref() else {
+        return TrimmedBaseResult {
+            base_seed: base_seed.to_owned(),
+            base_index,
+            base_status,
+            counters: TrimmedGenerationCounters::default(),
+            candidates: Vec::new(),
+        };
+    };
+    let mut counters = TrimmedGenerationCounters::default();
+    let mut candidates = Vec::new();
+    let mut attempted_topologies = HashSet::new();
+    for variant_index in 0..variants_per_base {
+        counters.transformation_attempt_count += 1;
+        let variant = variant_index + 1;
+        let seed = format!("{base_seed}::trim-{variant}");
+        let mut random = SeededRandom::new(&seed);
+        let trimmed_solution = trim_solution(base_solution, 5, &mut random);
+        debug_assert_eq!(used_cell_count(&trimmed_solution), 31);
+        let (puzzle, topology_hash) = materialize_existing_solution(&seed, &trimmed_solution);
+        if !attempted_topologies.insert(topology_hash.clone()) {
+            counters.duplicate_transformation_count += 1;
+            continue;
+        }
+        if !passes_entry_gate(&puzzle, 0, 12) {
+            counters.entry_rejected_count += 1;
+            continue;
+        }
+        let solved = solve_puzzle(
+            &puzzle,
+            SolveOptions {
+                state_budget: 500_000,
+                solution_limit: 2,
+                ..SolveOptions::default()
+            },
+        )
+        .expect("trimmed materialization must create a valid puzzle");
+        match solved {
+            SolveResult::BudgetExhausted { .. } => {
+                counters.solver_budget_exhausted_count += 1;
+            }
+            SolveResult::Solved {
+                canonical_solution,
+                solution_count,
+                metrics,
+            } if solution_count.kind == SolutionCountKind::Exact && solution_count.count == 1 => {
+                if used_cell_count(&canonical_solution) != 31
+                    || solution_has_unit_bay(&canonical_solution)
+                    || !passes_geometry_gate(&canonical_solution)
+                {
+                    counters.geometry_gate_rejected_count += 1;
+                    continue;
+                }
+                let canonical_solution_hash = solution_hash(&canonical_solution, WIDTH);
+                debug_assert_eq!(
+                    canonical_solution_hash,
+                    solution_hash(&trimmed_solution, WIDTH),
+                );
+                candidates.push(TrimmedCandidate {
+                    seed,
+                    base_seed: base_seed.to_owned(),
+                    base_index,
+                    variant,
+                    trim_count: 5,
+                    construction_state_count: base.construction_state_count,
+                    path_length_profile: base.path_length_profile.clone(),
+                    puzzle,
+                    canonical_solution,
+                    canonical_solution_hash,
+                    topology_hash,
+                    solver_metrics: metrics,
+                });
+                counters.accepted_candidate_count += 1;
+            }
+            _ => {
+                counters.non_unique_count += 1;
+            }
+        }
+    }
+    TrimmedBaseResult {
+        base_seed: base_seed.to_owned(),
+        base_index,
+        base_status,
+        counters,
+        candidates,
+    }
 }
 
 impl BuilderSource {
@@ -227,6 +365,7 @@ fn rejected_attempt(
         canonical_solution: None,
         canonical_solution_hash: None,
         topology_hash: None,
+        solver_metrics: None,
     }
 }
 
@@ -554,6 +693,72 @@ fn materialize(
     )
 }
 
+fn trim_solution(solution: &Solution, trim_count: usize, random: &mut SeededRandom) -> Solution {
+    let mut paths = solution.paths.clone();
+    for _ in 0..trim_count {
+        let options: Vec<_> = paths
+            .iter()
+            .enumerate()
+            .flat_map(|(path_index, path)| {
+                (path.cells.len() > 3)
+                    .then_some([(path_index, true), (path_index, false)])
+                    .into_iter()
+                    .flatten()
+            })
+            .collect();
+        assert!(!options.is_empty(), "trimmed path options must remain");
+        let (path_index, from_start) = options[random.integer(0, options.len() - 1)];
+        if from_start {
+            paths[path_index].cells.remove(0);
+        } else {
+            paths[path_index].cells.pop();
+        }
+    }
+    Solution { paths }
+}
+
+fn materialize_existing_solution(seed: &str, solution: &Solution) -> (Puzzle, String) {
+    let mut raw_terminals: Vec<_> = solution
+        .paths
+        .iter()
+        .flat_map(|path| {
+            let first = path.cells.first().expect("path must have a first cell");
+            let last = path.cells.last().expect("path must have a last cell");
+            [
+                (first.row, first.column, path.symbol.clone()),
+                (last.row, last.column, path.symbol.clone()),
+            ]
+        })
+        .collect();
+    raw_terminals.sort_by(|left, right| {
+        (left.0 * WIDTH + left.1)
+            .cmp(&(right.0 * WIDTH + right.1))
+            .then_with(|| left.2.cmp(&right.2))
+    });
+    let terminals: Vec<_> = raw_terminals
+        .into_iter()
+        .enumerate()
+        .map(|(index, (row, column, symbol))| Terminal {
+            terminal_id: format!("terminal-{}", index + 1),
+            symbol,
+            row,
+            column,
+        })
+        .collect();
+    let topology_hash = format!("{:08x}", fnv1a32(&canonical_topology_signature(&terminals)));
+    let puzzle = Puzzle {
+        schema_version: "onaji-no-tsunagi.puzzle.v1".to_owned(),
+        puzzle_id: format!(
+            "ots-rust-{:08x}",
+            fnv1a32(&format!("{seed}|{topology_hash}"))
+        ),
+        width: WIDTH,
+        height: HEIGHT,
+        terminals,
+    };
+    (puzzle, topology_hash)
+}
+
 fn canonical_topology_signature(terminals: &[Terminal]) -> String {
     let mut variants = Vec::with_capacity(8);
     for quarter_turns in 0..4 {
@@ -594,6 +799,40 @@ fn canonical_topology_signature(terminals: &[Terminal]) -> String {
         .unwrap_or_else(|| "6x6|".to_owned())
 }
 
+fn passes_entry_gate(
+    puzzle: &Puzzle,
+    minimum_forced_exits: usize,
+    maximum_forced_exits: usize,
+) -> bool {
+    let terminal_cells: HashSet<_> = puzzle
+        .terminals
+        .iter()
+        .map(|terminal| (terminal.row, terminal.column))
+        .collect();
+    let open_exit_counts: Vec<_> = puzzle
+        .terminals
+        .iter()
+        .map(|terminal| {
+            [
+                (terminal.row.checked_sub(1), Some(terminal.column)),
+                (Some(terminal.row), terminal.column.checked_add(1)),
+                (terminal.row.checked_add(1), Some(terminal.column)),
+                (Some(terminal.row), terminal.column.checked_sub(1)),
+            ]
+            .into_iter()
+            .filter_map(|(row, column)| Some((row?, column?)))
+            .filter(|(row, column)| *row < HEIGHT && *column < WIDTH)
+            .filter(|cell| !terminal_cells.contains(cell))
+            .count()
+        })
+        .collect();
+    if open_exit_counts.contains(&0) {
+        return false;
+    }
+    let forced_exit_count = open_exit_counts.iter().filter(|count| **count == 1).count();
+    (minimum_forced_exits..=maximum_forced_exits).contains(&forced_exit_count)
+}
+
 fn passes_geometry_gate(solution: &Solution) -> bool {
     let total_turns: usize = solution
         .paths
@@ -622,6 +861,26 @@ fn passes_geometry_gate(solution: &Solution) -> bool {
         })
         .count();
     horizontal < 3 && vertical < 3
+}
+
+fn solution_has_unit_bay(solution: &Solution) -> bool {
+    solution.paths.iter().any(|path| {
+        let indices: Vec<_> = path
+            .cells
+            .iter()
+            .map(|cell| cell.row * WIDTH + cell.column)
+            .collect();
+        has_unit_bay(&indices)
+    })
+}
+
+fn used_cell_count(solution: &Solution) -> usize {
+    solution
+        .paths
+        .iter()
+        .flat_map(|path| path.cells.iter().map(|cell| (cell.row, cell.column)))
+        .collect::<HashSet<_>>()
+        .len()
 }
 
 fn count_turns(cells: &[Cell]) -> usize {

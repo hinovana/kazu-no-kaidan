@@ -260,6 +260,54 @@ filter通過率の変化であり、児童の正答率や体感難易度の改�
 直線filter違反は0問で、全問が31マス、独立solverの`exact: 1`、
 topology非重複であり、integrity checkは全項目を通過した。
 
+## Rust builder・solver 31マス1,000問監査
+
+Rust prototypeのsolution-first builderで36マス基盤を作り、5マス短縮後も
+Rust solverでpartner非固定の完全探索を行った1,000問は次を開く。
+
+```text
+http://127.0.0.1:8000/?report=6x6-4-4-4-rust-builder-solver-31-cell-filter-classification-audit-1000.json
+```
+
+TypeScript版の現行31マス監査とはseed系列とbuilder実装が異なり、同一問題の
+A/B比較ではない。分類policy、8条件、原本基準、標本抽出方法、表示schemaは
+同一である。Rust生成1,000問はTypeScript solverでも全問を解き直し、解数、
+canonical solution hash、solver metrics、topology hash、最終直線gateが
+一致することを監査JSONのintegrity checkへ保存する。
+
+| 指標 | TypeScript現行 | Rust prototype | 差 |
+| --- | ---: | ---: | ---: |
+| 明らかに簡単側 | 203 | 193 | -10 |
+| 原本近傍 | 179 | 196 | +17 |
+| 明らかに難しい側 | 4 | 3 | -1 |
+| 指標混合・簡単寄り | 461 | 475 | +14 |
+| 指標混合・難しい寄り | 153 | 133 | -20 |
+| 全8条件通過 | 420（42.0%） | 408（40.8%） | -12（-1.2pt） |
+| 通過群の原本近傍 | 84 | 91 | +7 |
+| 直線filter違反 | 0 | 0 | 0 |
+| 初期選択肢量・中央値 | 1,889,568 | 1,679,616 | -209,952 |
+| 強制出口・中央値 | 1 | 1 | 0 |
+| solver状態・中央値 | 182 | 168 | -14 |
+| 総曲がり・中央値 | 7 | 7 | 0 |
+
+Rust側は1,000基盤seedのうち488基盤を採用し、97,600変形を調べた。
+変形重複3,574件、非唯一解92,768件、形状gate違反141件を除くと
+1,117件が採用候補になり、topology重複3件を検出した。seed順の先頭から
+topology非重複1,000問を監査母集団にした。Rust処理は5.781秒、
+TypeScriptによる全1,000問の再照合とレポート集計を含む全体は7.963秒だった。
+TypeScript現行監査の保存値56.595秒に対して短いが、生成順とbuilder実装が
+異なるため、純粋な言語性能だけの倍率とは解釈しない。
+
+再生成:
+
+```bash
+cd ../../..
+npm run audit:onaji-no-tsunagi:6x6-rust-31-cell-filter-classification
+```
+
+この監査はRust移植の分布と互換性を確認するprototype評価であり、
+児童にとっての難しさ、面白さ、利用可否を証明しない。
+
 31〜35マス側の内訳は、31マス31問、32マス79問、33マス232問、
 34マス525問、35マス1,133問である。
 旧31マス固定2,000問は、674基盤へ134,684変形を試し、変形重複5,320件と

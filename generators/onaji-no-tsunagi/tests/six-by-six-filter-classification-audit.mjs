@@ -8,6 +8,7 @@
  */
 
 import assert from "node:assert/strict";
+import {spawnSync} from "node:child_process";
 import {mkdir, readFile, writeFile} from "node:fs/promises";
 import {dirname} from "node:path";
 import {performance} from "node:perf_hooks";
@@ -22,6 +23,7 @@ import {
   evaluatePuzzleSelectionFilters,
 } from "../domain/generation/puzzle-selection-policy.ts";
 import {createSeededRandom} from "../domain/generation/random.ts";
+import {solutionHash} from "../domain/solver/normalize-solution.ts";
 import {solvePuzzle} from "../domain/solver/solve-puzzle.ts";
 import {
   analyzeSolutionCoverage,
@@ -284,15 +286,25 @@ const report = {
   generatorTrack:
     options.generationMode === "ordinary"
       ? "v3.4-draft.3"
-      : "v3.4-draft.3-partial-cover-experiment",
+      : options.generationMode === "rust-prototype"
+        ? "rust-prototype-v0.2-partial-cover-experiment"
+        : "v3.4-draft.3-partial-cover-experiment",
   reportTitle:
-    `おなじのつなぎ 6x6-4-4-4・${
+    `${
+      options.generationMode === "rust-prototype"
+        ? "Rust版 "
+        : ""
+    }おなじのつなぎ 6x6-4-4-4・${
       formatGeneratedCoverLabel(options)
     }生成${
       formatNumber(options.sampleCount)
     }問 統合監査`,
   toolbarSummary:
-    `同一母集団 ${formatNumber(options.sampleCount)}問 / ${
+    `${
+      options.generationMode === "rust-prototype"
+        ? "Rust builder・solver / "
+        : ""
+    }同一母集団 ${formatNumber(options.sampleCount)}問 / ${
       formatNumber(options.ruleIds.length)
     }条件`,
   lead:
@@ -463,9 +475,13 @@ console.log(JSON.stringify({
 }, null, 2));
 
 function generateAuditPopulation(generationOptions) {
-  return generationOptions.generationMode === "ordinary"
-    ? generateOrdinaryPopulation(generationOptions)
-    : generatePartialCoverPopulation(generationOptions);
+  if (generationOptions.generationMode === "ordinary") {
+    return generateOrdinaryPopulation(generationOptions);
+  }
+  if (generationOptions.generationMode === "rust-prototype") {
+    return generateRustPrototypePopulation(generationOptions);
+  }
+  return generatePartialCoverPopulation(generationOptions);
 }
 
 function generateOrdinaryPopulation(generationOptions) {
@@ -490,6 +506,222 @@ function generateOrdinaryPopulation(generationOptions) {
       mode: "ordinary_full_cover",
       generatedCandidateCount: candidates.length,
       usedCellCountRange: {minimum: 36, maximum: 36},
+    },
+  };
+}
+
+function generateRustPrototypePopulation(generationOptions) {
+  const rust = spawnSync(
+    generationOptions.rustBinaryPath,
+    [
+      "--seed-prefix",
+      generationOptions.seedPrefix,
+      "--accepted-count",
+      String(generationOptions.sampleCount),
+      "--maximum-base-count",
+      String(generationOptions.maximumBaseCount),
+      "--variants-per-base",
+      String(generationOptions.variantsPerBase),
+      "--jobs",
+      String(generationOptions.rustJobs),
+    ],
+    {
+      encoding: "utf8",
+      maxBuffer: 512 * 1024 * 1024,
+    },
+  );
+  if (rust.error !== undefined) {
+    throw rust.error;
+  }
+  assert.equal(
+    rust.status,
+    0,
+    `Rust batch generation failed:\n${rust.stderr}`,
+  );
+  const rows = rust.stdout
+    .trim()
+    .split("\n")
+    .filter(line => line.length > 0)
+    .map(line => JSON.parse(line));
+  assert.equal(rows.length, generationOptions.sampleCount);
+  const summaryLines = rust.stderr
+    .trim()
+    .split("\n")
+    .filter(line => line.startsWith("{"));
+  const rustSummary = JSON.parse(summaryLines.at(-1) ?? "{}");
+  assert.equal(
+    rustSummary.selectedCandidateCount,
+    generationOptions.sampleCount,
+  );
+
+  const profile = getUniquePathCoverProfile(PROFILE_ID);
+  const entryCriteria = {
+    terminalPattern: "4-4-4",
+    terminalCount: 12,
+    symbolPathCounts: SYMBOL_PATH_COUNTS,
+    minimumForcedExitCount: 0,
+    maximumForcedExitCount: 12,
+    maximumLineConcentration: 6,
+  };
+  const topologyHashes = new Set();
+  const candidates = rows.map(row => {
+    assert.equal(row.trimCount, 5);
+    assert.ok(!topologyHashes.has(row.topologyHash));
+    topologyHashes.add(row.topologyHash);
+    const solved = solvePuzzle(row.puzzle, {
+      solutionLimit: 2,
+      stateBudget: generationOptions.solverStateBudget,
+    });
+    assert.equal(solved.status, "solved", `${row.seed}: TypeScript parity`);
+    assert.deepEqual(
+      solved.solutionCount,
+      {kind: "exact", count: 1},
+      `${row.seed}: TypeScript parity solution count`,
+    );
+    assert.equal(
+      solutionHash(solved.canonicalSolution, row.puzzle.width),
+      row.canonicalSolutionHash,
+      `${row.seed}: canonical solution hash`,
+    );
+    assert.deepEqual(
+      solved.metrics,
+      row.solverMetrics,
+      `${row.seed}: Rust/TypeScript solver metrics`,
+    );
+    const rematerialized = materializePathPlan(
+      solved.canonicalSolution.paths.map((path, pathIndex) => ({
+        role:
+          pathIndex === 0
+            ? "thread"
+            : pathIndex === 1
+              ? "spine"
+              : "scaffold",
+        symbol: path.symbol,
+        cells: path.cells,
+      })),
+      row.puzzle.width,
+      row.puzzle.height,
+      `${row.seed}::typescript-parity`,
+    );
+    assert.equal(
+      rematerialized.topologyHash,
+      row.topologyHash,
+      `${row.seed}: topology hash`,
+    );
+    const coverage = analyzeSolutionCoverage(
+      row.puzzle,
+      row.canonicalSolution,
+    );
+    assert.equal(coverage.usedCellCount, 31);
+    const geometry = analyzeSolutionGeometry(
+      row.puzzle,
+      row.canonicalSolution,
+    );
+    assert.equal(geometry.unexplainedUnitBayCount, 0);
+    const straightPathCounts = countStraightPathsByAxis(
+      row.canonicalSolution,
+    );
+    const selectionFilterEvaluation = evaluatePuzzleSelectionFilters(
+      row.puzzle,
+      profile.puzzleSelectionPolicy.filterRuleIds,
+      row.canonicalSolution,
+    );
+    assert.equal(
+      selectionFilterEvaluation.allConfiguredFiltersPassed,
+      true,
+      `${row.seed}: profile selection policy`,
+    );
+    const entryResult = analyzeUniquePathCoverEntry(
+      row.puzzle,
+      entryCriteria,
+    );
+    assert.equal(entryResult.status, "candidate");
+    return {
+      id: `${PROFILE_ID}:${row.seed}`,
+      seed: row.seed,
+      profileId: PROFILE_ID,
+      puzzle: row.puzzle,
+      canonicalSolution: row.canonicalSolution,
+      provenance: {
+        implementation: "rust-prototype-builder-and-solver",
+        baseSeed: row.baseSeed,
+        baseIndex: row.baseIndex,
+        variant: row.variant,
+        trimCount: row.trimCount,
+        topologyHash: row.topologyHash,
+        pathLengthProfile: row.pathLengthProfile,
+        constructionStateCount: row.constructionStateCount,
+      },
+      metrics: {
+        entryHypothesisCount:
+          entryResult.analysis.naturalHypothesisCount,
+        forcedExitCount:
+          entryResult.analysis.forcedExitTerminalIds.length,
+        solverStateCount: row.solverMetrics.exploredStateCount,
+        solverBacktrackCount: row.solverMetrics.backtrackCount,
+        totalTurnCount: geometry.totalTurnCount,
+        ...straightPathCounts,
+        usedCellCount: coverage.usedCellCount,
+        maximumLineConcentration:
+          entryResult.analysis.maximumLineConcentration,
+        pairingChoiceCount: entryResult.analysis.pairingChoiceCount,
+      },
+    };
+  });
+  return {
+    candidates,
+    audit: {
+      mode: "rust_prototype_trimmed_partial_cover",
+      implementation: {
+        builder: "rust-prototype",
+        solver: "rust-prototype",
+        analysisAndReport: "typescript",
+      },
+      generatedCandidateCount: candidates.length,
+      usedCellCountRange: {minimum: 31, maximum: 31},
+      usedCellCountCounts: {"31": candidates.length},
+      trimCountRange: {minimum: 5, maximum: 5},
+      trimCountCounts: {"5": candidates.length},
+      variantsPerBase: generationOptions.variantsPerBase,
+      maximumBaseCount: generationOptions.maximumBaseCount,
+      solverStateBudget: generationOptions.solverStateBudget,
+      rustJobs: generationOptions.rustJobs,
+      rustBinaryPath: generationOptions.rustBinaryPath,
+      acceptanceGates: [
+        "rust-solution-first-base",
+        "trim-five-endpoint-cells",
+        "rust-independent-exact-1",
+        "used-cell-count-31-to-31",
+        "no-unexplained-unit-bay",
+        "profile-puzzle-selection-policy",
+        "unique-topology-hash",
+        "typescript-full-population-parity",
+      ],
+      counters: {
+        ...rustSummary.counters,
+        rawAcceptedCandidateCount:
+          rustSummary.counters.acceptedCandidateCount,
+        baseAttemptCount: rustSummary.maximumBaseCount,
+        baseAcceptedCount: rustSummary.baseAcceptedCount,
+        duplicateTopologyCount: rustSummary.duplicateTopologyCount,
+        uniqueTopologyCount: rustSummary.uniqueTopologyCount,
+        selectedCandidateCount: rustSummary.selectedCandidateCount,
+        acceptedCandidateCount: candidates.length,
+      },
+      rustTiming: {
+        elapsedMs: rustSummary.elapsedMillis,
+      },
+      crossLanguageParity: {
+        checkedCandidateCount: candidates.length,
+        status: "passed",
+        comparedFields: [
+          "solution-count",
+          "canonical-solution-hash",
+          "solver-metrics",
+          "topology-hash",
+          "profile-selection-policy",
+        ],
+      },
     },
   };
 }
@@ -777,6 +1009,14 @@ function createReportLead(reportOptions) {
     }問だけを母集団とし、filter適用前、全条件通過後、条件ごとの違反群を`
       + "同じ難易度分類で比較します。変形候補や別seed系列は混ぜていません。";
   }
+  if (reportOptions.generationMode === "rust-prototype") {
+    return `Rust prototypeのbuilderで36マス基盤を作り、経路端を5マス短縮し、`
+      + `Rust prototype solverで唯一解を再証明した31マスcover ${
+        formatNumber(reportOptions.sampleCount)
+      }問を母集団とします。TypeScriptは全問の解数・canonical hash・`
+      + "solver metrics・topology hashを照合した後、分類と表示JSONだけを"
+      + "担当します。";
+  }
   const trimCounts = createPartialCoverTrimCounts(reportOptions);
   const trimDescription =
     trimCounts.length === 1
@@ -806,6 +1046,25 @@ function createSamplingDescription(reportOptions) {
         basePuzzleSelectionPolicy,
       ordinaryGeneratorQualityGatesEnabled: true,
       countUnit: "generated_puzzle",
+    };
+  }
+  if (reportOptions.generationMode === "rust-prototype") {
+    return {
+      profileSelection: "forced_by_audit_option",
+      generationMode: "rust_prototype_trimmed_partial_cover",
+      baseGenerationMode: "rust_prototype_solution_first_full_cover",
+      builderImplementation: "rust-prototype",
+      uniquenessSolverImplementation: "rust-prototype",
+      analysisImplementation: "typescript",
+      placementFiltersAppliedDuringGeneration: [],
+      basePuzzleSelectionPolicyAppliedDuringGeneration:
+        basePuzzleSelectionPolicy,
+      transformedPuzzleSelectionPolicyAppliedBeforeAcceptance:
+        basePuzzleSelectionPolicy,
+      independentUniquenessProofRequired: true,
+      fullPopulationTypeScriptParityRequired: true,
+      topologyDeduplicationEnabled: true,
+      countUnit: "accepted_unique_puzzle",
     };
   }
   return {
@@ -848,6 +1107,11 @@ function formatGenerationStorageKey(reportOptions) {
   if (reportOptions.generationMode === "ordinary") {
     return "ordinary";
   }
+  if (reportOptions.generationMode === "rust-prototype") {
+    return `rust-prototype-partial-cover-${
+      reportOptions.minimumUsedCellCount
+    }-to-${reportOptions.maximumUsedCellCount}`;
+  }
   return `partial-cover-${reportOptions.minimumUsedCellCount}-to-${
     reportOptions.maximumUsedCellCount
   }`;
@@ -869,6 +1133,10 @@ function parseOptions(arguments_) {
     minimumUsedCellCount: 31,
     maximumUsedCellCount: 35,
     writeHtml: true,
+    rustBinaryPath:
+      "generators/onaji-no-tsunagi/rust-prototype/target/release/"
+      + "build_trimmed_batch",
+    rustJobs: 8,
   };
   const options = {...defaults};
   for (const argument of arguments_) {
@@ -878,9 +1146,12 @@ function parseOptions(arguments_) {
     }
     switch (name) {
       case "--generation-mode":
-        if (!["ordinary", "partial-cover"].includes(value)) {
+        if (
+          !["ordinary", "partial-cover", "rust-prototype"].includes(value)
+        ) {
           throw new RangeError(
-            "--generation-mode must be ordinary or partial-cover",
+            "--generation-mode must be ordinary, partial-cover, "
+              + "or rust-prototype",
           );
         }
         options.generationMode = value;
@@ -921,6 +1192,12 @@ function parseOptions(arguments_) {
       case "--write-html":
         options.writeHtml = parseBoolean(name, value);
         break;
+      case "--rust-binary":
+        options.rustBinaryPath = value;
+        break;
+      case "--rust-jobs":
+        options.rustJobs = parsePositiveInteger(name, value);
+        break;
       default:
         throw new TypeError(`unknown option: ${name}`);
     }
@@ -937,6 +1214,8 @@ function parseOptions(arguments_) {
   options.seedPrefix ??=
     options.generationMode === "ordinary"
       ? "terminal-filter-audit-v34-6x6-4-4-4"
+      : options.generationMode === "rust-prototype"
+        ? "rust-31-cell-filter-audit-v1-6x6-4-4-4"
       : options.minimumUsedCellCount === 31
           && options.maximumUsedCellCount === 35
         ? "partial-cover-filter-audit-v34-6x6-4-4-4"
@@ -947,6 +1226,9 @@ function parseOptions(arguments_) {
     options.generationMode === "ordinary"
       ? "/private/tmp/onaji-no-tsunagi-v34-6x6-4-4-4-"
         + "filter-classification-audit-2000-2026-07-26"
+      : options.generationMode === "rust-prototype"
+        ? "/private/tmp/onaji-no-tsunagi-rust-prototype-6x6-4-4-4-"
+          + "31-cell-filter-classification-audit-1000"
       : options.minimumUsedCellCount === 31
           && options.maximumUsedCellCount === 35
         ? "/private/tmp/onaji-no-tsunagi-v34-6x6-4-4-4-"
@@ -1224,7 +1506,12 @@ function verifyReport(reportValue, candidates) {
       }
     }
   }
-  if (reportValue.sampling.generationMode === "trimmed_partial_cover") {
+  if (
+    [
+      "trimmed_partial_cover",
+      "rust_prototype_trimmed_partial_cover",
+    ].includes(reportValue.sampling.generationMode)
+  ) {
     const topologyHashes = new Set();
     const usedCellCountRange =
       reportValue.generationAudit.usedCellCountRange;
@@ -1276,6 +1563,29 @@ function verifyReport(reportValue, candidates) {
       "partial-cover-unique-topology",
       "partial-cover-independent-exact-1",
       "partial-cover-profile-selection-policy",
+    );
+  }
+  if (
+    reportValue.sampling.generationMode
+      === "rust_prototype_trimmed_partial_cover"
+  ) {
+    assert.equal(reportValue.sampling.builderImplementation, "rust-prototype");
+    assert.equal(
+      reportValue.sampling.uniquenessSolverImplementation,
+      "rust-prototype",
+    );
+    assert.equal(
+      reportValue.generationAudit.crossLanguageParity.status,
+      "passed",
+    );
+    assert.equal(
+      reportValue.generationAudit.crossLanguageParity
+        .checkedCandidateCount,
+      candidates.length,
+    );
+    checks.push(
+      "rust-builder-and-solver-used",
+      "rust-typescript-full-population-parity",
     );
   }
   return {

@@ -15,14 +15,16 @@
 - `--jobs`による独立入力の並列solver実行（入力順で出力）
 - `6x6-4-4-4`限定の36マスsolution-first exact-cover builder
 - builderからpartner非固定solver、総曲がり上限、直線gateまでのbatch pipeline
+- 36マス基盤の経路端を5マス短縮し、31マスで唯一解を再証明するbatch
 - seed番号を分割できる決定的な並列CLI
 - release binaryを使う固定fixture benchmark
+- 1,000問を既存アルゴリズムレビューschemaへ載せるTypeScript境界
 
 含まないもの:
 
-- 31マス短縮、全品質gate、難易度分類
+- Rust内での8条件集計、原本基準難易度分類、レビューJSON組み立て
 - 本番と同じsymbol variant巡回順、optimizer、provenance
-- topology重複排除とデータベース永続化
+- 既存コーパス横断のtopology重複排除とデータベース永続化
 - `6x6-4-4-2`の端点配置policyと難易度選別
 - 本番Web UIからの呼び出し
 
@@ -49,6 +51,12 @@ builderは大量生成の速度を測るための限定移植である。高速�
 限定pipelineであり、共有経路候補の初期化時間、31マス短縮、難易度分類、
 重複の棄却、永続化を含まない。476問を「難しい良問」と分類した値でもない。
 
+31マス監査用batchでは、1,000基盤seed・97,600変形からRust solverで
+1,117候補を採用し、topology非重複の先頭1,000問を出力した。Rust処理は
+5.781秒、TypeScriptによる全問parityと監査JSON生成を含む全体は7.963秒だった。
+生成した1,000問は全問31マス・`exact: 1`で、Rust/TypeScript間の解数、
+canonical hash、solver metrics、topology hashが一致した。
+
 ## 実行
 
 リポジトリルートで:
@@ -57,6 +65,7 @@ builderは大量生成の速度を測るための限定移植である。高速�
 npm run test:onaji-no-tsunagi:rust-prototype
 npm run benchmark:onaji-no-tsunagi:rust-prototype
 npm run benchmark:onaji-no-tsunagi:rust-builder-prototype
+npm run audit:onaji-no-tsunagi:6x6-rust-31-cell-filter-classification
 ```
 
 直接実行する場合:
@@ -91,8 +100,12 @@ cargo run --release \
 標準出力はseed順の試行NDJSON、標準エラーはthroughput集計JSONである。
 `--start`を分ければ、複数processや複数machineへseed範囲を割り当てられる。
 
+31マスを1,000問だけNDJSONへ出すbinaryは`build_trimmed_batch`である。
+監査用npm commandはこのbinaryを起動し、TypeScriptで全問を再照合してから
+既存schema v6のJSONを`algorithm-review/data/`へ生成する。
+
 ## 採用判断
 
-固定fixtureと50 seedの限定builder一致だけで本番採用しない。次段では31マス
-短縮、全品質gate、topology hash、難易度分類を移植し、TypeScript生成済みの
-十分な件数でstatus、解数、canonical hashを全件比較する。
+1,000問の一致だけで本番採用しない。Rust版は本番TypeScriptとsymbol variant
+巡回順、optimizer、完全なprovenanceがまだ異なる。次段では同一seed・同一候補
+順のA/B、topology重複棄却、永続化形式を定めてから本番切替を判断する。
