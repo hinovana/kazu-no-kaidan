@@ -18,10 +18,17 @@ import type {
   MachineCheckReport,
 } from '../types/worksheet.ts';
 import type {UniquePathCoverProfile} from '../generation/build-unique-path-cover.ts';
+import {countStraightPathsByAxis} from './analyze-solution-geometry.ts';
 import {analyzeTerminalPlacement} from './analyze-terminal-placement.ts';
 import {doesSolutionPreserveRouteRoles} from './solution-route-roles.ts';
 import {validatePuzzle} from './validate-puzzle.ts';
 import {validateSolution} from './validate-solution.ts';
+
+/** 監査用Worksheetで省略する選別gateを指定する。 */
+export interface MachineCheckOptions {
+  /** 後段採用filterと難易度選別を通常どおり必須にするか。 */
+  readonly enforcePuzzleSelectionPolicy?: boolean;
+}
 
 /**
  * 生成済み問題群に対し、仕様で要求する技術gateを再集約する。
@@ -33,7 +40,10 @@ import {validateSolution} from './validate-solution.ts';
 export function runMachineChecks(
   request: GenerationRequest,
   puzzles: readonly GeneratedPuzzle[],
+  options: MachineCheckOptions = {},
 ): MachineCheckReport {
+  const enforcePuzzleSelectionPolicy =
+    options.enforcePuzzleSelectionPolicy ?? true;
   const checks: MachineCheck[] = [
     {
       checkId: 'puzzle_count',
@@ -120,7 +130,8 @@ export function runMachineChecks(
           ),
         ]
       : []),
-    ...(puzzles.some(
+    ...(enforcePuzzleSelectionPolicy &&
+    puzzles.some(
       entry => profileFor(entry).puzzleSelectionPolicy.filterRuleIds.length > 0,
     )
       ? [
@@ -130,7 +141,8 @@ export function runMachineChecks(
           ),
         ]
       : []),
-    ...(puzzles.some(
+    ...(enforcePuzzleSelectionPolicy &&
+    puzzles.some(
       entry =>
         profileFor(entry).puzzleSelectionPolicy.difficultyReference !== null,
     )
@@ -156,8 +168,11 @@ export function runMachineChecks(
 
 function satisfiesPuzzleSelectionFilters(entry: GeneratedPuzzle): boolean {
   const policy = profileFor(entry).puzzleSelectionPolicy;
-  return evaluatePuzzleSelectionFilters(entry.puzzle, policy.filterRuleIds)
-    .allConfiguredFiltersPassed;
+  return evaluatePuzzleSelectionFilters(
+    entry.puzzle,
+    policy.filterRuleIds,
+    entry.canonicalSolution,
+  ).allConfiguredFiltersPassed;
 }
 
 function satisfiesDifficultySelectionPolicy(
@@ -176,6 +191,7 @@ function satisfiesDifficultySelectionPolicy(
       totalTurnCount: entry.solutionCost.totalTurnCount,
     },
     reference,
+    countStraightPathsByAxis(entry.canonicalSolution),
   );
   const accepted =
     request.acceptedDifficultyClassifications ??

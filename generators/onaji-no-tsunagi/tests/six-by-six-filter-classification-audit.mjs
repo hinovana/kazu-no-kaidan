@@ -1,9 +1,10 @@
 /**
- * 6x6-4-4-4の通常生成問題を、配置条件違反と難易度分類のクロス表にする。
+ * 6x6-4-4-4の生成問題を、配置条件違反と難易度分類のクロス表にする。
  *
- * 後段の配置filterを適用しない通常生成2,000問を母集団とし、各条件に違反した
- * 問題数と、その違反問題に占める5難易度区分の割合をHTMLとJSONへ出力する。
- * 条件間の違反重複は許容し、一つの問題を複数条件の行へ数える。
+ * 通常の36マスcover、または36マスcoverの唯一解を1〜5マス短縮して独立solver
+ * で唯一解を再証明した31〜35マスcoverを母集団にできる。profileへ組み込まれた
+ * 後段採用gateは最終canonical solutionにも再適用し、残る監査条件の違反問題数と
+ * 5難易度区分を同じschemaで出す。
  */
 
 import assert from "node:assert/strict";
@@ -12,14 +13,36 @@ import {dirname} from "node:path";
 import {performance} from "node:perf_hooks";
 
 import {decodeReferenceCorpusJson} from "../application/decode-reference-corpus.ts";
+import {
+  getUniquePathCoverProfile,
+} from "../domain/generation/build-unique-path-cover.ts";
 import {generateWorksheetForProfile} from "../domain/generation/generate-worksheet.ts";
+import {materializePathPlan} from "../domain/generation/materialize-path-plan.ts";
+import {
+  evaluatePuzzleSelectionFilters,
+} from "../domain/generation/puzzle-selection-policy.ts";
+import {createSeededRandom} from "../domain/generation/random.ts";
+import {solvePuzzle} from "../domain/solver/solve-puzzle.ts";
+import {
+  analyzeSolutionCoverage,
+} from "../domain/validation/analyze-solution-coverage.ts";
+import {
+  analyzeSolutionGeometry,
+  countStraightPathsByAxis,
+} from "../domain/validation/analyze-solution-geometry.ts";
+import {
+  analyzeUniquePathCoverEntry,
+} from "../domain/validation/analyze-unique-path-cover-entry.ts";
 import {
   analyzeDifficultyReferences,
   toDifficultyCandidate,
 } from "./difficulty-audit-analysis.mjs";
 import {
   CLASSIFICATION_POLICY,
+  MAX_REVIEW_SAMPLES_PER_GROUP,
   calculateReferencePercentiles,
+  classifyCandidate,
+  sampleThenSortCandidates,
   summarizeCandidateMetrics,
   summarizeDifficultyCohort,
 } from "./difficulty-audit-policy.mjs";
@@ -30,17 +53,40 @@ import {
   TERMINAL_PLACEMENT_GATE_RULES,
   analyzeTerminalPlacementHypotheses,
 } from "./difficulty-audit-hypothesis.mjs";
-import {classifyCandidate} from "./difficulty-audit-policy.mjs";
 
 const PROFILE_ID = "6x6-4-4-4";
 const PROFILE_DIFFICULTY = 2;
+const SYMBOL_PATH_COUNTS = [2, 2, 2];
+const STRAIGHT_PATH_LIMIT_RULE = {
+  id: "reject-three-straight-paths-on-same-axis",
+  label: "真横線3本以上または真縦線3本以上を禁止",
+  resultKey: "satisfiesNoThreeStraightPathsOnSameAxis",
+};
+const CONNECTED_TERMINAL_CLUSTER_RULE = {
+  id: "reject-four-connected-terminal-cluster",
+  label: "縦横隣接で連なる端点4個以上を禁止",
+  resultKey: "satisfiesNoFourOrMoreOrthogonallyConnectedTerminals",
+};
+const FILTER_AUDIT_RULES = [
+  ...TERMINAL_PLACEMENT_GATE_RULES,
+  CONNECTED_TERMINAL_CLUSTER_RULE,
+  STRAIGHT_PATH_LIMIT_RULE,
+];
+const FILTER_RULE_BY_SELECTION_RULE_ID = new Map([
+  [
+    "no_three_straight_paths_on_same_axis",
+    STRAIGHT_PATH_LIMIT_RULE,
+  ],
+]);
 const DEFAULT_ACTIVE_RULE_IDS = [
   "central-4x4-all-symbols",
-  "central-4x4-three-to-five-terminals",
+  "central-4x4-four-to-six-terminals",
   "reject-same-symbol-edge-adjacency",
   "reject-filled-two-by-two-terminal-blocks",
   "at-most-two-central-boundary-adjacencies",
   "reject-three-orthogonal-pairs-on-one-outer-side",
+  "reject-four-connected-terminal-cluster",
+  "reject-three-straight-paths-on-same-axis",
 ];
 const CLASSIFICATION_GROUPS = [
   {id: "clearly_easier", label: "明らかに簡単側"},
@@ -62,7 +108,7 @@ const reference = analyzeDifficultyReferences(
 assert.ok(reference, `${PROFILE_ID}: 原本基準点がありません。`);
 
 const rulesById = new Map(
-  TERMINAL_PLACEMENT_GATE_RULES.map(rule => [rule.id, rule]),
+  FILTER_AUDIT_RULES.map(rule => [rule.id, rule]),
 );
 const ruleCounters = options.ruleIds
   .map(ruleId => {
@@ -82,24 +128,30 @@ const passedClassificationCounts = createClassificationCounts();
 const classifiedCandidates = [];
 let allFiltersPassedCount = 0;
 const startedAt = performance.now();
+const generatedPopulation = generateAuditPopulation(options);
 
-for (let index = 0; index < options.sampleCount; index += 1) {
-  const seed = `${options.seedPrefix}-${index}`;
-  const worksheet = generateWorksheetForProfile(
-    {
-      difficulty: PROFILE_DIFFICULTY,
-      puzzleCount: 1,
-      seed,
-    },
-    PROFILE_ID,
-  );
-  const generated = worksheet.puzzles[0];
-  assert.ok(generated, `${seed}: 問題が生成されませんでした。`);
-  assert.equal(generated.provenance.profileId, PROFILE_ID);
-  const placement = analyzeTerminalPlacementHypotheses(generated.puzzle);
+for (
+  let index = 0;
+  index < generatedPopulation.candidates.length;
+  index += 1
+) {
+  const candidate = generatedPopulation.candidates[index];
+  const placement = analyzeTerminalPlacementHypotheses(candidate.puzzle);
+  const filterAnalysis = {
+    ...placement,
+    horizontalStraightPathCount:
+      candidate.metrics.horizontalStraightPathCount,
+    verticalStraightPathCount:
+      candidate.metrics.verticalStraightPathCount,
+    satisfiesNoThreeStraightPathsOnSameAxis:
+      candidate.metrics.horizontalStraightPathCount
+        < CLASSIFICATION_POLICY.clearlyEasierStraightPathCountOnSameAxis
+      && candidate.metrics.verticalStraightPathCount
+        < CLASSIFICATION_POLICY.clearlyEasierStraightPathCountOnSameAxis,
+  };
   const failedRules = [];
   for (const counter of ruleCounters) {
-    if (placement[counter.resultKey] === true) {
+    if (filterAnalysis[counter.resultKey] === true) {
       continue;
     }
     failedRules.push({
@@ -108,11 +160,8 @@ for (let index = 0; index < options.sampleCount; index += 1) {
     });
   }
   const classified = {
-    ...classifyCandidate(
-      toDifficultyCandidate(seed, generated),
-      reference,
-    ),
-    placement,
+    ...classifyCandidate(candidate, reference),
+    placement: filterAnalysis,
     filterEvaluation: {
       allPassed: failedRules.length === 0,
       failedRules,
@@ -133,7 +182,9 @@ for (let index = 0; index < options.sampleCount; index += 1) {
   }
   if ((index + 1) % 100 === 0) {
     console.error(
-      `[filter-classification-audit] ${index + 1}/${options.sampleCount}`,
+      `[filter-classification-audit:${options.generationMode}] ${
+        index + 1
+      }/${options.sampleCount}`,
     );
   }
 }
@@ -153,9 +204,22 @@ assert.equal(
 const rejectedClassificationCounts = countClassifications(
   rejectedCandidates,
 );
+const previousPolicyClassificationCounts =
+  countPreviousPolicyClassifications(classifiedCandidates);
+const classificationPolicyTransitions =
+  summarizeClassificationPolicyTransitions(classifiedCandidates);
 const conditionViolations = ruleCounters.map(counter => {
   const violationCandidates = classifiedCandidates.filter(candidate =>
     candidate.filterEvaluation.failedRules.some(rule => rule.id === counter.id)
+  );
+  const referenceLikeViolationCandidates = violationCandidates.filter(
+    candidate => candidate.classification === "reference_like",
+  );
+  const referenceLikeReviewCandidates = sampleThenSortCandidates(
+    referenceLikeViolationCandidates,
+    options.reviewSamplesPerCategory,
+    `condition:${counter.id}:reference-like`,
+    (left, right) => left.referenceDistance - right.referenceDistance,
   );
   const exclusiveViolationCandidates = violationCandidates.filter(
     candidate => candidate.filterEvaluation.failedRules.length === 1,
@@ -181,6 +245,8 @@ const conditionViolations = ruleCounters.map(counter => {
       counter.classificationCounts,
       counter.violationCount,
     ),
+    referenceLikeViolationCount: referenceLikeViolationCandidates.length,
+    referenceLikeReviewCandidates,
     exclusiveViolationCount: exclusiveViolationCandidates.length,
     exclusiveViolationRate:
       exclusiveViolationCandidates.length / options.sampleCount,
@@ -213,11 +279,16 @@ const passedSummary = summarizeDifficultyCohort(
 );
 const report = {
   schemaVersion:
-    "onaji-no-tsunagi.six-by-six-filter-classification-audit.v3",
+    "onaji-no-tsunagi.six-by-six-filter-classification-audit.v6",
   generatedAt: new Date().toISOString(),
-  generatorTrack: "v3.4-draft.3",
+  generatorTrack:
+    options.generationMode === "ordinary"
+      ? "v3.4-draft.3"
+      : "v3.4-draft.3-partial-cover-experiment",
   reportTitle:
-    `おなじのつなぎ 6x6-4-4-4・通常生成${
+    `おなじのつなぎ 6x6-4-4-4・${
+      formatGeneratedCoverLabel(options)
+    }生成${
       formatNumber(options.sampleCount)
     }問 統合監査`,
   toolbarSummary:
@@ -225,11 +296,7 @@ const report = {
       formatNumber(options.ruleIds.length)
     }条件`,
   lead:
-    `6x6-4-4-4を固定seed系列で通常生成した${
-      formatNumber(options.sampleCount)
-    }問だけを母集団とし、`
-    + "filter適用前、全条件通過後、条件ごとの違反群を同じ難易度分類で"
-    + "比較します。変形候補や別seed系列は一切混ぜていません。",
+    createReportLead(options),
   fullWidthLayout: true,
   compactCandidateCards: true,
   designTheme: "dashboard-frame",
@@ -248,9 +315,13 @@ const report = {
   showCandidateCardMetrics: false,
   showReferencePercentiles: false,
   reviewStorageKey:
-    "onaji-no-tsunagi-v34-6x6-4-4-4-filter-audit-review-v3",
+    `onaji-no-tsunagi-v34-6x6-4-4-4-${
+      formatGenerationStorageKey(options)
+    }-filter-audit-review-v6`,
   reviewExportFileName:
-    "onaji-no-tsunagi-v34-6x6-4-4-4-filter-audit-human-review.json",
+    `onaji-no-tsunagi-v34-6x6-4-4-4-${
+      formatGenerationStorageKey(options)
+    }-filter-audit-human-review.json`,
   classificationPolicy: CLASSIFICATION_POLICY,
   referenceCorpus: {
     sourceDocumentId: decodedReference.corpus.sourceDocument.id,
@@ -262,12 +333,14 @@ const report = {
   samplesPerProfile: options.sampleCount,
   totalGenerated: options.sampleCount,
   seedPrefix: options.seedPrefix,
-  sampling: {
-    profileSelection: "forced_by_audit_option",
-    placementFiltersAppliedDuringGeneration: [],
-    ordinaryGeneratorQualityGatesEnabled: true,
-    countUnit: "generated_puzzle",
+  sampling: createSamplingDescription(options),
+  reviewSampling: {
+    method: "deterministic-random-then-sort",
+    requestedPerGroup: options.reviewSamplesPerCategory,
+    maximumPerGroup: MAX_REVIEW_SAMPLES_PER_GROUP,
+    randomRankSource: "sample-key-and-candidate-id-hash",
   },
+  generationAudit: generatedPopulation.audit,
   selectedRuleIds: options.ruleIds,
   timing: {
     elapsedMs,
@@ -283,6 +356,13 @@ const report = {
     overallClassificationCounts,
     options.sampleCount,
   ),
+  classificationPolicyChange: {
+    previousPolicyId: "onaji-no-tsunagi.difficulty-selection.v2",
+    currentPolicyId: "onaji-no-tsunagi.difficulty-selection.v3",
+    previousClassificationCounts: previousPolicyClassificationCounts,
+    currentClassificationCounts: overallClassificationCounts,
+    transitions: classificationPolicyTransitions,
+  },
   allFiltersPassed: {
     count: allFiltersPassedCount,
     rate: allFiltersPassedCount / options.sampleCount,
@@ -328,7 +408,10 @@ const report = {
   },
   byProfile: {
     "filter適用前": {
-      cohortLabel: `通常生成した全${formatNumber(options.sampleCount)}問`,
+      cohortLabel:
+        `${formatGeneratedCoverLabel(options)}で生成した全${
+          formatNumber(options.sampleCount)
+        }問`,
       reference,
       ...overallSummary,
     },
@@ -345,22 +428,25 @@ const report = {
 report.integrityChecks = verifyReport(report, classifiedCandidates);
 
 await mkdir(dirname(options.outputPrefix), {recursive: true});
-await Promise.all([
+const outputWrites = [
   writeFile(
     `${options.outputPrefix}.json`,
     `${JSON.stringify(report, null, 2)}\n`,
     "utf8",
   ),
-  writeFile(
+];
+if (options.writeHtml) {
+  outputWrites.push(writeFile(
     `${options.outputPrefix}.html`,
     renderDifficultyAuditHtml(report),
     "utf8",
-  ),
-]);
+  ));
+}
+await Promise.all(outputWrites);
 
 console.log(JSON.stringify({
   jsonPath: `${options.outputPrefix}.json`,
-  htmlPath: `${options.outputPrefix}.html`,
+  htmlPath: options.writeHtml ? `${options.outputPrefix}.html` : null,
   timing: report.timing,
   overallClassificationCounts,
   allFiltersPassed: report.allFiltersPassed,
@@ -376,16 +462,413 @@ console.log(JSON.stringify({
   integrityChecks: report.integrityChecks,
 }, null, 2));
 
+function generateAuditPopulation(generationOptions) {
+  return generationOptions.generationMode === "ordinary"
+    ? generateOrdinaryPopulation(generationOptions)
+    : generatePartialCoverPopulation(generationOptions);
+}
+
+function generateOrdinaryPopulation(generationOptions) {
+  const candidates = [];
+  for (let index = 0; index < generationOptions.sampleCount; index += 1) {
+    const seed = `${generationOptions.seedPrefix}-${index}`;
+    const generated = generateWorksheetForProfile(
+      {
+        difficulty: PROFILE_DIFFICULTY,
+        puzzleCount: 1,
+        seed,
+      },
+      PROFILE_ID,
+    ).puzzles[0];
+    assert.ok(generated, `${seed}: 問題が生成されませんでした。`);
+    assert.equal(generated.provenance.profileId, PROFILE_ID);
+    candidates.push(toDifficultyCandidate(seed, generated));
+  }
+  return {
+    candidates,
+    audit: {
+      mode: "ordinary_full_cover",
+      generatedCandidateCount: candidates.length,
+      usedCellCountRange: {minimum: 36, maximum: 36},
+    },
+  };
+}
+
+function generatePartialCoverPopulation(generationOptions) {
+  const candidates = [];
+  const attemptedTopologyHashes = new Set();
+  const topologyHashes = new Set();
+  const counters = {
+    basePuzzleCount: 0,
+    transformationAttemptCount: 0,
+    entryRejectedCount: 0,
+    solverBudgetExhaustedCount: 0,
+    nonUniqueCount: 0,
+    coverageRejectedCount: 0,
+    unitBayRejectedCount: 0,
+    puzzleSelectionRejectedCount: 0,
+    duplicateTransformationCount: 0,
+    duplicateTopologyCount: 0,
+  };
+  const profile = getUniquePathCoverProfile(PROFILE_ID);
+  const trimCounts = createPartialCoverTrimCounts(generationOptions);
+  const entryCriteria = {
+    terminalPattern: "4-4-4",
+    terminalCount: 12,
+    symbolPathCounts: SYMBOL_PATH_COUNTS,
+    minimumForcedExitCount: 0,
+    maximumForcedExitCount: 12,
+    maximumLineConcentration: 6,
+  };
+
+  for (
+    let baseIndex = 0;
+    baseIndex < generationOptions.maximumBaseCount
+      && candidates.length < generationOptions.sampleCount;
+    baseIndex += 1
+  ) {
+    const baseSeed = `${generationOptions.seedPrefix}-base-${baseIndex}`;
+    const basePuzzle = generateWorksheetForProfile(
+      {
+        difficulty: PROFILE_DIFFICULTY,
+        puzzleCount: 1,
+        seed: baseSeed,
+      },
+      PROFILE_ID,
+    ).puzzles[0];
+    assert.ok(basePuzzle, `${baseSeed}: 基盤問題が生成されませんでした。`);
+    counters.basePuzzleCount += 1;
+
+    for (
+      let variant = 0;
+      variant < generationOptions.variantsPerBase
+        && candidates.length < generationOptions.sampleCount;
+      variant += 1
+    ) {
+      counters.transformationAttemptCount += 1;
+      const trimCount = trimCounts[variant % trimCounts.length];
+      const seed = `${baseSeed}::trim-${variant + 1}`;
+      const trimmedPaths = trimPaths(
+        basePuzzle.canonicalSolution.paths,
+        trimCount,
+        createSeededRandom(seed),
+      );
+      assert.ok(trimmedPaths, `${seed}: 経路を短縮できませんでした。`);
+      const plan = materializePathPlan(
+        trimmedPaths.map((path, pathIndex) => ({
+          role:
+            pathIndex === 0
+              ? "thread"
+              : pathIndex === 1
+                ? "spine"
+                : "scaffold",
+          symbol: path.symbol,
+          cells: path.cells,
+        })),
+        6,
+        6,
+        seed,
+      );
+      if (attemptedTopologyHashes.has(plan.topologyHash)) {
+        counters.duplicateTransformationCount += 1;
+        continue;
+      }
+      attemptedTopologyHashes.add(plan.topologyHash);
+      const entryResult = analyzeUniquePathCoverEntry(
+        plan.puzzle,
+        entryCriteria,
+      );
+      if (entryResult.status !== "candidate") {
+        counters.entryRejectedCount += 1;
+        continue;
+      }
+      const solved = solvePuzzle(plan.puzzle, {
+        solutionLimit: 2,
+        stateBudget: generationOptions.solverStateBudget,
+      });
+      if (solved.status === "budget_exhausted") {
+        counters.solverBudgetExhaustedCount += 1;
+        continue;
+      }
+      if (
+        solved.status !== "solved"
+        || solved.solutionCount.kind !== "exact"
+        || solved.solutionCount.count !== 1
+      ) {
+        counters.nonUniqueCount += 1;
+        continue;
+      }
+      const coverage = analyzeSolutionCoverage(
+        plan.puzzle,
+        solved.canonicalSolution,
+      );
+      if (
+        coverage.usedCellCount
+          < generationOptions.minimumUsedCellCount
+        || coverage.usedCellCount
+          > generationOptions.maximumUsedCellCount
+      ) {
+        counters.coverageRejectedCount += 1;
+        continue;
+      }
+      const geometry = analyzeSolutionGeometry(
+        plan.puzzle,
+        solved.canonicalSolution,
+      );
+      const straightPathCounts = countStraightPathsByAxis(
+        solved.canonicalSolution,
+      );
+      if (geometry.unexplainedUnitBayCount > 0) {
+        counters.unitBayRejectedCount += 1;
+        continue;
+      }
+      const selectionFilterEvaluation = evaluatePuzzleSelectionFilters(
+        plan.puzzle,
+        profile.puzzleSelectionPolicy.filterRuleIds,
+        solved.canonicalSolution,
+      );
+      if (!selectionFilterEvaluation.allConfiguredFiltersPassed) {
+        counters.puzzleSelectionRejectedCount += 1;
+        continue;
+      }
+      if (topologyHashes.has(plan.topologyHash)) {
+        counters.duplicateTopologyCount += 1;
+        continue;
+      }
+      topologyHashes.add(plan.topologyHash);
+      candidates.push({
+        id: `${PROFILE_ID}:${seed}`,
+        seed,
+        profileId: PROFILE_ID,
+        puzzle: plan.puzzle,
+        canonicalSolution: solved.canonicalSolution,
+        provenance: {
+          baseSeed,
+          trimCount,
+          topologyHash: plan.topologyHash,
+        },
+        metrics: {
+          entryHypothesisCount:
+            entryResult.analysis.naturalHypothesisCount,
+          forcedExitCount:
+            entryResult.analysis.forcedExitTerminalIds.length,
+          solverStateCount: solved.metrics.exploredStateCount,
+          solverBacktrackCount: solved.metrics.backtrackCount,
+          totalTurnCount: geometry.totalTurnCount,
+          ...straightPathCounts,
+          usedCellCount: coverage.usedCellCount,
+          maximumLineConcentration:
+            entryResult.analysis.maximumLineConcentration,
+          pairingChoiceCount: entryResult.analysis.pairingChoiceCount,
+        },
+      });
+    }
+    if ((baseIndex + 1) % 100 === 0) {
+      console.error(
+        `[partial-cover-generation] base ${baseIndex + 1}, `
+        + `accepted ${candidates.length}/${generationOptions.sampleCount}`,
+      );
+    }
+  }
+
+  assert.equal(
+    candidates.length,
+    generationOptions.sampleCount,
+    `${generationOptions.maximumBaseCount}基盤までに`
+      + `${generationOptions.sampleCount}問を生成できませんでした。`,
+  );
+  assert.equal(topologyHashes.size, candidates.length);
+  return {
+    candidates,
+    audit: {
+      mode: "trimmed_partial_cover",
+      generatedCandidateCount: candidates.length,
+      usedCellCountRange: {
+        minimum: generationOptions.minimumUsedCellCount,
+        maximum: generationOptions.maximumUsedCellCount,
+      },
+      usedCellCountCounts: Object.fromEntries(
+        Array.from(
+          {
+            length:
+              generationOptions.maximumUsedCellCount
+              - generationOptions.minimumUsedCellCount
+              + 1,
+          },
+          (_, index) => {
+            const usedCellCount =
+              generationOptions.minimumUsedCellCount + index;
+            return [
+              String(usedCellCount),
+              candidates.filter(
+                candidate =>
+                  candidate.metrics.usedCellCount === usedCellCount,
+              ).length,
+            ];
+          },
+        ),
+      ),
+      trimCountRange: {
+        minimum: Math.min(...trimCounts),
+        maximum: Math.max(...trimCounts),
+      },
+      trimCountCounts: Object.fromEntries(
+        trimCounts.map(trimCount => {
+          return [
+            String(trimCount),
+            candidates.filter(
+              candidate => candidate.provenance.trimCount === trimCount,
+            ).length,
+          ];
+        }),
+      ),
+      variantsPerBase: generationOptions.variantsPerBase,
+      maximumBaseCount: generationOptions.maximumBaseCount,
+      solverStateBudget: generationOptions.solverStateBudget,
+      acceptanceGates: [
+        "entry-candidate",
+        "independent-exact-1",
+        `used-cell-count-${generationOptions.minimumUsedCellCount}`
+          + `-to-${generationOptions.maximumUsedCellCount}`,
+        "no-unexplained-unit-bay",
+        "profile-puzzle-selection-policy",
+        "unique-topology-hash",
+      ],
+      counters: {
+        ...counters,
+        acceptedCandidateCount: candidates.length,
+      },
+    },
+  };
+}
+
+function trimPaths(paths, trimCount, random) {
+  const result = paths.map(path => ({
+    symbol: path.symbol,
+    cells: [...path.cells],
+  }));
+  for (let index = 0; index < trimCount; index += 1) {
+    const options = result.flatMap((path, pathIndex) =>
+      path.cells.length > 3
+        ? [
+            {pathIndex, fromStart: true},
+            {pathIndex, fromStart: false},
+          ]
+        : []
+    );
+    if (options.length === 0) {
+      return null;
+    }
+    const selected = options[random.integer(0, options.length - 1)];
+    const path = result[selected.pathIndex];
+    if (selected.fromStart) {
+      path.cells.shift();
+    } else {
+      path.cells.pop();
+    }
+  }
+  return result;
+}
+
+function createReportLead(reportOptions) {
+  if (reportOptions.generationMode === "ordinary") {
+    return `6x6-4-4-4を固定seed系列で36マスcover生成した${
+      formatNumber(reportOptions.sampleCount)
+    }問だけを母集団とし、filter適用前、全条件通過後、条件ごとの違反群を`
+      + "同じ難易度分類で比較します。変形候補や別seed系列は混ぜていません。";
+  }
+  const trimCounts = createPartialCoverTrimCounts(reportOptions);
+  const trimDescription =
+    trimCounts.length === 1
+      ? `${trimCounts[0]}マス`
+      : `${Math.min(...trimCounts)}〜${Math.max(...trimCounts)}マス`;
+  return `固定seed系列の36マス唯一解から経路端を${trimDescription}短縮し、`
+    + `独立solverで唯一解を再証明した${
+      formatGeneratedCoverLabel(reportOptions)
+    } ${
+      formatNumber(reportOptions.sampleCount)
+    }問を母集団とします。profile組み込み済みの後段採用gateは短縮後の`
+    + "canonical solutionへ再適用し、残る条件を同じ難易度分類で集計します。";
+}
+
+function createSamplingDescription(reportOptions) {
+  const baseProfile = getUniquePathCoverProfile(PROFILE_ID);
+  const basePuzzleSelectionPolicy = {
+    policyId: baseProfile.puzzleSelectionPolicy.policyId,
+    filterRuleIds: [...baseProfile.puzzleSelectionPolicy.filterRuleIds],
+  };
+  if (reportOptions.generationMode === "ordinary") {
+    return {
+      profileSelection: "forced_by_audit_option",
+      generationMode: "ordinary_full_cover",
+      placementFiltersAppliedDuringGeneration: [],
+      puzzleSelectionPolicyAppliedDuringGeneration:
+        basePuzzleSelectionPolicy,
+      ordinaryGeneratorQualityGatesEnabled: true,
+      countUnit: "generated_puzzle",
+    };
+  }
+  return {
+    profileSelection: "forced_by_audit_option",
+    generationMode: "trimmed_partial_cover",
+    baseGenerationMode: "ordinary_full_cover",
+    placementFiltersAppliedDuringGeneration: [],
+    basePuzzleSelectionPolicyAppliedDuringGeneration:
+      basePuzzleSelectionPolicy,
+    transformedPuzzleSelectionPolicyAppliedBeforeAcceptance:
+      basePuzzleSelectionPolicy,
+    independentUniquenessProofRequired: true,
+    topologyDeduplicationEnabled: true,
+    countUnit: "accepted_unique_puzzle",
+  };
+}
+
+function createPartialCoverTrimCounts(reportOptions) {
+  const minimumTrimCount = 36 - reportOptions.maximumUsedCellCount;
+  const maximumTrimCount = 36 - reportOptions.minimumUsedCellCount;
+  return Array.from(
+    {length: maximumTrimCount - minimumTrimCount + 1},
+    (_, index) => minimumTrimCount + index,
+  );
+}
+
+function formatGeneratedCoverLabel(reportOptions) {
+  if (reportOptions.generationMode === "ordinary") {
+    return "36マスcover";
+  }
+  return reportOptions.minimumUsedCellCount
+      === reportOptions.maximumUsedCellCount
+    ? `${reportOptions.minimumUsedCellCount}マスcover`
+    : `${reportOptions.minimumUsedCellCount}〜${
+      reportOptions.maximumUsedCellCount
+    }マスcover`;
+}
+
+function formatGenerationStorageKey(reportOptions) {
+  if (reportOptions.generationMode === "ordinary") {
+    return "ordinary";
+  }
+  return `partial-cover-${reportOptions.minimumUsedCellCount}-to-${
+    reportOptions.maximumUsedCellCount
+  }`;
+}
+
 function parseOptions(arguments_) {
   const defaults = {
+    generationMode: "ordinary",
     sampleCount: 2_000,
     ruleIds: DEFAULT_ACTIVE_RULE_IDS,
-    seedPrefix: "terminal-filter-audit-v34-6x6-4-4-4",
+    seedPrefix: null,
     referenceCorpusPath:
       "/Users/hino/worktrees/kazuno-kaidan/onaji-no-tsunagi/ref/onaji-no-tsunagi-source-corpus.json",
-    outputPrefix:
-      "/private/tmp/onaji-no-tsunagi-v34-6x6-4-4-4-filter-classification-audit-2000-2026-07-26",
+    outputPrefix: null,
     reviewSamplesPerCategory: 4,
+    variantsPerBase: 10,
+    maximumBaseCount: 10_000,
+    solverStateBudget: 500_000,
+    minimumUsedCellCount: 31,
+    maximumUsedCellCount: 35,
+    writeHtml: true,
   };
   const options = {...defaults};
   for (const argument of arguments_) {
@@ -394,6 +877,14 @@ function parseOptions(arguments_) {
       throw new TypeError(`option requires a value: ${argument}`);
     }
     switch (name) {
+      case "--generation-mode":
+        if (!["ordinary", "partial-cover"].includes(value)) {
+          throw new RangeError(
+            "--generation-mode must be ordinary or partial-cover",
+          );
+        }
+        options.generationMode = value;
+        break;
       case "--sample-count":
         options.sampleCount = parsePositiveInteger(name, value);
         break;
@@ -412,10 +903,58 @@ function parseOptions(arguments_) {
       case "--review-samples":
         options.reviewSamplesPerCategory = parsePositiveInteger(name, value);
         break;
+      case "--variants-per-base":
+        options.variantsPerBase = parsePositiveInteger(name, value);
+        break;
+      case "--maximum-base-count":
+        options.maximumBaseCount = parsePositiveInteger(name, value);
+        break;
+      case "--solver-state-budget":
+        options.solverStateBudget = parsePositiveInteger(name, value);
+        break;
+      case "--minimum-used-cell-count":
+        options.minimumUsedCellCount = parsePositiveInteger(name, value);
+        break;
+      case "--maximum-used-cell-count":
+        options.maximumUsedCellCount = parsePositiveInteger(name, value);
+        break;
+      case "--write-html":
+        options.writeHtml = parseBoolean(name, value);
+        break;
       default:
         throw new TypeError(`unknown option: ${name}`);
     }
   }
+  if (
+    options.minimumUsedCellCount < 31
+    || options.maximumUsedCellCount > 35
+    || options.minimumUsedCellCount > options.maximumUsedCellCount
+  ) {
+    throw new RangeError(
+      "partial cover used-cell range must be within 31 to 35",
+    );
+  }
+  options.seedPrefix ??=
+    options.generationMode === "ordinary"
+      ? "terminal-filter-audit-v34-6x6-4-4-4"
+      : options.minimumUsedCellCount === 31
+          && options.maximumUsedCellCount === 35
+        ? "partial-cover-filter-audit-v34-6x6-4-4-4"
+        : `partial-cover-${options.minimumUsedCellCount}-to-${
+          options.maximumUsedCellCount
+        }-filter-audit-v34-6x6-4-4-4`;
+  options.outputPrefix ??=
+    options.generationMode === "ordinary"
+      ? "/private/tmp/onaji-no-tsunagi-v34-6x6-4-4-4-"
+        + "filter-classification-audit-2000-2026-07-26"
+      : options.minimumUsedCellCount === 31
+          && options.maximumUsedCellCount === 35
+        ? "/private/tmp/onaji-no-tsunagi-v34-6x6-4-4-4-"
+          + "partial-cover-filter-classification-audit-2000-2026-07-26"
+        : "/private/tmp/onaji-no-tsunagi-v34-6x6-4-4-4-"
+          + `partial-cover-${options.minimumUsedCellCount}-to-${
+            options.maximumUsedCellCount
+          }-filter-classification-audit-2000-2026-07-27`;
   return options;
 }
 
@@ -425,6 +964,12 @@ function parsePositiveInteger(name, value) {
     throw new RangeError(`${name} must be a positive integer`);
   }
   return parsed;
+}
+
+function parseBoolean(name, value) {
+  if (value === "true") return true;
+  if (value === "false") return false;
+  throw new RangeError(`${name} must be true or false`);
 }
 
 function parseRuleIds(value) {
@@ -477,6 +1022,61 @@ function toClassificationGroupId(candidate) {
     return candidate.classification;
   }
   return candidate.directionScore < 0 ? "mixed_easier" : "mixed_harder";
+}
+
+function toPreviousPolicyClassificationGroupId(candidate) {
+  const directions = Object.values(candidate.indicatorDirections);
+  const comparableCount = directions.filter(
+    direction => direction === "comparable",
+  ).length;
+  const easierCount = directions.filter(
+    direction => direction === "easier",
+  ).length;
+  const harderCount = directions.filter(
+    direction => direction === "harder",
+  ).length;
+  if (comparableCount >= 3) {
+    return "reference_like";
+  }
+  if (
+    easierCount >= 2
+    && harderCount <= 1
+    && easierCount > harderCount
+  ) {
+    return "clearly_easier";
+  }
+  if (harderCount >= 2 && easierCount === 0) {
+    return "clearly_harder";
+  }
+  return candidate.directionScore < 0 ? "mixed_easier" : "mixed_harder";
+}
+
+function countPreviousPolicyClassifications(candidates) {
+  const counts = createClassificationCounts();
+  for (const candidate of candidates) {
+    counts[toPreviousPolicyClassificationGroupId(candidate)] += 1;
+  }
+  return counts;
+}
+
+function summarizeClassificationPolicyTransitions(candidates) {
+  const transitions = new Map();
+  for (const candidate of candidates) {
+    const previous = toPreviousPolicyClassificationGroupId(candidate);
+    const current = toClassificationGroupId(candidate);
+    const key = `${previous}->${current}`;
+    transitions.set(key, (transitions.get(key) ?? 0) + 1);
+  }
+  return [...transitions.entries()]
+    .map(([key, count]) => {
+      const [previous, current] = key.split("->");
+      return {previous, current, count};
+    })
+    .toSorted((left, right) =>
+      right.count - left.count
+      || left.previous.localeCompare(right.previous)
+      || left.current.localeCompare(right.current)
+    );
 }
 
 function summarizeFailureCombinations(candidates, sampleCount) {
@@ -534,6 +1134,14 @@ function summarizeIndicatorDirections(candidates) {
 }
 
 function verifyReport(reportValue, candidates) {
+  const checks = [
+    "generated-candidate-count",
+    "overall-classification-sum",
+    "passed-plus-rejected-sum",
+    "condition-classification-sums",
+    "single-rule-removal-arithmetic",
+    "review-candidate-membership",
+  ];
   const sumCounts = counts =>
     Object.values(counts).reduce((sum, count) => sum + count, 0);
   assert.equal(
@@ -546,6 +1154,27 @@ function verifyReport(reportValue, candidates) {
     reportValue.sampleCount,
     "filter前の分類合計がsampleCountと一致しません。",
   );
+  assert.equal(
+    sumCounts(
+      reportValue.classificationPolicyChange.previousClassificationCounts,
+    ),
+    reportValue.sampleCount,
+    "旧policyの分類合計がsampleCountと一致しません。",
+  );
+  assert.equal(
+    reportValue.classificationPolicyChange.transitions.reduce(
+      (sum, transition) => sum + transition.count,
+      0,
+    ),
+    reportValue.sampleCount,
+    "分類policy遷移の合計がsampleCountと一致しません。",
+  );
+  assert.deepEqual(
+    reportValue.classificationPolicyChange.currentClassificationCounts,
+    reportValue.overallClassificationCounts,
+    "新policyの分類集計が全体集計と一致しません。",
+  );
+  checks.push("classification-policy-transition-sum");
   assert.equal(
     reportValue.allFiltersPassed.count
       + reportValue.rejectedByAnyFilter.count,
@@ -564,7 +1193,26 @@ function verifyReport(reportValue, candidates) {
         + condition.exclusiveViolationCount,
       `${condition.id}: 単独解除後の通過数が一致しません。`,
     );
+    assert.equal(
+      condition.referenceLikeViolationCount,
+      condition.classificationCounts.reference_like,
+      `${condition.id}: 原本近傍違反数が一致しません。`,
+    );
+    assert.ok(
+      condition.referenceLikeReviewCandidates.length
+        <= MAX_REVIEW_SAMPLES_PER_GROUP,
+    );
+    for (const candidate of condition.referenceLikeReviewCandidates) {
+      assert.equal(candidate.classification, "reference_like");
+      assert.ok(
+        candidate.filterEvaluation.failedRules.some(
+          rule => rule.id === condition.id,
+        ),
+        `${candidate.id}: ${condition.id}の違反標本ではありません。`,
+      );
+    }
   }
+  checks.push("condition-reference-like-review-samples");
   const candidateIds = new Set(candidates.map(candidate => candidate.id));
   for (const summary of Object.values(reportValue.byProfile)) {
     for (const group of Object.values(summary.reviewCandidates)) {
@@ -576,16 +1224,63 @@ function verifyReport(reportValue, candidates) {
       }
     }
   }
+  if (reportValue.sampling.generationMode === "trimmed_partial_cover") {
+    const topologyHashes = new Set();
+    const usedCellCountRange =
+      reportValue.generationAudit.usedCellCountRange;
+    const trimCountRange = reportValue.generationAudit.trimCountRange;
+    const transformedSelectionPolicy =
+      reportValue.sampling
+        .transformedPuzzleSelectionPolicyAppliedBeforeAcceptance;
+    for (const candidate of candidates) {
+      assert.ok(
+        candidate.metrics.usedCellCount
+          >= usedCellCountRange.minimum
+          && candidate.metrics.usedCellCount
+            <= usedCellCountRange.maximum,
+        `${candidate.id}: 使用マス数が監査範囲外です。`,
+      );
+      assert.ok(
+        candidate.provenance.trimCount >= trimCountRange.minimum
+          && candidate.provenance.trimCount <= trimCountRange.maximum,
+        `${candidate.id}: 短縮数が監査範囲外です。`,
+      );
+      assert.ok(
+        !topologyHashes.has(candidate.provenance.topologyHash),
+        `${candidate.id}: topologyが重複しています。`,
+      );
+      topologyHashes.add(candidate.provenance.topologyHash);
+    }
+    for (const ruleId of transformedSelectionPolicy.filterRuleIds) {
+      const reportRule = reportValue.conditionViolations.find(
+        condition => condition.resultKey
+          === FILTER_RULE_BY_SELECTION_RULE_ID.get(ruleId)?.resultKey,
+      );
+      assert.ok(
+        reportRule,
+        `${ruleId}: 31マス採用gateに対応する監査条件がありません。`,
+      );
+      assert.equal(
+        reportRule.violationCount,
+        0,
+        `${ruleId}: 31マス採用後の母集団に違反が残っています。`,
+      );
+    }
+    assert.equal(
+      reportValue.generationAudit.counters.acceptedCandidateCount,
+      candidates.length,
+    );
+    checks.push(
+      "partial-cover-used-cell-count-in-requested-range",
+      "partial-cover-trim-count-in-requested-range",
+      "partial-cover-unique-topology",
+      "partial-cover-independent-exact-1",
+      "partial-cover-profile-selection-policy",
+    );
+  }
   return {
     status: "passed",
-    checks: [
-      "generated-candidate-count",
-      "overall-classification-sum",
-      "passed-plus-rejected-sum",
-      "condition-classification-sums",
-      "single-rule-removal-arithmetic",
-      "review-candidate-membership",
-    ],
+    checks,
   };
 }
 

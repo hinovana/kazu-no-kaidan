@@ -9,6 +9,7 @@
 | --- | --- |
 | [ディレクトリ構成](directory-structure.md) | 各ディレクトリと主要ファイルの責務、依存方向、変更内容ごとの入口を確認する |
 | [6×6 原本基準・難易度監査](six-by-six-difficulty-audit.md) | 原本3問と生成3,000問の機械指標を比較し、人間レビュー対象を選ぶ |
+| [6×6選別・31マス監査チェックポイント](six-by-six-selection-checkpoint-2026-07-30.md) | Rustバッチ生成prototype着手前の選別policy、31マス監査値、未確定事項、引き渡し契約を確認する |
 | APIリファレンス（ローカル生成） | TypeDocがTSDocから生成したHTMLで、export APIの型、引数、戻り値、保証範囲を確認する |
 
 ## APIリファレンスの生成

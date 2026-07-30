@@ -28,7 +28,7 @@ export interface GeneratorVersions {
     'onaji-no-tsunagi-spec.v3.3' | 'onaji-no-tsunagi-spec.v3.4-draft.3';
   readonly analyzerVersion:
     | 'onaji-no-tsunagi-difficulty.v3.3'
-    | 'onaji-no-tsunagi-difficulty.v3.4-draft';
+    | 'onaji-no-tsunagi-difficulty.v3.4-draft.3';
   readonly profileVersion:
     'onaji-no-tsunagi-profiles.v3.3' | 'onaji-no-tsunagi-profiles.v3.4-draft.3';
 }
@@ -52,7 +52,7 @@ const VERSIONS_BY_TRACK = {
     schemaVersion: 'onaji-no-tsunagi.worksheet.v3.4-draft.3',
     generatorVersion: 'onaji-no-tsunagi-generator.v3.4-draft.3',
     algorithmSpecVersion: 'onaji-no-tsunagi-spec.v3.4-draft.3',
-    analyzerVersion: 'onaji-no-tsunagi-difficulty.v3.4-draft',
+    analyzerVersion: 'onaji-no-tsunagi-difficulty.v3.4-draft.3',
     profileVersion: 'onaji-no-tsunagi-profiles.v3.4-draft.3',
   },
 } as const satisfies Readonly<

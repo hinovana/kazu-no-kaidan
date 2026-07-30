@@ -36,7 +36,7 @@ const ACTIVE_PLACEMENT_RULES = [
   },
   {
     id: 'central-terminal-count',
-    label: '中央4×4は合計3〜5個',
+    label: '中央4×4は合計4〜6個',
     resultKey: 'satisfiesCentralTerminalCountRange',
   },
   {

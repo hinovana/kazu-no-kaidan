@@ -184,14 +184,19 @@ function record(generated, difficulty, stats) {
       undefined,
     );
   }
-  if (profile.puzzleSelectionPolicy.difficultyReference !== null) {
+  if (profile.puzzleSelectionPolicy.filterRuleIds.length > 0) {
     assert.equal(
       evaluatePuzzleSelectionFilters(
         generated.puzzle,
         profile.puzzleSelectionPolicy.filterRuleIds,
+        generated.canonicalSolution,
       ).allConfiguredFiltersPassed,
       true,
     );
+  } else {
+    assert.deepEqual(profile.puzzleSelectionPolicy.filterRuleIds, []);
+  }
+  if (profile.puzzleSelectionPolicy.difficultyReference !== null) {
     assert.ok(generated.difficultySelection);
     assert.notEqual(
       generated.difficultySelection.classification,
@@ -204,7 +209,6 @@ function record(generated, difficulty, stats) {
       ) ?? 0) + 1,
     );
   } else {
-    assert.deepEqual(profile.puzzleSelectionPolicy.filterRuleIds, []);
     assert.equal(generated.difficultySelection, undefined);
   }
 

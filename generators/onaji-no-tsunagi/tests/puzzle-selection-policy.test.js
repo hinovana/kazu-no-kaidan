@@ -10,6 +10,9 @@ import {
 import {
   getUniquePathCoverProfile,
 } from "../domain/generation/build-unique-path-cover.ts";
+import {
+  evaluatePuzzleSelectionFilters,
+} from "../domain/generation/puzzle-selection-policy.ts";
 
 const reference = {
   sourceProblemId: "reference",
@@ -20,17 +23,66 @@ const reference = {
     totalTurnCount: 8,
   },
 };
+const noStraightPaths = {
+  horizontalStraightPathCount: 0,
+  verticalStraightPathCount: 0,
+};
+const sixBySixTwelveTerminalReference = {
+  sourceProblemId: "book-p43-problem-4",
+  metrics: {
+    entryHypothesisCount: 26_873_856,
+    forcedExitCount: 0,
+    solverStateCount: 126,
+    totalTurnCount: 4,
+  },
+};
 
 assert.equal(
-  classifyDifficultySelection(reference.metrics, reference).classification,
+  classifyDifficultySelection(
+    reference.metrics,
+    reference,
+    noStraightPaths,
+  ).classification,
   "reference_like",
+);
+assert.equal(
+  classifyDifficultySelection(
+    reference.metrics,
+    reference,
+    noStraightPaths,
+  ).policyId,
+  "onaji-no-tsunagi.difficulty-selection.v3",
+);
+assert.equal(
+  classifyDifficultySelection(
+    reference.metrics,
+    reference,
+    {
+      horizontalStraightPathCount: 3,
+      verticalStraightPathCount: 0,
+    },
+  ).classification,
+  "clearly_easier",
+  "three horizontal straight paths must override reference-like indicators",
+);
+assert.equal(
+  classifyDifficultySelection(
+    reference.metrics,
+    reference,
+    {
+      horizontalStraightPathCount: 0,
+      verticalStraightPathCount: 3,
+    },
+  ).classification,
+  "clearly_easier",
+  "three vertical straight paths must override reference-like indicators",
 );
 assert.equal(
   classifyDifficultySelection({
     ...reference.metrics,
     entryHypothesisCount: 40,
     forcedExitCount: 4,
-  }, reference).classification,
+  }, reference, noStraightPaths).classification,
   "clearly_easier",
 );
 assert.equal(
@@ -38,7 +90,7 @@ assert.equal(
     ...reference.metrics,
     solverStateCount: 250,
     totalTurnCount: 11,
-  }, reference).classification,
+  }, reference, noStraightPaths).classification,
   "clearly_harder",
 );
 assert.equal(
@@ -46,9 +98,129 @@ assert.equal(
     ...reference.metrics,
     entryHypothesisCount: 40,
     totalTurnCount: 11,
-  }, reference).classification,
+  }, reference, noStraightPaths).classification,
   "mixed",
 );
+assert.equal(
+  classifyDifficultySelection({
+    ...reference.metrics,
+    entryHypothesisCount: 40,
+    solverStateCount: 250,
+    totalTurnCount: 11,
+  }, reference, noStraightPaths).classification,
+  "mixed",
+);
+assert.equal(
+  classifyDifficultySelection({
+    ...reference.metrics,
+    entryHypothesisCount: 124_416,
+    forcedExitCount: 4,
+    solverStateCount: 1_181,
+    totalTurnCount: 1,
+  }, sixBySixTwelveTerminalReference, noStraightPaths).classification,
+  "clearly_easier",
+  "base-413::trim-59 must not remain mixed because only solver cost is harder",
+);
+assert.equal(
+  classifyDifficultySelection({
+    ...reference.metrics,
+    entryHypothesisCount: 124_416,
+    forcedExitCount: 3,
+    solverStateCount: 267,
+    totalTurnCount: 0,
+  }, sixBySixTwelveTerminalReference, noStraightPaths).classification,
+  "clearly_easier",
+  "base-146::trim-116 must be rejected as clearly easier",
+);
+assert.equal(
+  classifyDifficultySelection({
+    ...reference.metrics,
+    entryHypothesisCount: 40,
+    forcedExitCount: 4,
+    solverStateCount: 250,
+  }, reference, noStraightPaths).classification,
+  "clearly_easier",
+);
+assert.equal(
+  classifyDifficultySelection({
+    ...reference.metrics,
+    entryHypothesisCount: 40,
+    forcedExitCount: 4,
+    solverStateCount: 250,
+    totalTurnCount: 11,
+  }, reference, noStraightPaths).classification,
+  "mixed",
+);
+
+for (const fixture of [
+  {
+    id: "base-146::trim-112",
+    metrics: {
+      entryHypothesisCount: 497_664,
+      forcedExitCount: 0,
+      solverStateCount: 296,
+      totalTurnCount: 2,
+    },
+    shape: {
+      horizontalStraightPathCount: 4,
+      verticalStraightPathCount: 0,
+    },
+  },
+  {
+    id: "base-283::trim-93",
+    metrics: {
+      entryHypothesisCount: 746_496,
+      forcedExitCount: 1,
+      solverStateCount: 269,
+      totalTurnCount: 3,
+    },
+    shape: {
+      horizontalStraightPathCount: 4,
+      verticalStraightPathCount: 0,
+    },
+  },
+  {
+    id: "base-177::trim-145",
+    metrics: {
+      entryHypothesisCount: 419_904,
+      forcedExitCount: 1,
+      solverStateCount: 707,
+      totalTurnCount: 2,
+    },
+    shape: {
+      horizontalStraightPathCount: 0,
+      verticalStraightPathCount: 4,
+    },
+  },
+  {
+    id: "base-146::trim-54",
+    metrics: {
+      entryHypothesisCount: 279_936,
+      forcedExitCount: 1,
+      solverStateCount: 747,
+      totalTurnCount: 2,
+    },
+    shape: {
+      horizontalStraightPathCount: 4,
+      verticalStraightPathCount: 0,
+    },
+  },
+]) {
+  const result = classifyDifficultySelection(
+    fixture.metrics,
+    sixBySixTwelveTerminalReference,
+    fixture.shape,
+  );
+  assert.equal(
+    result.classification,
+    "clearly_easier",
+    `${fixture.id} must be rejected by the same-axis straight-path gate`,
+  );
+  assert.ok(
+    result.structuralClearlyEasierReasons.length > 0,
+    `${fixture.id} must retain its structural rejection reason`,
+  );
+}
 
 const targetPolicy = getUniquePathCoverProfile(
   "6x6-4-4-2",
@@ -62,11 +234,43 @@ assert.deepEqual(targetPolicy.filterRuleIds, [
 assert.equal(targetPolicy.maximumConsecutiveClearlyEasierCandidates, 10);
 assert.notEqual(targetPolicy.difficultyReference, null);
 
+const twelveTerminalPolicy = getUniquePathCoverProfile(
+  "6x6-4-4-4",
+).puzzleSelectionPolicy;
+assert.deepEqual(twelveTerminalPolicy.filterRuleIds, [
+  "no_three_straight_paths_on_same_axis",
+]);
+assert.equal(twelveTerminalPolicy.difficultyReference, null);
+assert.equal(twelveTerminalPolicy.maximumConsecutiveClearlyEasierCandidates, null);
+
+const threeHorizontalStraightPaths = {
+  paths: [
+    {cells: [{row: 0, column: 0}, {row: 0, column: 1}]},
+    {cells: [{row: 1, column: 0}, {row: 1, column: 1}]},
+    {cells: [{row: 2, column: 0}, {row: 2, column: 1}]},
+  ],
+};
+assert.equal(
+  evaluatePuzzleSelectionFilters(
+    {width: 6, height: 6, terminals: []},
+    twelveTerminalPolicy.filterRuleIds,
+    threeHorizontalStraightPaths,
+  ).allConfiguredFiltersPassed,
+  false,
+  "three horizontal straight paths must be excluded for 6x6-4-4-4",
+);
+assert.throws(
+  () => evaluatePuzzleSelectionFilters(
+    {width: 6, height: 6, terminals: []},
+    twelveTerminalPolicy.filterRuleIds,
+  ),
+  /canonicalSolution/u,
+);
+
 for (const profileId of [
   "5x5-2-2-2",
   "5x5-4-2-2",
   "5x5-4-4-2",
-  "6x6-4-4-4",
   "6x6-6-4-4",
 ]) {
   const policy = getUniquePathCoverProfile(profileId).puzzleSelectionPolicy;

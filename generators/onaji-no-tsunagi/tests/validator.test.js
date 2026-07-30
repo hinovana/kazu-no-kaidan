@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import {
+  countStraightPathsByAxis,
+} from "../domain/validation/analyze-solution-geometry.ts";
 import { validatePuzzle } from "../domain/validation/validate-puzzle.ts";
 import { validateSolution } from "../domain/validation/validate-solution.ts";
 
@@ -38,6 +41,33 @@ const alternativePairing = {
   ],
 };
 assert.deepEqual(validateSolution(puzzle, alternativePairing), { valid: true });
+assert.deepEqual(countStraightPathsByAxis(alternativePairing), {
+  horizontalStraightPathCount: 0,
+  verticalStraightPathCount: 2,
+});
+assert.deepEqual(countStraightPathsByAxis({
+  paths: [
+    {
+      symbol: "circle",
+      cells: [
+        { row: 0, column: 0 },
+        { row: 0, column: 1 },
+        { row: 0, column: 2 },
+      ],
+    },
+    {
+      symbol: "square",
+      cells: [
+        { row: 1, column: 0 },
+        { row: 1, column: 1 },
+        { row: 2, column: 1 },
+      ],
+    },
+  ],
+}), {
+  horizontalStraightPathCount: 1,
+  verticalStraightPathCount: 0,
+});
 
 const diagonal = {
   paths: [

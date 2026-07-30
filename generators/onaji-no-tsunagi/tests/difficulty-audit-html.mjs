@@ -1214,7 +1214,7 @@ function renderExperimentSummary(report) {
     <h3>難易度分類の変化</h3>
     <table><thead><tr>
       <th>分類</th><th>生成policy通過</th><th>中央記号網羅</th>
-      <th>前回条件</th><th>中央3〜5追加</th>
+      <th>前回条件</th><th>中央4〜6追加</th>
       <th>中央隣接制限</th><th>今回の最終条件</th>
       <th>生成policy通過群との差</th>
     </tr></thead><tbody>${
@@ -1266,7 +1266,7 @@ function renderExperimentSummary(report) {
     <h3>端点位置の変化</h3>
     <table><thead><tr>
       <th>指標</th><th>生成policy通過</th><th>中央記号網羅</th>
-      <th>前回条件</th><th>中央3〜5追加</th>
+      <th>前回条件</th><th>中央4〜6追加</th>
       <th>中央隣接制限</th><th>今回の最終条件</th>
     </tr></thead><tbody>
       ${renderPlacementComparisonRow(

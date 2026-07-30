@@ -244,7 +244,7 @@ function createReport(
             `後段フィルターなし ${options.samplesPerProfile}問`,
           lead:
             "6x6-4-4-2の生成アルゴリズムに内蔵した6条件は有効なまま、"
-            + "中央端点数3〜5、2×2、中央・外周境界、外周一辺集中型の"
+            + "中央端点数4〜6、2×2、中央・外周境界、外周一辺集中型の"
             + "後段4条件を採用フィルターに使わず、生成された"
             + `${options.samplesPerProfile.toLocaleString("ja-JP")}問を`
             + "そのまま原本基準の機械指標で分類しました。",

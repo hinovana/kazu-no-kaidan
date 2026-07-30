@@ -18,13 +18,15 @@ import {
  */
 export const CLASSIFICATION_POLICY =
   DIFFICULTY_SELECTION_CLASSIFICATION_POLICY;
+export const MAX_REVIEW_SAMPLES_PER_GROUP = 30;
 
 /**
  * 生成問題の機械指標を、同じprofileの原本基準点と比較して分類する。
  *
- * 複数指標が同じ方向を示し、反対方向の指標がない場合だけ
- * `clearly_easier`または`clearly_harder`とする。返す分類は人間レビュー候補の
- * 優先度であり、問題の採否を保証しない。
+ * 同一方向の直線経路3本以上を簡単側として最優先する。相対4指標では、
+ * 簡単側が複数指標で支持され難しい側より多い場合に単一の逆方向指標を
+ * 許容する。難しい側は簡単側指標がない場合だけ採用する。返す分類は
+ * 人間レビュー候補の優先度であり、問題の採否を保証しない。
  */
 export function classifyCandidate(candidate, reference) {
   const selection = classifyDifficultySelection(
@@ -32,6 +34,12 @@ export function classifyCandidate(candidate, reference) {
     {
       sourceProblemId: reference.sourceProblemId ?? "audit-reference",
       metrics: reference.metrics,
+    },
+    {
+      horizontalStraightPathCount:
+        candidate.metrics.horizontalStraightPathCount,
+      verticalStraightPathCount:
+        candidate.metrics.verticalStraightPathCount,
     },
   );
   const directionComponents = createDirectionComponents(
@@ -42,6 +50,8 @@ export function classifyCandidate(candidate, reference) {
     ...candidate,
     classification: selection.classification,
     indicatorDirections: selection.indicatorDirections,
+    structuralClearlyEasierReasons:
+      selection.structuralClearlyEasierReasons,
     directionScore: round(
       Object.values(directionComponents).reduce(
         (sum, value) => sum + value,
@@ -103,6 +113,8 @@ export function summarizeCandidateMetrics(candidates) {
       "solverStateCount",
       "solverBacktrackCount",
       "totalTurnCount",
+      "horizontalStraightPathCount",
+      "verticalStraightPathCount",
       "usedCellCount",
       "maximumLineConcentration",
     ].map(metric => [
@@ -164,10 +176,14 @@ export function summarizeDifficultyCohort(
 }
 
 /**
- * 分類の端と分布全体から、重複しない人間レビュー標本を最大20問選ぶ。
+ * 各分類から、重複しない人間レビュー標本を選ぶ。
  *
- * `categoryLimit`は各分類から先に取る上限であり、最終的に不足する場合は
- * direction scoreの分布全体から補完する。
+ * 各分類の全候補を決定的な擬似ランダム順で抽出してから、画面上の比較に
+ * 使う指標順へ並べる。原本距離や難易度方向で先に切り詰めない。
+ *
+ * `categoryLimit`は5分類それぞれから先に取る上限で、最大30問に丸める。
+ * 合計目標は「分類ごとの上限×5」とし、不足する分類がある場合は
+ * 未選択候補を同じ方法でランダム抽出して補完する。
  */
 export function createReviewCandidateGroups(
   groups,
@@ -175,61 +191,104 @@ export function createReviewCandidateGroups(
   categoryLimit,
 ) {
   const selectedIds = new Set();
-  const targetCount = Math.min(20, allCandidates.length);
-  const selectUnique = (candidates, limit, compare) => {
-    const selected = [];
-    for (const candidate of [...candidates].toSorted(compare)) {
-      if (selectedIds.size >= targetCount) {
-        break;
-      }
-      if (selectedIds.has(candidate.id)) {
-        continue;
-      }
-      selected.push(candidate);
+  const perCategoryLimit = Math.min(
+    MAX_REVIEW_SAMPLES_PER_GROUP,
+    categoryLimit,
+  );
+  const targetCount = Math.min(
+    perCategoryLimit * 5,
+    allCandidates.length,
+  );
+  const selectUnique = (
+    candidates,
+    limit,
+    sampleKey,
+    displayCompare,
+  ) => {
+    const remainingTarget = Math.max(0, targetCount - selectedIds.size);
+    const selected = sampleThenSortCandidates(
+      candidates.filter(candidate => !selectedIds.has(candidate.id)),
+      Math.min(limit, remainingTarget),
+      sampleKey,
+      displayCompare,
+    );
+    for (const candidate of selected) {
       selectedIds.add(candidate.id);
-      if (selected.length >= limit) {
-        break;
-      }
     }
     return selected;
   };
   const selected = {
     clearlyEasier: selectUnique(
       groups.clearly_easier ?? [],
-      categoryLimit,
+      perCategoryLimit,
+      "clearly-easier",
       (left, right) => left.directionScore - right.directionScore,
     ),
     referenceLike: selectUnique(
       groups.reference_like ?? [],
-      categoryLimit,
+      perCategoryLimit,
+      "reference-like",
       (left, right) => left.referenceDistance - right.referenceDistance,
     ),
     clearlyHarder: selectUnique(
       groups.clearly_harder ?? [],
-      categoryLimit,
+      perCategoryLimit,
+      "clearly-harder",
       (left, right) => right.directionScore - left.directionScore,
     ),
     mixedEasyEdge: selectUnique(
       groups.mixed ?? [],
-      categoryLimit,
+      perCategoryLimit,
+      "mixed-easier",
       (left, right) => left.directionScore - right.directionScore,
     ),
     mixedHardEdge: selectUnique(
       groups.mixed ?? [],
-      categoryLimit,
+      perCategoryLimit,
+      "mixed-harder",
       (left, right) => right.directionScore - left.directionScore,
     ),
   };
   const fillCount = Math.max(0, targetCount - selectedIds.size);
   selected.representativeFill = selectUnique(
-    selectEvenlySpaced(
-      allCandidates.filter(candidate => !selectedIds.has(candidate.id)),
-      fillCount,
-    ),
+    allCandidates,
     fillCount,
-    () => 0,
+    "representative-fill",
+    (left, right) => left.directionScore - right.directionScore,
   );
   return selected;
+}
+
+/**
+ * 候補を入力順に依存しない擬似ランダム順で抽出し、抽出後だけ表示順に並べる。
+ *
+ * `sampleKey`と候補IDから作るhashを乱数順位として使うため、同じ母集団なら
+ * 再実行しても同じ標本になる。
+ */
+export function sampleThenSortCandidates(
+  candidates,
+  requestedLimit,
+  sampleKey,
+  displayCompare,
+) {
+  const limit = Math.min(
+    MAX_REVIEW_SAMPLES_PER_GROUP,
+    Math.max(0, requestedLimit),
+  );
+  const uniqueCandidates = [
+    ...new Map(candidates.map(candidate => [candidate.id, candidate])).values(),
+  ];
+  return uniqueCandidates
+    .toSorted((left, right) =>
+      deterministicSampleRank(sampleKey, left.id)
+        - deterministicSampleRank(sampleKey, right.id)
+      || left.id.localeCompare(right.id)
+    )
+    .slice(0, limit)
+    .toSorted((left, right) =>
+      displayCompare(left, right)
+      || left.id.localeCompare(right.id)
+    );
 }
 
 function createDirectionComponents(actual, reference) {
@@ -280,22 +339,13 @@ function percentile(sorted, ratio) {
   return sorted[Math.max(0, index)];
 }
 
-function selectEvenlySpaced(candidates, count) {
-  if (count === 0 || candidates.length === 0) {
-    return [];
+function deterministicSampleRank(sampleKey, candidateId) {
+  let hash = 2_166_136_261;
+  for (const character of `${sampleKey}\0${candidateId}`) {
+    hash ^= character.codePointAt(0);
+    hash = Math.imul(hash, 16_777_619);
   }
-  const sorted = [...candidates].toSorted(
-    (left, right) => left.directionScore - right.directionScore,
-  );
-  if (count >= sorted.length) {
-    return sorted;
-  }
-  return Array.from({ length: count }, (_, index) => {
-    const position = count === 1
-      ? Math.floor((sorted.length - 1) / 2)
-      : Math.round(index * (sorted.length - 1) / (count - 1));
-    return sorted[position];
-  });
+  return hash >>> 0;
 }
 
 function round(value) {

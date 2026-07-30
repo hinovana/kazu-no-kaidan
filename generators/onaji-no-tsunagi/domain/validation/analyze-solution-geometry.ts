@@ -14,6 +14,7 @@ import type {
   Solution,
   SolutionCost,
   SolutionGeometryAnalysis,
+  StraightPathCounts,
 } from '../types/solution.ts';
 import {solutionHash} from '../solver/normalize-solution.ts';
 
@@ -100,6 +101,34 @@ export function analyzeSolutionGeometry(
     unusedComponentCount: componentCount,
     isolatedUnusedCellCount: isolatedCellCount,
     paths: paths.map(({edgeCount}) => ({edgeCount})),
+  };
+}
+
+/**
+ * 曲がりがない解答経路を真横・真縦に分けて数える。
+ *
+ * 経路長は問わず、全セルが同じ行なら真横、同じ列なら真縦とする。
+ * 有効な解答経路は異なる二端点を持つため、同じ経路を両方向へ重複計上しない。
+ */
+export function countStraightPathsByAxis(
+  solution: Solution,
+): StraightPathCounts {
+  let horizontalStraightPathCount = 0;
+  let verticalStraightPathCount = 0;
+  for (const path of solution.paths) {
+    const first = path.cells[0];
+    if (first === undefined) {
+      continue;
+    }
+    if (path.cells.every(cell => cell.row === first.row)) {
+      horizontalStraightPathCount += 1;
+    } else if (path.cells.every(cell => cell.column === first.column)) {
+      verticalStraightPathCount += 1;
+    }
+  }
+  return {
+    horizontalStraightPathCount,
+    verticalStraightPathCount,
   };
 }
 

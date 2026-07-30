@@ -24,12 +24,12 @@ export const CENTRAL_SYMBOL_COVERAGE_HYPOTHESIS = {
 };
 
 export const CENTRAL_TERMINAL_COUNT_HYPOTHESIS = {
-  id: "central-4x4-three-to-five-terminals",
+  id: "central-4x4-four-to-six-terminals",
   description:
-    "外周を除いた中央4×4に置く端点の合計を3個以上5個以下にする。",
+    "外周を除いた中央4×4に置く端点の合計を4個以上6個以下にする。",
   targetProfileId: "6x6-4-4-2",
-  minimumTerminalCount: 3,
-  maximumTerminalCount: 5,
+  minimumTerminalCount: 4,
+  maximumTerminalCount: 6,
 };
 
 export const LIMITED_EDGE_ADJACENCY_HYPOTHESIS = {
@@ -77,7 +77,7 @@ export const LIMITED_CENTRAL_BOUNDARY_ADJACENCY_HYPOTHESIS = {
 export const COMBINED_TERMINAL_PLACEMENT_HYPOTHESIS = {
   id: "bounded-central-placement-and-limited-adjacency",
   description:
-    "中央4×4に全記号を1個以上、合計3〜5個置き、中央内の隣接pairを"
+    "中央4×4に全記号を1個以上、合計4〜6個置き、中央内の隣接pairを"
     + "1組までにする。外周上の隣接pairも1組までとし、外周で隣接する"
     + "場合は異なる記号同士だけを許容する。",
   targetProfileId: "6x6-4-4-2",
@@ -98,7 +98,7 @@ export const TERMINAL_PLACEMENT_GATE_RULES = [
   },
   {
     id: CENTRAL_TERMINAL_COUNT_HYPOTHESIS.id,
-    label: "中央4×4は合計3〜5個",
+    label: "中央4×4は合計4〜6個",
     description: CENTRAL_TERMINAL_COUNT_HYPOTHESIS.description,
     resultKey: "satisfiesCentralTerminalCountRange",
   },

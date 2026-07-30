@@ -15,6 +15,7 @@ import type {
 import {createSeededRandom} from './random.ts';
 import {
   SIX_BY_SIX_TEN_TERMINAL_SELECTION_POLICY,
+  SIX_BY_SIX_TWELVE_TERMINAL_SELECTION_POLICY,
   UNFILTERED_PUZZLE_SELECTION_POLICY,
   type PuzzleSelectionPolicy,
 } from './puzzle-selection-policy.ts';
@@ -216,7 +217,7 @@ const SIX_BY_SIX_PROFILES = {
     profileId: '6x6-4-4-4',
     generationPolicy: SIX_BY_SIX_GENERATION_POLICY,
     terminalPlacementPolicy: null,
-    puzzleSelectionPolicy: UNFILTERED_PUZZLE_SELECTION_POLICY,
+    puzzleSelectionPolicy: SIX_BY_SIX_TWELVE_TERMINAL_SELECTION_POLICY,
     width: 6,
     height: 6,
     terminalPattern: '4-4-4',

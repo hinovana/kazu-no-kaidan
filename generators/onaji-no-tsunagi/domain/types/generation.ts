@@ -6,7 +6,7 @@
 
 import type {DifficultyLevel} from './difficulty.ts';
 import type {Puzzle, UniquePathCoverProfileId} from './puzzle.ts';
-import type {Solution} from './solution.ts';
+import type {Solution, StraightPathCounts} from './solution.ts';
 
 /** 現在generatorが受け入れる難易度。レベル4は未実装のため含まない。 */
 export type AvailableDifficultyLevel = Extract<DifficultyLevel, 1 | 2 | 3>;
@@ -61,7 +61,8 @@ export type PuzzleSelectionFilterRuleId =
   | 'central_terminal_count_range'
   | 'filled_two_by_two_terminal_block'
   | 'central_boundary_adjacency_pair_limit'
-  | 'concentrated_orthogonal_outer_side_pairs';
+  | 'concentrated_orthogonal_outer_side_pairs'
+  | 'no_three_straight_paths_on_same_axis';
 
 /** 原本との比較に使う4指標。値は同一solver・analyzer版の間だけで比較する。 */
 export interface DifficultyReferenceMetrics {
@@ -74,12 +75,22 @@ export interface DifficultyReferenceMetrics {
 /** 一指標が原本に対して示す難易度方向。 */
 export type DifficultyIndicatorDirection = 'easier' | 'comparable' | 'harder';
 
+/** 原本との相対比較とは別に、簡単すぎる形状を判定する絶対値。 */
+export type DifficultySolutionShapeMetrics = StraightPathCounts;
+
+/** 解答形状だけで明らかに簡単側とする理由。 */
+export type StructuralClearlyEasierReason =
+  | 'three_or_more_horizontal_straight_paths'
+  | 'three_or_more_vertical_straight_paths';
+
 /** 原本基準の4指標と、その集約分類。 */
 export interface DifficultySelectionAnalysis {
-  readonly policyId: 'onaji-no-tsunagi.difficulty-selection.v1';
+  readonly policyId: 'onaji-no-tsunagi.difficulty-selection.v3';
   readonly referenceSourceProblemId: string;
   readonly classification: DifficultyClassification;
   readonly metrics: DifficultyReferenceMetrics;
+  readonly solutionShapeMetrics: DifficultySolutionShapeMetrics;
+  readonly structuralClearlyEasierReasons: readonly StructuralClearlyEasierReason[];
   readonly referenceMetrics: DifficultyReferenceMetrics;
   readonly indicatorDirections: {
     readonly entryHypotheses: DifficultyIndicatorDirection;

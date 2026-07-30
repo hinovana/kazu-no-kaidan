@@ -25,6 +25,8 @@
     "audit:onaji-no-tsunagi:6x6-difficulty": "node generators/onaji-no-tsunagi/tests/six-by-six-difficulty-audit.mjs",
     "audit:onaji-no-tsunagi:6x6-terminal-placement": "node generators/onaji-no-tsunagi/tests/six-by-six-central-terminal-experiment.mjs",
     "audit:onaji-no-tsunagi:6x6-filter-classification": "node generators/onaji-no-tsunagi/tests/six-by-six-filter-classification-audit.mjs",
+    "audit:onaji-no-tsunagi:6x6-partial-cover-filter-classification": "node generators/onaji-no-tsunagi/tests/six-by-six-filter-classification-audit.mjs --generation-mode=partial-cover",
+    "audit:onaji-no-tsunagi:6x6-31-cell-filter-classification": "node generators/onaji-no-tsunagi/tests/six-by-six-filter-classification-audit.mjs --generation-mode=partial-cover --minimum-used-cell-count=31 --maximum-used-cell-count=31 --variants-per-base=200 --review-samples=30 --sample-count=1000 --output-prefix=generators/onaji-no-tsunagi/algorithm-review/data/6x6-4-4-4-31-cell-filter-classification-audit-central-4-to-6-1000 --write-html=false",
     "audit:onaji-no-tsunagi:6x6-source-like-trim": "node generators/onaji-no-tsunagi/tests/six-by-six-source-like-trim-review.mjs",
     "test:onaji-no-tsunagi:unit": "for test_file in generators/onaji-no-tsunagi/tests/*.test.js; do node \"$test_file\" || exit 1; done",
     "test:onaji-no-tsunagi:dom": "vitest run --environment jsdom generators/onaji-no-tsunagi/tests/ui-behavior.test.tsx",

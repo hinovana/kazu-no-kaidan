@@ -28,6 +28,7 @@ import {analyzeSolutionCoverage} from '../validation/analyze-solution-coverage.t
 import {
   analyzeSolutionGeometry,
   calculateSolutionCost,
+  countStraightPathsByAxis,
 } from '../validation/analyze-solution-geometry.ts';
 import {analyzeUniquePathCoverEntry} from '../validation/analyze-unique-path-cover-entry.ts';
 import {doesSolutionPreserveRouteRoles} from '../validation/solution-route-roles.ts';
@@ -53,7 +54,10 @@ import {
   getProfileSymbolAssignmentVariantCount,
 } from './generation-profile-adapter.ts';
 import {createSeededRandom, stableHash} from './random.ts';
-import {evaluatePuzzleSelectionFilters} from './puzzle-selection-policy.ts';
+import {
+  evaluatePuzzleSelectionFilters,
+  UNFILTERED_PUZZLE_SELECTION_POLICY,
+} from './puzzle-selection-policy.ts';
 import {findUniquePathCoverProfileDifficulty} from './unique-path-cover-profile.ts';
 
 interface GenerationProgress {
@@ -141,9 +145,39 @@ export function generateWorksheetForProfile(
   return generateWorksheet({...request, profileId});
 }
 
+/**
+ * 指定profileの後段採用filterと難易度選別を適用せずにWorksheetを生成する。
+ *
+ * @remarks
+ * 端点配置filter自体の通過率を測る監査専用の入口である。solution-first構成、
+ * 一意性証明、最適性、生成policyは通常生成と同じだが、通常UIや公開用の
+ * Worksheet生成には使わない。
+ */
+export function generateWorksheetForProfileWithoutPuzzleSelection(
+  request: GenerationRequest,
+  profileId: UniquePathCoverProfileId,
+): Worksheet {
+  const expectedDifficulty = findUniquePathCoverProfileDifficulty(profileId);
+  if (request.difficulty !== expectedDifficulty) {
+    throw new RangeError(
+      `profile ${profileId} requires difficulty ${expectedDifficulty}`,
+    );
+  }
+  if (request.profileId !== undefined && request.profileId !== profileId) {
+    throw new RangeError('request profile conflicts with fixed profile');
+  }
+  const profile = getUniquePathCoverProfile(profileId);
+  return generateWorksheetWithProfiles(
+    {...request, profileId},
+    [{...profile, puzzleSelectionPolicy: UNFILTERED_PUZZLE_SELECTION_POLICY}],
+    {enforcePuzzleSelectionPolicy: false},
+  );
+}
+
 function generateWorksheetWithProfiles(
   request: GenerationRequest,
   profiles: readonly UniquePathCoverProfile[],
+  machineCheckOptions: {readonly enforcePuzzleSelectionPolicy?: boolean} = {},
 ): Worksheet {
   const firstProfile = profiles[0];
   if (firstProfile === undefined) {
@@ -179,7 +213,7 @@ function generateWorksheetWithProfiles(
     );
   }
 
-  const report = runMachineChecks(request, puzzles);
+  const report = runMachineChecks(request, puzzles, machineCheckOptions);
   if (!report.allPassed) {
     const failed = report.checks.find(check => !check.passed);
     throw new GenerationFailure({
@@ -434,6 +468,7 @@ function evaluateCandidate(
   const selectionFilterEvaluation = evaluatePuzzleSelectionFilters(
     plan.puzzle,
     profile.puzzleSelectionPolicy.filterRuleIds,
+    optimization.solution,
   );
   if (!selectionFilterEvaluation.allConfiguredFiltersPassed) {
     return rejectedCandidate('puzzle_selection_filter_failed');
@@ -451,6 +486,7 @@ function evaluateCandidate(
             totalTurnCount: optimization.cost.totalTurnCount,
           },
           difficultyReference,
+          countStraightPathsByAxis(optimization.solution),
         );
 
   const generatedPuzzle: GeneratedPuzzle = {

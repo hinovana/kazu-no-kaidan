@@ -11,16 +11,21 @@ import type {
   DifficultyIndicatorDirection,
   DifficultyReferenceMetrics,
   DifficultySelectionAnalysis,
+  DifficultySolutionShapeMetrics,
+  StructuralClearlyEasierReason,
 } from '../types/generation.ts';
 
 /** 監査レポートと生成器で共有する、版付き分類閾値と非保証範囲。 */
 export const DIFFICULTY_SELECTION_CLASSIFICATION_POLICY = {
-  schemaVersion: 'onaji-no-tsunagi.difficulty-review-policy.v1',
+  schemaVersion: 'onaji-no-tsunagi.difficulty-review-policy.v3',
   comparableFactorRange: [0.5, 2],
   comparableForcedExitDifference: 1,
   comparableTurnDifference: 2,
   minimumComparableIndicatorCount: 3,
   clearlyDirectionalIndicatorCount: 2,
+  maximumOpposingIndicatorCountForClearlyEasier: 1,
+  maximumOpposingIndicatorCountForClearlyHarder: 0,
+  clearlyEasierStraightPathCountOnSameAxis: 3,
   indicators: [
     {
       id: 'entryHypotheses',
@@ -56,12 +61,16 @@ export interface DifficultySelectionReference {
 /**
  * 生成候補の4指標を原本基準点と比較し、レビュー区分へ分類する。
  *
- * 3指標以上が許容帯なら原本近傍、2指標以上が同方向かつ逆方向が0なら
- * 明らかに簡単／難しい側、それ以外は指標混合とする。
+ * 真横または真縦の直線経路が3本以上なら、相対4指標より優先して明らかに
+ * 簡単側とする。それ以外は、3指標以上が許容帯なら原本近傍とする。
+ * 明らかに簡単な候補を除外する目的に合わせ、簡単側2指標以上かつ難しい側
+ * より多ければ、単一の難しい側指標を許容する。難しい側は誤認を避けるため、
+ * 従来どおり簡単側0指標を要求する。それ以外は指標混合とする。
  */
 export function classifyDifficultySelection(
   metrics: DifficultyReferenceMetrics,
   reference: DifficultySelectionReference,
+  solutionShapeMetrics: DifficultySolutionShapeMetrics,
 ): DifficultySelectionAnalysis {
   const indicatorDirections = {
     entryHypotheses: compareFactor(
@@ -85,9 +94,13 @@ export function classifyDifficultySelection(
   const comparableCount = countDirection(directions, 'comparable');
   const easierCount = countDirection(directions, 'easier');
   const harderCount = countDirection(directions, 'harder');
+  const structuralClearlyEasierReasons =
+    findStructuralClearlyEasierReasons(solutionShapeMetrics);
 
   let classification: DifficultySelectionAnalysis['classification'] = 'mixed';
-  if (
+  if (structuralClearlyEasierReasons.length > 0) {
+    classification = 'clearly_easier';
+  } else if (
     comparableCount >=
     DIFFICULTY_SELECTION_CLASSIFICATION_POLICY.minimumComparableIndicatorCount
   ) {
@@ -95,25 +108,45 @@ export function classifyDifficultySelection(
   } else if (
     easierCount >=
       DIFFICULTY_SELECTION_CLASSIFICATION_POLICY.clearlyDirectionalIndicatorCount &&
-    harderCount === 0
+    harderCount <=
+      DIFFICULTY_SELECTION_CLASSIFICATION_POLICY.maximumOpposingIndicatorCountForClearlyEasier &&
+    easierCount > harderCount
   ) {
     classification = 'clearly_easier';
   } else if (
     harderCount >=
       DIFFICULTY_SELECTION_CLASSIFICATION_POLICY.clearlyDirectionalIndicatorCount &&
-    easierCount === 0
+    easierCount <=
+      DIFFICULTY_SELECTION_CLASSIFICATION_POLICY.maximumOpposingIndicatorCountForClearlyHarder
   ) {
     classification = 'clearly_harder';
   }
 
   return {
-    policyId: 'onaji-no-tsunagi.difficulty-selection.v1',
+    policyId: 'onaji-no-tsunagi.difficulty-selection.v3',
     referenceSourceProblemId: reference.sourceProblemId,
     classification,
     metrics,
+    solutionShapeMetrics,
+    structuralClearlyEasierReasons,
     referenceMetrics: reference.metrics,
     indicatorDirections,
   };
+}
+
+function findStructuralClearlyEasierReasons(
+  metrics: DifficultySolutionShapeMetrics,
+): readonly StructuralClearlyEasierReason[] {
+  const reasons: StructuralClearlyEasierReason[] = [];
+  const threshold =
+    DIFFICULTY_SELECTION_CLASSIFICATION_POLICY.clearlyEasierStraightPathCountOnSameAxis;
+  if (metrics.horizontalStraightPathCount >= threshold) {
+    reasons.push('three_or_more_horizontal_straight_paths');
+  }
+  if (metrics.verticalStraightPathCount >= threshold) {
+    reasons.push('three_or_more_vertical_straight_paths');
+  }
+  return reasons;
 }
 
 function compareFactor(

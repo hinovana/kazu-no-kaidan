@@ -52,6 +52,12 @@ export interface PathGeometryAnalysis {
   readonly edgeCount: number;
 }
 
+/** 曲がりがない経路を、盤面上の向き別に数えた形状値。 */
+export interface StraightPathCounts {
+  readonly horizontalStraightPathCount: number;
+  readonly verticalStraightPathCount: number;
+}
+
 /** canonical solution全体の経路形状と未使用セルの機械分析。 */
 export interface SolutionGeometryAnalysis {
   readonly totalEdgeCount: number;

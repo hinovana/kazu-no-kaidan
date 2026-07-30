@@ -7,6 +7,7 @@ import {
 
 const satisfies = analyzeTerminalPlacementHypotheses(puzzle([
   terminal("circle", 1, 1),
+  terminal("circle", 1, 3),
   terminal("triangle", 2, 2),
   terminal("square", 4, 4),
   terminal("circle", 0, 0),
@@ -23,7 +24,7 @@ assert.equal(satisfies.satisfiesTerminalRunAndBlockRule, true);
 assert.equal(satisfies.satisfiesLimitedCentralBoundaryAdjacency, true);
 assert.equal(satisfies.satisfiesNoConcentratedOrthogonalEdgePairs, true);
 assert.equal(satisfies.satisfiesFinalHypothesis, true);
-assert.equal(satisfies.centralTerminalCount, 3);
+assert.equal(satisfies.centralTerminalCount, 4);
 assert.equal(satisfies.outerRingTerminalCount, 1);
 assert.equal(satisfies.adjacentEdgeTerminalPairCount, 0);
 assert.equal(satisfies.adjacentCentralTerminalPairCount, 0);
@@ -57,6 +58,16 @@ assert.deepEqual(missingTriangle.centralSymbolCounts, {
   triangle: 0,
 });
 
+const threeCentralTerminals = analyzeTerminalPlacementHypotheses(puzzle([
+  terminal("circle", 1, 1),
+  terminal("triangle", 2, 2),
+  terminal("square", 4, 4),
+]));
+assert.equal(threeCentralTerminals.satisfiesCentralSymbolCoverage, true);
+assert.equal(threeCentralTerminals.satisfiesCentralTerminalCountRange, false);
+assert.equal(threeCentralTerminals.satisfiesBoundedCentralPlacement, false);
+assert.equal(threeCentralTerminals.centralTerminalCount, 3);
+
 const sixCentralTerminals = analyzeTerminalPlacementHypotheses(puzzle([
   terminal("circle", 1, 1),
   terminal("triangle", 1, 3),
@@ -66,15 +77,28 @@ const sixCentralTerminals = analyzeTerminalPlacementHypotheses(puzzle([
   terminal("square", 4, 4),
 ]));
 assert.equal(sixCentralTerminals.satisfiesCentralSymbolCoverage, true);
-assert.equal(sixCentralTerminals.satisfiesCentralTerminalCountRange, false);
-assert.equal(sixCentralTerminals.satisfiesBoundedCentralPlacement, false);
-assert.equal(sixCentralTerminals.satisfiesCombinedHypothesis, false);
+assert.equal(sixCentralTerminals.satisfiesCentralTerminalCountRange, true);
+assert.equal(sixCentralTerminals.satisfiesBoundedCentralPlacement, true);
+assert.equal(sixCentralTerminals.satisfiesCombinedHypothesis, true);
 assert.equal(sixCentralTerminals.centralTerminalCount, 6);
+
+const sevenCentralTerminals = analyzeTerminalPlacementHypotheses(puzzle([
+  terminal("circle", 1, 1),
+  terminal("triangle", 1, 3),
+  terminal("square", 2, 2),
+  terminal("circle", 2, 4),
+  terminal("triangle", 3, 1),
+  terminal("square", 4, 4),
+  terminal("circle", 3, 3),
+]));
+assert.equal(sevenCentralTerminals.satisfiesCentralTerminalCountRange, false);
+assert.equal(sevenCentralTerminals.centralTerminalCount, 7);
 
 const adjacentSameSymbol = analyzeTerminalPlacementHypotheses(puzzle([
   terminal("circle", 1, 1),
   terminal("triangle", 2, 2),
   terminal("square", 4, 4),
+  terminal("circle", 1, 4),
   terminal("circle", 0, 2),
   terminal("circle", 0, 3),
 ]));
@@ -95,6 +119,7 @@ const oneDifferentSymbolPairIsAllowed =
   terminal("circle", 1, 1),
   terminal("triangle", 2, 2),
   terminal("square", 4, 4),
+  terminal("circle", 1, 4),
   terminal("circle", 0, 2),
   terminal("triangle", 0, 3),
 ]));
@@ -153,6 +178,7 @@ const straightThreeTerminalCluster =
     terminal("triangle", 1, 2),
     terminal("circle", 2, 2),
     terminal("square", 4, 1),
+    terminal("circle", 4, 4),
   ]));
 assert.equal(straightThreeTerminalCluster.satisfiesCombinedHypothesis, true);
 assert.equal(
@@ -177,6 +203,7 @@ const lShapedThreeTerminalCluster =
     terminal("triangle", 1, 1),
     terminal("circle", 1, 2),
     terminal("square", 4, 4),
+    terminal("circle", 3, 3),
   ]));
 assert.equal(lShapedThreeTerminalCluster.satisfiesCombinedHypothesis, true);
 assert.equal(
@@ -198,11 +225,97 @@ assert.equal(
   1,
 );
 
+const connectedTerminalFilterExamples = [
+  {
+    label: "例1: 横一列の4端点",
+    expectedMaximum: 4,
+    expectedSatisfies: false,
+    terminals: [
+      terminal("circle", 1, 0),
+      terminal("triangle", 1, 1),
+      terminal("square", 1, 2),
+      terminal("circle", 1, 3),
+    ],
+  },
+  {
+    label: "例2: L字の4端点",
+    expectedMaximum: 4,
+    expectedSatisfies: false,
+    terminals: [
+      terminal("circle", 0, 1),
+      terminal("triangle", 1, 1),
+      terminal("square", 2, 1),
+      terminal("circle", 2, 2),
+    ],
+  },
+  {
+    label: "例3: 階段状の5端点",
+    expectedMaximum: 5,
+    expectedSatisfies: false,
+    terminals: [
+      terminal("circle", 0, 0),
+      terminal("triangle", 0, 1),
+      terminal("square", 1, 1),
+      terminal("circle", 1, 2),
+      terminal("triangle", 2, 2),
+    ],
+  },
+  {
+    label: "例4: 斜めの4端点",
+    expectedMaximum: 1,
+    expectedSatisfies: true,
+    terminals: [
+      terminal("circle", 0, 0),
+      terminal("triangle", 1, 1),
+      terminal("square", 2, 2),
+      terminal("circle", 3, 3),
+    ],
+  },
+  {
+    label: "例5: 3端点と孤立1端点",
+    expectedMaximum: 3,
+    expectedSatisfies: true,
+    terminals: [
+      terminal("circle", 1, 0),
+      terminal("triangle", 1, 1),
+      terminal("square", 1, 2),
+      terminal("circle", 4, 4),
+    ],
+  },
+  {
+    label: "例6: 離れた2端点組が2つ",
+    expectedMaximum: 2,
+    expectedSatisfies: true,
+    terminals: [
+      terminal("circle", 0, 0),
+      terminal("triangle", 0, 1),
+      terminal("square", 4, 3),
+      terminal("circle", 4, 4),
+    ],
+  },
+];
+for (const example of connectedTerminalFilterExamples) {
+  const analysis = analyzeTerminalPlacementHypotheses(
+    puzzle(example.terminals),
+  );
+  assert.equal(
+    analysis.maximumAdjacentTerminalClusterSize,
+    example.expectedMaximum,
+    `${example.label}の最大連結端点数が不正です。`,
+  );
+  assert.equal(
+    analysis.satisfiesNoFourOrMoreOrthogonallyConnectedTerminals,
+    example.expectedSatisfies,
+    `${example.label}のfilter判定が不正です。`,
+  );
+}
+
 const twoSeparatePairsAreAllowed =
   analyzeTerminalPlacementHypotheses(puzzle([
     terminal("circle", 1, 1),
     terminal("triangle", 1, 2),
     terminal("square", 4, 1),
+    terminal("circle", 3, 4),
     terminal("circle", 5, 4),
     terminal("square", 5, 5),
   ]));
@@ -217,6 +330,7 @@ const filledTwoByTwoBlockIsRejected =
     terminal("triangle", 1, 1),
     terminal("circle", 1, 2),
     terminal("square", 4, 4),
+    terminal("circle", 3, 3),
   ]));
 assert.equal(filledTwoByTwoBlockIsRejected.satisfiesCombinedHypothesis, true);
 assert.equal(
@@ -246,6 +360,7 @@ const threeCentralBoundaryPairsAreRejected =
     terminal("triangle", 5, 2),
     terminal("square", 3, 0),
     terminal("square", 3, 1),
+    terminal("circle", 2, 4),
   ]));
 assert.equal(
   threeCentralBoundaryPairsAreRejected.satisfiesCombinedHypothesis,

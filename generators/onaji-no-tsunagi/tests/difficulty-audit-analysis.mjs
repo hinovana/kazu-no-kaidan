@@ -16,6 +16,7 @@ import {
 import { solvePuzzle } from "../domain/solver/solve-puzzle.ts";
 import {
   analyzeSolutionGeometry,
+  countStraightPathsByAxis,
 } from "../domain/validation/analyze-solution-geometry.ts";
 
 export const SIX_BY_SIX_PROFILE_IDS = [
@@ -65,6 +66,9 @@ export function analyzeDifficultyReferences(corpus) {
       puzzle,
       solutionResult.canonicalSolution,
     );
+    const straightPathCounts = countStraightPathsByAxis(
+      solutionResult.canonicalSolution,
+    );
     references.set(profileId, {
       sourceProblemId: problem.id,
       source: problem.source,
@@ -77,6 +81,7 @@ export function analyzeDifficultyReferences(corpus) {
         solverStateCount: solutionResult.metrics.exploredStateCount,
         solverBacktrackCount: solutionResult.metrics.backtrackCount,
         totalTurnCount: geometry.totalTurnCount,
+        ...straightPathCounts,
         usedCellCount:
           geometry.totalEdgeCount + solutionResult.canonicalSolution.paths.length,
         maximumLineConcentration: structure.maximumLineConcentration,
@@ -110,6 +115,9 @@ export function getDifficultyProfileId(puzzle) {
  * generatorの内部結果を、難易度監査で保存する候補形式へ変換する。
  */
 export function toDifficultyCandidate(seed, generated) {
+  const straightPathCounts = countStraightPathsByAxis(
+    generated.canonicalSolution,
+  );
   return {
     id: `${generated.provenance.profileId}:${seed}`,
     seed,
@@ -128,6 +136,7 @@ export function toDifficultyCandidate(seed, generated) {
       solverStateCount: generated.uniquenessProof.exploredStateCount,
       solverBacktrackCount: generated.difficulty.backtrackCount,
       totalTurnCount: generated.solutionCost.totalTurnCount,
+      ...straightPathCounts,
       usedCellCount: generated.answerCoverage.usedCellCount,
       maximumLineConcentration: generated.entry.maximumLineConcentration,
       pairingChoiceCount: generated.entry.pairingChoiceCount,

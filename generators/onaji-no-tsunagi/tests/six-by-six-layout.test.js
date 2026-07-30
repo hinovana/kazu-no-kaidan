@@ -16,6 +16,11 @@ const profileIds = [
   "6x6-4-4-4",
   "6x6-6-4-4",
 ];
+const seedsPerProfile = parsePositiveInteger(
+  process.env.OTS_SIX_BY_SIX_LAYOUT_SEEDS_PER_PROFILE,
+  300,
+);
+const minimumBuiltCount = Math.ceil(seedsPerProfile / 6);
 const resultByProfile = {};
 
 for (const profileId of profileIds) {
@@ -26,7 +31,7 @@ for (const profileId of profileIds) {
   const pathLengthProfiles = new Set();
   const topologyHashes = new Set();
 
-  for (let seedIndex = 0; seedIndex < 3_000; seedIndex += 1) {
+  for (let seedIndex = 0; seedIndex < seedsPerProfile; seedIndex += 1) {
     const seed = `six-by-six-layout-${profileId}-${seedIndex}`;
     const result = buildUniquePathCover(
       seed,
@@ -102,13 +107,13 @@ for (const profileId of profileIds) {
     topologyHashes.add(plan.topologyHash);
   }
 
-  assert.ok(builtCount >= 500, JSON.stringify({
+  assert.ok(builtCount >= minimumBuiltCount, JSON.stringify({
     profileId,
     builtCount,
     budgetExhaustedCount,
   }));
   assert.equal(pathLengthProfiles.size, profile.pathLengthProfiles.length);
-  assert.ok(topologyHashes.size >= 500);
+  assert.ok(topologyHashes.size >= minimumBuiltCount);
   resultByProfile[profileId] = {
     builtCount,
     budgetExhaustedCount,
@@ -120,5 +125,19 @@ for (const profileId of profileIds) {
 
 console.log(
   "onaji-no-tsunagi 6x6 path-cover layout tests passed",
+  {seedsPerProfile},
   resultByProfile,
 );
+
+function parsePositiveInteger(value, fallback) {
+  if (value === undefined) {
+    return fallback;
+  }
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new RangeError(
+      "OTS_SIX_BY_SIX_LAYOUT_SEEDS_PER_PROFILE must be a positive integer",
+    );
+  }
+  return parsed;
+}

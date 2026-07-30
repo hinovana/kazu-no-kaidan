@@ -92,6 +92,114 @@ for (let missingIndex = 0; missingIndex < twoByTwo.length; missingIndex += 1) {
   assert.equal(lShape.lShapedThreeTerminalBlocks.length, 1);
 }
 
+const reviewedConnectedTerminalRegressions = [
+  {
+    id: "base-120::trim-106",
+    expectedMaximum: 5,
+    coordinates: [
+      [0, 1], [0, 4], [1, 3], [2, 0], [2, 1], [2, 4],
+      [2, 5], [3, 5], [4, 1], [4, 5], [5, 1], [5, 5],
+    ],
+  },
+  {
+    id: "base-124::trim-177",
+    expectedMaximum: 5,
+    coordinates: [
+      [0, 3], [1, 0], [1, 1], [1, 4], [2, 2], [2, 3],
+      [2, 4], [2, 5], [3, 0], [5, 3], [5, 4], [5, 5],
+    ],
+  },
+  {
+    id: "base-146::trim-142",
+    expectedMaximum: 4,
+    coordinates: [
+      [0, 0], [0, 3], [1, 0], [1, 4], [2, 0], [2, 4],
+      [2, 5], [3, 0], [4, 1], [4, 4], [5, 0], [5, 5],
+    ],
+  },
+  {
+    id: "base-226::trim-144",
+    expectedMaximum: 4,
+    coordinates: [
+      [0, 1], [0, 4], [1, 2], [2, 5], [3, 0], [3, 1],
+      [3, 2], [3, 5], [4, 2], [4, 5], [5, 0], [5, 5],
+    ],
+  },
+  {
+    id: "base-234::trim-106",
+    expectedMaximum: 4,
+    coordinates: [
+      [0, 0], [0, 3], [1, 4], [2, 0], [2, 4], [2, 5],
+      [3, 0], [4, 0], [4, 3], [4, 4], [4, 5], [5, 0],
+    ],
+  },
+  {
+    id: "base-235::trim-131",
+    expectedMaximum: 4,
+    coordinates: [
+      [0, 0], [0, 4], [1, 0], [1, 1], [2, 4], [2, 5],
+      [3, 0], [3, 1], [3, 2], [3, 3], [4, 5], [5, 1],
+    ],
+  },
+  {
+    id: "base-300::trim-88",
+    expectedMaximum: 5,
+    coordinates: [
+      [0, 0], [0, 1], [0, 4], [1, 4], [2, 0], [2, 2],
+      [2, 4], [3, 0], [3, 4], [4, 4], [5, 0], [5, 3],
+    ],
+  },
+  {
+    id: "base-41::trim-134",
+    expectedMaximum: 5,
+    coordinates: [
+      [0, 0], [0, 3], [1, 1], [1, 4], [2, 4], [2, 5],
+      [4, 1], [4, 5], [5, 1], [5, 2], [5, 3], [5, 4],
+    ],
+  },
+  {
+    id: "base-52::trim-46",
+    expectedMaximum: 4,
+    coordinates: [
+      [0, 0], [0, 4], [1, 3], [2, 0], [2, 4], [3, 0],
+      [3, 4], [3, 5], [4, 0], [4, 3], [5, 0], [5, 4],
+    ],
+  },
+  {
+    id: "base-69::trim-169",
+    expectedMaximum: 5,
+    coordinates: [
+      [0, 0], [0, 3], [1, 0], [1, 4], [1, 5], [3, 2],
+      [3, 3], [3, 5], [4, 0], [4, 1], [4, 2], [5, 3],
+    ],
+  },
+  {
+    id: "base-73::trim-139",
+    expectedMaximum: 8,
+    coordinates: [
+      [0, 2], [0, 4], [1, 0], [1, 2], [2, 1], [2, 2],
+      [3, 1], [3, 2], [4, 1], [4, 4], [5, 1], [5, 5],
+    ],
+  },
+];
+for (const regression of reviewedConnectedTerminalRegressions) {
+  const analysis = analyzeTerminalCells(
+    regression.coordinates.map(([row, column]) => cell(row, column)),
+    width,
+    height,
+  );
+  assert.equal(
+    analysis.maximumAdjacentTerminalClusterSize,
+    regression.expectedMaximum,
+    `${regression.id}: 最大連結端点数が人間レビュー結果と一致しません。`,
+  );
+  assert.equal(
+    analysis.satisfiesNoFourOrMoreOrthogonallyConnectedTerminals,
+    false,
+    `${regression.id}: 4端点以上の縦横連結を却下できませんでした。`,
+  );
+}
+
 const symbolPlacement = analyzeTerminalSymbols([
   symbolCell("circle", 1, 1),
   symbolCell("square", 2, 3),

@@ -109,7 +109,7 @@ export interface GenerationProvenance {
   readonly solverVersion: 'onaji-no-tsunagi-solver.v3.1';
   readonly analyzerVersion:
     | 'onaji-no-tsunagi-difficulty.v3.3'
-    | 'onaji-no-tsunagi-difficulty.v3.4-draft';
+    | 'onaji-no-tsunagi-difficulty.v3.4-draft.3';
   readonly profileVersion:
     'onaji-no-tsunagi-profiles.v3.3' | 'onaji-no-tsunagi-profiles.v3.4-draft.3';
   readonly seed: string;

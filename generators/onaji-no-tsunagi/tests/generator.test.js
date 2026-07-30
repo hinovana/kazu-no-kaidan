@@ -165,12 +165,16 @@ const levelTwo = generateWorksheet(levelTwoRequest);
 assert.deepEqual(generateWorksheet(levelTwoRequest), levelTwo);
 assert.equal(
   worksheetHash(levelTwo),
-  "4d12c002aafc3e33648e342f20a7d5f50773407003793310eb8c10c1ea51f9f2",
-  "v3.4 draft.3 level 2 output must remain stable",
+  "372a8eb2c1640ff3bad39b6926769f379802f82eb6124c6ed55963be29f0dea5",
+  "v3.4 draft.3 / difficulty v3 level 2 output must remain stable",
 );
 assert.equal(
   levelTwo.schemaVersion,
   "onaji-no-tsunagi.worksheet.v3.4-draft.3",
+);
+assert.equal(
+  levelTwo.provenance.analyzerVersion,
+  "onaji-no-tsunagi-difficulty.v3.4-draft.3",
 );
 assert.deepEqual(
   levelTwo.puzzles.map((generated) => generated.provenance.profileId),
@@ -191,8 +195,8 @@ const levelThree = generateWorksheet(levelThreeRequest);
 assert.deepEqual(generateWorksheet(levelThreeRequest), levelThree);
 assert.equal(
   worksheetHash(levelThree),
-  "b1a88edd2760b799b56947a22dc91ae8cc27f3d503ddea38792cccf92d2880b1",
-  "v3.4 draft.3 level 3 output must remain stable",
+  "5450b4151c08ea8485e85bae03f02030454b1809bf75bb31caadb4555eb01af9",
+  "v3.4 draft.3 / difficulty v3 level 3 output must remain stable",
 );
 assert.deepEqual(
   levelThree.puzzles.map((generated) => generated.provenance.profileId),
@@ -267,7 +271,8 @@ for (const worksheet of [levelTwo, levelThree]) {
     );
     assert.equal(
       profile.puzzleSelectionPolicy.filterRuleIds.length > 0,
-      profile.profileId === "6x6-4-4-2",
+      profile.profileId === "6x6-4-4-2"
+        || profile.profileId === "6x6-4-4-4",
     );
     assert.equal(
       profile.puzzleSelectionPolicy.difficultyReference !== null,
@@ -281,17 +286,20 @@ for (const worksheet of [levelTwo, levelThree]) {
       generated.difficultySelection !== undefined,
       profile.profileId === "6x6-4-4-2",
     );
-    if (profile.profileId === "6x6-4-4-2") {
-      assert.notEqual(
-        generated.difficultySelection.classification,
-        "clearly_easier",
-      );
+    if (profile.puzzleSelectionPolicy.filterRuleIds.length > 0) {
       assert.equal(
         evaluatePuzzleSelectionFilters(
           generated.puzzle,
           profile.puzzleSelectionPolicy.filterRuleIds,
+          generated.canonicalSolution,
         ).allConfiguredFiltersPassed,
         true,
+      );
+    }
+    if (profile.profileId === "6x6-4-4-2") {
+      assert.notEqual(
+        generated.difficultySelection.classification,
+        "clearly_easier",
       );
     }
     assert.equal(generated.puzzle.width, 6);

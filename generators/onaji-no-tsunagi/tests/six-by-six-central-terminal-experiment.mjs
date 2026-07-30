@@ -46,7 +46,7 @@ import {
   getUniquePathCoverProfile,
 } from "../domain/generation/build-unique-path-cover.ts";
 import {
-  generateWorksheet,
+  generateWorksheetForProfileWithoutPuzzleSelection,
 } from "../domain/generation/generate-worksheet.ts";
 
 const options = parseOptions(process.argv.slice(2));
@@ -65,11 +65,6 @@ assert.ok(reference);
 const referencePlacement =
   analyzeTerminalPlacementHypotheses(reference.puzzle);
 assert.equal(
-  referencePlacement.satisfiesCombinedHypothesis,
-  true,
-  "原本6x6-4-4-2が組み合わせ条件を満たしていません。",
-);
-assert.equal(
   referencePlacement.adjacentEdgeTerminalPairCount,
   1,
   "原本6x6-4-4-2の外周隣接数が想定と異なります。",
@@ -79,14 +74,24 @@ assert.equal(
   3,
   "原本6x6-4-4-2の中央端点数が想定と異なります。",
 );
+assert.equal(
+  referencePlacement.satisfiesCentralTerminalCountRange,
+  false,
+  "中央端点数3個の原本が現行4〜6個filterを通過しています。",
+);
+assert.equal(
+  referencePlacement.satisfiesCombinedHypothesis,
+  false,
+  "原本の3個配置を現行の組み合わせ条件へ誤って含めています。",
+);
 assert.ok(
   referencePlacement.adjacentCentralTerminalPairCount <= 1,
   "原本6x6-4-4-2の中央隣接数が追加条件を超えています。",
 );
 assert.equal(
   referencePlacement.satisfiesFinalHypothesis,
-  true,
-  "原本6x6-4-4-2が改訂後の隣接条件を満たしていません。",
+  false,
+  "原本の3個配置を現行の最終条件へ誤って含めています。",
 );
 
 const generated = generateExperimentCohorts(options.samplesPerCohort);
@@ -243,11 +248,11 @@ function generateExperimentCohorts(samplesPerCohort) {
   ) {
     const seed = `difficulty-audit-v34-level-2-${levelTwoRequestCount}`;
     levelTwoRequestCount += 1;
-    const worksheet = generateWorksheet({
+    const worksheet = generateWorksheetForProfileWithoutPuzzleSelection({
       difficulty: 2,
       puzzleCount: 1,
       seed,
-    });
+    }, CENTRAL_SYMBOL_COVERAGE_HYPOTHESIS.targetProfileId);
     const result = worksheet.puzzles[0];
     assert.ok(result);
     if (
@@ -352,6 +357,7 @@ function generateExperimentCohorts(samplesPerCohort) {
       terminalPlacementDiagnostics,
     ),
     sampling: {
+      puzzleSelectionAppliedDuringGeneration: false,
       levelTwoRequestCount,
       targetProfileEncounterCount,
       ignoredOtherProfileCount,
@@ -443,7 +449,7 @@ function createExperimentReport(
   };
   return {
     schemaVersion:
-      "onaji-no-tsunagi.terminal-placement-difficulty-experiment.v6",
+      "onaji-no-tsunagi.terminal-placement-difficulty-experiment.v8",
     reportTitle: "おなじのつなぎ 6×6 端点配置仮説の対照実験",
     toolbarSummary:
       `生成policy通過・段階的な端点配置条件 各${
@@ -452,15 +458,16 @@ function createExperimentReport(
     lead:
       "6x6-4-4-2の生成探索へ組み込んだ6条件と、監査に残した4条件を"
       + "対象に、中央4×4の記号網羅、外周隣接制限、"
-      + "中央端点数3〜5、中央隣接最大1組を段階的に加え、"
+      + "中央端点数4〜6、中央隣接最大1組を段階的に加え、"
       + "最後に縦横3連・L字3連・2×2を却下し、中央と外周を"
       + "またぐ隣接を2組まで、外周一辺集中型の直交隣接pairを"
       + "2組までに制限して、"
-      + "同じseed系列・同じ原本基準で比較しました。",
+      + "同じseed系列・同じ原本基準で比較しました。後段採用filterと"
+      + "難易度選別は母集団生成時に適用していません。",
     reviewStorageKey:
-      "onaji-no-tsunagi-v34-terminal-placement-difficulty-review-v6",
+      "onaji-no-tsunagi-v34-terminal-placement-difficulty-review-v8",
     reviewExportFileName:
-      "onaji-no-tsunagi-v34-terminal-placement-human-review-v6.json",
+      "onaji-no-tsunagi-v34-terminal-placement-human-review-v8.json",
     generatedAt: new Date().toISOString(),
     generatorTrack: "v3.4-draft.3",
     classificationPolicy: CLASSIFICATION_POLICY,
@@ -524,7 +531,7 @@ function createExperimentReport(
     byProfile: {
       [targetProfileId]: {
         cohortLabel:
-          "中央4×4は全記号・合計3〜5・隣接1組まで"
+          "中央4×4は全記号・合計4〜6・隣接1組まで"
           + "＋外周隣接は異記号1組まで"
           + "＋縦横3連・L字3連・2×2を却下"
           + "＋中央外周境界の隣接2組まで"

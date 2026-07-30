@@ -10,10 +10,11 @@
 import type {Cell, Puzzle, SymbolId, Terminal} from '../types/puzzle.ts';
 
 const SYMBOLS: readonly SymbolId[] = ['circle', 'square', 'triangle'];
-const CENTRAL_TERMINAL_MINIMUM = 3;
-const CENTRAL_TERMINAL_MAXIMUM = 5;
+const CENTRAL_TERMINAL_MINIMUM = 4;
+const CENTRAL_TERMINAL_MAXIMUM = 6;
 const CENTRAL_BOUNDARY_ADJACENCY_MAXIMUM = 2;
 const ORTHOGONAL_EDGE_PAIR_MAXIMUM = 2;
+const ORTHOGONALLY_CONNECTED_TERMINAL_MAXIMUM = 3;
 const constraintMasksByGeometry = new Map<string, TerminalConstraintMasks>();
 
 interface TerminalConstraintMasks {
@@ -76,6 +77,8 @@ export interface TerminalCellPlacementAnalysis {
   readonly lShapedThreeTerminalBlocks: readonly (readonly Cell[])[];
   readonly orthogonalEdgeCellPairsBySide: OrthogonalEdgePairs;
   readonly maximumAdjacentTerminalClusterSize: number;
+  /** 縦横隣接だけでたどれる各端点連結成分が3端点以下ならtrue。 */
+  readonly satisfiesNoFourOrMoreOrthogonallyConnectedTerminals: boolean;
 }
 
 /** 生成探索中に利用する、単調な配置条件と完成時L字条件の最小分析。 */
@@ -101,6 +104,8 @@ export interface TerminalPlacementAnalysis {
   readonly satisfiesTerminalRunAndBlockRule: boolean;
   readonly satisfiesLimitedCentralBoundaryAdjacency: boolean;
   readonly satisfiesNoConcentratedOrthogonalEdgePairs: boolean;
+  /** 縦横隣接だけでたどれる各端点連結成分が3端点以下ならtrue。 */
+  readonly satisfiesNoFourOrMoreOrthogonallyConnectedTerminals: boolean;
   readonly satisfiesPreviousCombinedHypothesis: boolean;
   readonly satisfiesBoundedCentralAndEdgeHypothesis: boolean;
   readonly satisfiesCombinedHypothesis: boolean;
@@ -163,6 +168,10 @@ export function analyzeTerminalCells(
       isInsideCentralRegion(pair.second, width, height),
   );
   const adjacentClusters = findAdjacentCellClusters(cells);
+  const maximumAdjacentTerminalClusterSize = Math.max(
+    0,
+    ...adjacentClusters.map(cluster => cluster.length),
+  );
   return {
     centralTerminalCount: centralCells.length,
     outerRingTerminalCount: cells.length - centralCells.length,
@@ -177,10 +186,10 @@ export function analyzeTerminalCells(
       width,
       height,
     ),
-    maximumAdjacentTerminalClusterSize: Math.max(
-      0,
-      ...adjacentClusters.map(cluster => cluster.length),
-    ),
+    maximumAdjacentTerminalClusterSize,
+    satisfiesNoFourOrMoreOrthogonallyConnectedTerminals:
+      maximumAdjacentTerminalClusterSize <=
+      ORTHOGONALLY_CONNECTED_TERMINAL_MAXIMUM,
   };
 }
 
@@ -347,6 +356,8 @@ export function analyzeTerminalPlacement(
     CENTRAL_BOUNDARY_ADJACENCY_MAXIMUM;
   const satisfiesNoConcentratedOrthogonalEdgePairs =
     maximumOrthogonalEdgeTerminalPairCount <= ORTHOGONAL_EDGE_PAIR_MAXIMUM;
+  const satisfiesNoFourOrMoreOrthogonallyConnectedTerminals =
+    geometry.satisfiesNoFourOrMoreOrthogonallyConnectedTerminals;
   const satisfiesPreviousCombinedHypothesis =
     satisfiesCentralSymbolCoverage && satisfiesLimitedEdgeAdjacency;
   const satisfiesBoundedCentralAndEdgeHypothesis =
@@ -366,6 +377,7 @@ export function analyzeTerminalPlacement(
     satisfiesTerminalRunAndBlockRule,
     satisfiesLimitedCentralBoundaryAdjacency,
     satisfiesNoConcentratedOrthogonalEdgePairs,
+    satisfiesNoFourOrMoreOrthogonallyConnectedTerminals,
     satisfiesPreviousCombinedHypothesis,
     satisfiesBoundedCentralAndEdgeHypothesis,
     satisfiesCombinedHypothesis:
