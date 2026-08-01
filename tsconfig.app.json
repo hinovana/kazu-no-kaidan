@@ -27,6 +27,10 @@
     "src/**/*.tsx",
     "generators/kokugo-no-tane/redirect.ts",
     "generators/kokugo-no-tane/module.tsx",
-    "generators/kokugo-no-tane/ui/**/*.tsx"
+    "generators/kokugo-no-tane/ui/**/*.tsx",
+    "generators/onaji-no-tsunagi/redirect.ts",
+    "generators/onaji-no-tsunagi/module.tsx",
+    "generators/onaji-no-tsunagi/tests/ui-behavior.test.tsx",
+    "generators/onaji-no-tsunagi/ui/**/*.tsx"
   ]
 }

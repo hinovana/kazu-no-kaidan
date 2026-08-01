@@ -6,12 +6,23 @@ import {
   RouterProvider,
 } from "react-router-dom";
 import { generatorRegistry } from "./generator-registry.js";
-import type { ReactGeneratorEntry } from "./generator-module.js";
 
-const kokugoEntry = requireReactEntry("kokugo-no-tane");
-const KokugoNoTanePage = lazy(async () => {
-  const loaded = await kokugoEntry.load();
-  return { default: loaded.Page };
+const reactRoutes = generatorRegistry.flatMap((entry) => {
+  if (entry.kind !== "react") {
+    return [];
+  }
+  const GeneratorPage = lazy(async () => {
+    const loaded = await entry.load();
+    return { default: loaded.Page };
+  });
+  return [{
+    path: entry.path,
+    element: (
+      <Suspense fallback={<LoadingPage />}>
+        <GeneratorPage onRequestPrint={() => window.print()} />
+      </Suspense>
+    ),
+  }];
 });
 
 const router = createHashRouter([
@@ -21,14 +32,7 @@ const router = createHashRouter([
     errorElement: <RouteError />,
     children: [
       { index: true, element: <GeneratorIndex /> },
-      {
-        path: kokugoEntry.path,
-        element: (
-          <Suspense fallback={<LoadingPage />}>
-            <KokugoNoTanePage onRequestPrint={() => window.print()} />
-          </Suspense>
-        ),
-      },
+      ...reactRoutes,
     ],
   },
 ]);
@@ -70,12 +74,4 @@ function RouteError() {
       <Link to="/">教材一覧へ戻る</Link>
     </main>
   );
-}
-
-function requireReactEntry(id: string): ReactGeneratorEntry {
-  const entry = generatorRegistry.find((candidate) => candidate.id === id);
-  if (entry?.kind !== "react") {
-    throw new Error(`React generator is not registered: ${id}`);
-  }
-  return entry;
 }

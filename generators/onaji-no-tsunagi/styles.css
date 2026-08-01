@@ -1,0 +1,813 @@
+.onaji-page {
+  --ots-ink: #20332f;
+  --ots-muted: #65736f;
+  --ots-accent: #c96338;
+  --ots-accent-dark: #984324;
+  --ots-teal: #147c79;
+  --ots-paper: #fffef9;
+  --ots-grid: #81908c;
+  color: var(--ots-ink);
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 28px clamp(16px, 4vw, 48px) 64px;
+  font-family: var(--app-font-sans, -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif);
+}
+
+.ots-page-header {
+  max-width: 780px;
+  margin-bottom: 20px;
+}
+
+.ots-back-link {
+  color: var(--ots-teal);
+  font-weight: 700;
+}
+
+.ots-reference-link {
+  display: inline-block;
+  margin-left: 18px;
+  color: var(--ots-accent-dark);
+  font-weight: 700;
+}
+
+.ots-page-kicker,
+.ots-sheet-kicker {
+  margin: 22px 0 4px;
+  color: var(--ots-accent-dark);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.ots-page-header h1 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  letter-spacing: 0.04em;
+}
+
+.ots-page-header p:last-child {
+  font-size: 1.04rem;
+  line-height: 1.8;
+}
+
+.ots-prototype-notice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  padding: 14px 18px;
+  border: 1px solid #e6b59d;
+  border-radius: 12px;
+  background: #fff4ed;
+  color: #6e3825;
+}
+
+.ots-control-panel {
+  margin: 20px 0;
+  padding: 20px;
+  border: 1px solid #cbd5d1;
+  border-radius: 16px;
+  background: #f7faf8;
+  box-shadow: 0 8px 24px rgb(31 63 54 / 8%);
+}
+
+.ots-control-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(150px, 1fr));
+  gap: 14px;
+  align-items: end;
+}
+
+.ots-control-panel label {
+  display: grid;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.ots-control-panel select,
+.ots-control-panel input {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid #99aaa4;
+  border-radius: 8px;
+  background: white;
+  color: var(--ots-ink);
+  font: inherit;
+}
+
+.ots-control-panel select:disabled {
+  opacity: 1;
+  color: var(--ots-ink);
+  cursor: not-allowed;
+}
+
+.ots-seed-field {
+  grid-column: 1 / 2;
+}
+
+.ots-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.ots-primary-button,
+.ots-secondary-button {
+  min-height: 42px;
+  padding: 9px 16px;
+  border-radius: 9px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ots-primary-button {
+  border: 1px solid var(--ots-accent-dark);
+  background: var(--ots-accent);
+  color: white;
+}
+
+.ots-secondary-button {
+  border: 1px solid #75918a;
+  background: white;
+  color: var(--ots-ink);
+}
+
+.ots-primary-button:focus-visible,
+.ots-secondary-button:focus-visible,
+.ots-control-panel input:focus-visible,
+.ots-control-panel select:focus-visible,
+.ots-back-link:focus-visible,
+.ots-reference-link:focus-visible,
+.ots-file-picker input:focus-visible {
+  outline: 3px solid rgb(20 124 121 / 35%);
+  outline-offset: 2px;
+}
+
+.ots-primary-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.ots-control-note {
+  margin-top: 14px;
+  color: var(--ots-muted);
+}
+
+.ots-selection-criteria {
+  margin: 16px 0 0;
+  padding: 14px;
+  border: 1px solid #cbd5d1;
+  border-radius: 10px;
+}
+
+.ots-selection-criteria legend {
+  padding: 0 6px;
+  font-weight: 800;
+}
+
+.ots-selection-criteria:disabled {
+  opacity: 0.62;
+}
+
+.ots-selection-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+}
+
+.ots-selection-options label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ots-selection-options input {
+  width: auto;
+  min-height: 0;
+  margin: 0;
+}
+
+.ots-form-error {
+  margin: 8px 0 0;
+  color: #9a341f;
+  font-weight: 800;
+}
+
+.ots-control-note {
+  margin-bottom: 0;
+  line-height: 1.65;
+}
+
+.ots-empty-state,
+.ots-error,
+.ots-status {
+  padding: 24px;
+  border-radius: 14px;
+  background: #f5f7f5;
+  text-align: center;
+}
+
+.ots-error {
+  border: 1px solid #d48b78;
+  background: #fff2ef;
+  color: #792d1f;
+}
+
+.ots-preview-stack {
+  display: block;
+}
+
+.ots-preview-stack > * + * {
+  margin-top: 28px;
+}
+
+.ots-sheet {
+  box-sizing: border-box;
+  padding: 20px;
+  border: 1px solid #d5d8d3;
+  border-radius: 14px;
+  background: var(--ots-paper);
+  box-shadow: 0 10px 28px rgb(35 53 48 / 8%);
+}
+
+.ots-sheet-header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 20px;
+  align-items: end;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--ots-accent);
+}
+
+.ots-sheet-header h2 {
+  margin: 0;
+  font-size: 1.75rem;
+}
+
+.ots-sheet-kicker {
+  margin-top: 0;
+}
+
+.ots-student-fields {
+  display: grid;
+  grid-template-columns: auto minmax(90px, 1fr);
+  gap: 8px;
+  min-width: 260px;
+  font-size: 0.85rem;
+}
+
+.ots-student-fields i {
+  display: block;
+  border-bottom: 1px solid var(--ots-ink);
+}
+
+.ots-sheet-seed {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--ots-muted);
+  font-size: 0.72rem;
+  text-align: right;
+}
+
+.ots-instruction,
+.ots-thinking-hint,
+.ots-answer-note {
+  margin: 12px 0 0;
+  line-height: 1.65;
+}
+
+.ots-thinking-hint,
+.ots-answer-note {
+  color: var(--ots-teal);
+  font-weight: 700;
+}
+
+.ots-worksheet-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.ots-worksheet-grid--large {
+  grid-template-columns: 1fr;
+}
+
+.ots-puzzle-card {
+  break-inside: avoid;
+  padding: 12px;
+  border: 1px solid #ccd3cf;
+  border-radius: 10px;
+  background: white;
+}
+
+.ots-puzzle-card-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.ots-puzzle-card-heading h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.ots-puzzle-card-classification {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: baseline;
+}
+
+.ots-classification-badge {
+  padding: 2px 8px;
+  border: 1px solid #78a69b;
+  border-radius: 999px;
+  background: #e8f5f1;
+  color: #155e59;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.ots-stars {
+  color: var(--ots-accent);
+  letter-spacing: 0.05em;
+}
+
+.ots-puzzle-board {
+  display: block;
+  width: min(100%, 520px);
+  max-height: 520px;
+  margin: 0 auto;
+}
+
+.ots-board-background {
+  fill: #fff;
+  stroke: var(--ots-grid);
+  stroke-width: 3;
+}
+
+.ots-grid-line {
+  stroke: var(--ots-grid);
+  stroke-width: 2;
+  stroke-dasharray: 8 6;
+}
+
+.ots-marker {
+  fill: #fff;
+  stroke: var(--ots-accent);
+  stroke-width: 8;
+  stroke-linejoin: round;
+}
+
+.ots-cell-coordinate {
+  fill: #61706c;
+  font-size: 17px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.ots-answer-line {
+  fill: none;
+  stroke: var(--ots-ink);
+  stroke-width: 14;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  shape-rendering: geometricPrecision;
+}
+
+.ots-puzzle-id {
+  margin: 6px 0 0;
+  color: var(--ots-muted);
+  font-size: 0.68rem;
+  text-align: right;
+}
+
+.ots-answer-screen-hidden {
+  display: none;
+}
+
+.ots-diagnostics {
+  padding: 16px;
+  border: 1px solid #cbd5d1;
+  border-radius: 12px;
+}
+
+.ots-diagnostics summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.ots-diagnostic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.ots-diagnostic-grid section {
+  padding: 12px;
+  background: #f4f7f5;
+}
+
+.ots-diagnostic-grid dl {
+  margin: 0;
+}
+
+.ots-diagnostic-grid dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ots-diagnostic-grid dt {
+  color: var(--ots-muted);
+}
+
+.ots-diagnostic-grid dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.ots-reference-review {
+  max-width: 1500px;
+}
+
+.ots-reference-loader {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto auto;
+  gap: 14px 18px;
+  align-items: center;
+  margin: 20px 0;
+  padding: 20px;
+  border: 1px solid #cbd5d1;
+  border-radius: 16px;
+  background: #f7faf8;
+}
+
+.ots-reference-loader > * {
+  min-width: 0;
+}
+
+.ots-reference-loader h2,
+.ots-reference-loader p {
+  margin: 0;
+}
+
+.ots-reference-loader p {
+  margin-top: 6px;
+  line-height: 1.65;
+}
+
+.ots-reference-loader .ots-control-note {
+  grid-column: 1 / -1;
+}
+
+.ots-file-picker {
+  display: grid;
+  gap: 6px;
+  font-weight: 800;
+}
+
+.ots-file-picker input {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 320px;
+  padding: 8px;
+  border: 1px solid #99aaa4;
+  border-radius: 8px;
+  background: white;
+  color: var(--ots-ink);
+  font: inherit;
+}
+
+.ots-decode-errors {
+  max-height: 360px;
+  overflow: auto;
+  margin: 14px 0 0;
+  padding-left: 24px;
+  text-align: left;
+}
+
+.ots-decode-errors li + li {
+  margin-top: 8px;
+}
+
+.ots-reference-results {
+  margin-top: 22px;
+}
+
+.ots-source-pdf-check {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(240px, auto);
+  gap: 14px 18px;
+  align-items: center;
+  margin: 20px 0;
+  padding: 18px 20px;
+  border: 1px solid #b8cbc5;
+  border-radius: 14px;
+  background: #eef7f4;
+}
+
+.ots-source-pdf-check h2,
+.ots-source-pdf-check p {
+  margin: 0;
+}
+
+.ots-source-pdf-check p {
+  margin-top: 6px;
+  line-height: 1.65;
+}
+
+.ots-source-pdf-check code,
+.ots-reference-hash {
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+}
+
+.ots-pdf-check-result {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 4px;
+  padding: 11px 13px;
+  border-radius: 9px;
+}
+
+.ots-pdf-check-result--waiting {
+  background: #f5f7f6;
+  color: var(--ots-muted);
+}
+
+.ots-pdf-check-result--match {
+  background: #dff3ea;
+  color: #175d49;
+}
+
+.ots-pdf-check-result--mismatch {
+  background: #fff0ed;
+  color: #842e1e;
+}
+
+.ots-reference-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.ots-reference-summary div {
+  display: grid;
+  gap: 5px;
+  padding: 14px;
+  border: 1px solid #cbd5d1;
+  border-radius: 10px;
+  background: #f4f7f5;
+}
+
+.ots-reference-summary span {
+  color: var(--ots-muted);
+  font-size: 0.8rem;
+}
+
+.ots-reference-summary strong {
+  overflow-wrap: anywhere;
+}
+
+.ots-reference-warning {
+  padding: 12px 15px;
+  border-left: 5px solid #d49033;
+  background: #fff8e7;
+  color: #6a4718;
+  font-weight: 700;
+}
+
+.ots-reference-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.ots-reference-card {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #cbd5d1;
+  border-radius: 14px;
+  background: var(--ots-paper);
+  box-shadow: 0 8px 24px rgb(31 63 54 / 8%);
+}
+
+.ots-reference-card > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+}
+
+.ots-reference-card h2,
+.ots-reference-source {
+  margin: 0;
+}
+
+.ots-reference-source {
+  color: var(--ots-muted);
+  font-size: 0.82rem;
+}
+
+.ots-transcription-status {
+  flex: none;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.ots-transcription-status--draft {
+  background: #fff0d6;
+  color: #7c4a00;
+}
+
+.ots-transcription-status--double-checked {
+  background: #dff3ea;
+  color: #175d49;
+}
+
+.ots-reference-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 14px 0;
+}
+
+.ots-reference-facts div {
+  padding: 8px;
+  background: #f4f7f5;
+}
+
+.ots-reference-facts dt {
+  color: var(--ots-muted);
+  font-size: 0.72rem;
+}
+
+.ots-reference-facts dd {
+  margin: 2px 0 0;
+  font-weight: 800;
+}
+
+.ots-coordinate-details {
+  margin-top: 12px;
+}
+
+.ots-coordinate-details summary {
+  cursor: pointer;
+  color: var(--ots-teal);
+  font-weight: 800;
+}
+
+.ots-coordinate-details table {
+  width: 100%;
+  margin-top: 10px;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.ots-coordinate-details th,
+.ots-coordinate-details td {
+  padding: 6px;
+  border-bottom: 1px solid #d5ddd9;
+  text-align: left;
+}
+
+@media (max-width: 720px) {
+  .ots-control-grid,
+  .ots-worksheet-grid,
+  .ots-reference-loader,
+  .ots-source-pdf-check,
+  .ots-reference-grid,
+  .ots-reference-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ots-seed-field {
+    grid-column: auto;
+  }
+
+  .ots-sheet-header {
+    grid-template-columns: 1fr;
+  }
+
+  .ots-student-fields {
+    min-width: 0;
+  }
+
+  .ots-reference-link {
+    display: block;
+    margin: 10px 0 0;
+  }
+
+  .ots-reference-loader .ots-control-note {
+    grid-column: auto;
+  }
+
+  .ots-reference-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ots-coordinate-details {
+    overflow-x: auto;
+  }
+}
+
+@page {
+  size: A4 portrait;
+  margin: 10mm;
+}
+
+@media print {
+  html,
+  body {
+    background: white !important;
+  }
+
+  .onaji-page {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    color: #111;
+  }
+
+  .screen-only {
+    display: none !important;
+  }
+
+  .ots-preview-stack {
+    display: block;
+  }
+
+  .ots-preview-stack > * + * {
+    margin-top: 0;
+  }
+
+  .ots-answer-screen-hidden {
+    display: block;
+  }
+
+  .ots-sheet {
+    width: 190mm;
+    min-height: 250mm;
+    padding: 5mm;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    break-after: page;
+  }
+
+  .ots-sheet-header h2 {
+    font-size: 18pt;
+  }
+
+  .ots-instruction,
+  .ots-thinking-hint,
+  .ots-answer-note {
+    font-size: 9.5pt;
+  }
+
+  .ots-worksheet-grid {
+    gap: 4mm;
+    margin-top: 4mm;
+  }
+
+  .ots-puzzle-card {
+    padding: 2.5mm;
+    border-color: #999;
+  }
+
+  .ots-worksheet-grid:not(.ots-worksheet-grid--large) .ots-puzzle-board {
+    width: 72mm;
+    height: 72mm;
+  }
+
+  .ots-worksheet-grid--large .ots-puzzle-board {
+    width: 104mm;
+    height: 104mm;
+  }
+
+  .ots-grid-line {
+    stroke: #777;
+  }
+
+  .ots-marker {
+    stroke: #111;
+  }
+
+  .ots-answer-line {
+    stroke: #111;
+  }
+
+  .ots-puzzle-id {
+    font-size: 6.5pt;
+  }
+}

@@ -15,6 +15,8 @@ CLI版は今後保守しないため、移行完了後に `cli/` を削除する
 
 `generators/kazu-sagashi/` は、かずさがしの実装時に必要なファイルだけを作る。空ディレクトリや仮の画面は先に作らない。
 
+2026-07-25に、2つ目のTypeScript・React教材として `generators/onaji-no-tsunagi/` を追加した。仕様、domain、application、solver、UI、コーパステストを教材配下に閉じ、SPAホスト側は型付きregistry、route、互換HTML入口だけを追加した。教材間の共通domainは作っていない。
+
 ## 推奨構成
 
 ```text

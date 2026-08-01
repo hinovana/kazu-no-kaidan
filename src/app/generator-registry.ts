@@ -25,4 +25,14 @@ export const generatorRegistry = [
     path: "/generators/kokugo-no-tane",
     load: async () => (await import("../../generators/kokugo-no-tane/module.tsx")).default,
   },
+  {
+    kind: "react",
+    id: "onaji-no-tsunagi",
+    title: "おなじのつなぎ",
+    description: "5×5の6/8/10個のマークを2個ずつつなぐ、ペアリングを含めて唯一解確認済み・人間レビュー前の算数パズルです。",
+    path: "/generators/onaji-no-tsunagi",
+    load: async () =>
+      (await import("../../generators/onaji-no-tsunagi/module.tsx"))
+        .generatorModule,
+  },
 ] as const satisfies readonly GeneratorEntry[];

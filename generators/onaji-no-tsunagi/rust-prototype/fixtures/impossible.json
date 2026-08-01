@@ -1,0 +1,1 @@
+{"schemaVersion":"onaji-no-tsunagi.puzzle.v1","puzzleId":"impossible","width":2,"height":2,"terminals":[{"terminalId":"a","symbol":"circle","row":0,"column":0},{"terminalId":"b","symbol":"circle","row":1,"column":1},{"terminalId":"c","symbol":"square","row":0,"column":1},{"terminalId":"d","symbol":"square","row":1,"column":0}]}

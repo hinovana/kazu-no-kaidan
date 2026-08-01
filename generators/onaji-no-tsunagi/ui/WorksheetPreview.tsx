@@ -1,0 +1,186 @@
+/**
+ * 解答線を含まない問題用Worksheetを、画面previewとA4印刷向けに構成する。
+ *
+ * @packageDocumentation
+ */
+
+import type {Worksheet} from '../domain/types/worksheet.ts';
+import type {DifficultyClassification} from '../domain/types/generation.ts';
+import {PuzzleBoard} from './PuzzleBoard.tsx';
+
+/**
+ * 解答線を含まない問題用紙を、難易度に応じたA4 page構成で描画する。
+ */
+export function WorksheetPreview({worksheet}: {readonly worksheet: Worksheet}) {
+  const large = worksheet.request.difficulty >= 2;
+  if (large) {
+    return (
+      <>
+        {worksheet.puzzles.map((generated, index) => {
+          const headingId = `ots-problem-heading-${index + 1}`;
+          return (
+            <section
+              className="ots-sheet ots-problem-sheet ots-single-puzzle-sheet"
+              aria-labelledby={headingId}
+              key={generated.puzzle.puzzleId}
+            >
+              <SheetHeader
+                headingId={headingId}
+                title="おなじのつなぎ"
+                seed={worksheet.request.seed}
+              />
+              <ProblemInstructions />
+              <div className="ots-worksheet-grid ots-worksheet-grid--large">
+                <ProblemCard
+                  generated={generated}
+                  index={index}
+                  level={worksheet.request.difficulty}
+                />
+              </div>
+            </section>
+          );
+        })}
+      </>
+    );
+  }
+
+  return (
+    <section
+      className="ots-sheet ots-problem-sheet"
+      aria-labelledby="ots-problem-heading"
+    >
+      <SheetHeader
+        headingId="ots-problem-heading"
+        title="おなじのつなぎ"
+        seed={worksheet.request.seed}
+      />
+      <ProblemInstructions />
+      <div className="ots-worksheet-grid">
+        {worksheet.puzzles.map((generated, index) => (
+          <ProblemCard
+            generated={generated}
+            index={index}
+            key={generated.puzzle.puzzleId}
+            level={worksheet.request.difficulty}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ProblemInstructions() {
+  return (
+    <>
+      <p className="ots-instruction">
+        同じ形のマークを、2こずつ線でつなぎましょう。線は上下左右に進み、
+        1つのマスには1本の線だけ通せます。すべてのマークを1回ずつ使います。
+        同じ形が4こ以上あるときも、2こずつのペアを作ります。
+      </p>
+      <p className="ots-thinking-hint">
+        一本つないだら、ほかのマークにも道が残っているか見てみよう。
+      </p>
+    </>
+  );
+}
+
+function ProblemCard({
+  generated,
+  index,
+  level,
+}: {
+  readonly generated: Worksheet['puzzles'][number];
+  readonly index: number;
+  readonly level: 1 | 2 | 3 | 4;
+}) {
+  return (
+    <article className="ots-puzzle-card">
+      <div className="ots-puzzle-card-heading">
+        <h3>問題 {index + 1}</h3>
+        <div className="ots-puzzle-card-classification">
+          <DifficultyClassificationBadge
+            classification={generated.difficultySelection?.classification}
+          />
+          <DifficultyStars level={level} />
+        </div>
+      </div>
+      <PuzzleBoard puzzle={generated.puzzle} solution={null} mode="problem" />
+      <p className="ots-puzzle-id">{generated.puzzle.puzzleId}</p>
+    </article>
+  );
+}
+
+/** 原本基準の機械分類を、校正済み難易度と誤認しない補助labelで表示する。 */
+export function DifficultyClassificationBadge({
+  classification,
+}: {
+  readonly classification: DifficultyClassification | undefined;
+}) {
+  if (classification === undefined || classification === 'clearly_easier') {
+    return null;
+  }
+  const label =
+    classification === 'reference_like'
+      ? '原本近傍'
+      : classification === 'clearly_harder'
+        ? '明らかに難しい側'
+        : '指標混合';
+  return (
+    <span
+      className="ots-classification-badge screen-only"
+      aria-label={`原本基準の機械分類: ${label}`}
+    >
+      {label}
+    </span>
+  );
+}
+
+/** 問題・答案で共有する、記名欄と再現用seedを含む印刷header。 */
+export function SheetHeader({
+  headingId,
+  title,
+  seed,
+}: {
+  readonly headingId: string;
+  readonly title: string;
+  readonly seed: string;
+}) {
+  return (
+    <header className="ots-sheet-header">
+      <div>
+        <p className="ots-sheet-kicker">算数パズル</p>
+        <h2 id={headingId}>{title}</h2>
+      </div>
+      <div className="ots-student-fields" aria-label="名前と日付の記入欄">
+        <span>なまえ</span>
+        <i />
+        <span>ひづけ</span>
+        <i />
+      </div>
+      <p className="ots-sheet-seed">seed: {shortSeed(seed)}</p>
+    </header>
+  );
+}
+
+/**
+ * 未校正の構造帯を4段階の星とaccessibility labelで表示する。
+ */
+export function DifficultyStars({level}: {readonly level: 1 | 2 | 3 | 4}) {
+  return (
+    <span className="ots-stars" aria-label={`暫定難易度${level}`}>
+      {indexSequence(4).map(index => (
+        <span aria-hidden="true" key={index}>
+          {index < level ? '★' : '☆'}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function shortSeed(seed: string): string {
+  return seed.length <= 24 ? seed : `${seed.slice(0, 21)}...`;
+}
+
+function indexSequence(length: number): readonly number[] {
+  return [...Array.from({length}).keys()];
+}
